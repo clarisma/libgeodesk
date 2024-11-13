@@ -127,15 +127,15 @@ public:
 		return taggedPtr_.raw() & 0xffff'ffff'ffff'fffcULL; 
 	}
 
-private:
-	explicit TagTablePtr(TaggedPtr<const uint8_t,1> taggedPtr) : taggedPtr_(taggedPtr) {}
-
 	int32_t pointerOffset(DataPtr p) const noexcept
 	{
 		return static_cast<int32_t>(p.ptr() - taggedPtr_.rawPtr());
 	}
 	// This is always based off the raw tagged pointer (i.e. with the local_key bit,
 	// if any), not the actual pointer
+
+private:
+	explicit TagTablePtr(TaggedPtr<const uint8_t,1> taggedPtr) : taggedPtr_(taggedPtr) {}
 
 	static int valueType(TagBits value) noexcept
 	{
@@ -185,7 +185,7 @@ private:
 	TaggedPtr<const uint8_t, 1> taggedPtr_;
 
 	friend class TagIterator;
-	friend class PyTagIterator;
+	friend class ::PyTagIterator;
 	friend class FeatureWriter;
 };
 

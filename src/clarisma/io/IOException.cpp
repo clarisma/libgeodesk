@@ -38,6 +38,8 @@ void IOException::checkAndThrow()
 
 namespace clarisma {
 
+namespace clarisma {
+
 void IOException::checkAndThrow()
 {
     if (errno)
@@ -57,9 +59,7 @@ void IOException::checkAndThrow()
 void IOException::alwaysThrow()
 {
     checkAndThrow();
-    throw IOException("Unnown IO error");
+    throw IOException("Unknown IO error");
 }
 
-
-// static void alwaysThrow(const char* msg);
 } // namespace clarisma

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "ConsoleWriter.h"
+#include <clarisma/cli/ConsoleWriter.h>
 
 namespace clarisma {
 

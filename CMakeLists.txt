@@ -19,6 +19,7 @@ project (libgeodesk)
 set(BUILD_SHARED_LIBS OFF)
 
 option(GEODESK_PYTHON "Build GeoDesk with Python support" OFF)
+option(GEODESK_PYTHON_WHEELS "Enable Support for Python Wheels" OFF)
 
 # Option to choose between static or shared library
 # Only set the option if BUILD_SHARED_LIBS is not already defined
@@ -75,11 +76,25 @@ endif()
 message(STATUS "GeoDesk: INCLUDES = ${INCLUDES}")
 
 if(GEODESK_PYTHON)
-    message(STATUS "GeoDesk: Building with Python support.")
     target_compile_definitions(geodesk PUBLIC GEODESK_PYTHON)
-    find_package(Python REQUIRED COMPONENTS Development)
-    message(STATUS "Python libraries: ${Python_LIBRARIES}")
-    target_include_directories(geodesk PRIVATE ${Python_INCLUDE_DIRS})
+    # Use Python paths set by cibuildwheel if available
+    if(DEFINED ENV{CIBW_PYTHON_INCLUDE} AND DEFINED ENV{CIBW_PYTHON_LIBRARIES})
+        message(STATUS "GeoDesk: Using Python settings from CIBuildWheels")
+        set(Python_INCLUDE_DIRS $ENV{CIBW_PYTHON_INCLUDE})
+        set(Python_LIBRARIES $ENV{CIBW_PYTHON_LIBRARIES})
+    else()
+        # Fallback to standard CMake Python find
+        #if(GEODESK_PYTHON_WHEELS)
+        #    message(STATUS "GeoDesk: Building with Python support (PythonExtensions).")
+        #    find_package(PythonExtensions REQUIRED)
+        #else()
+            message(STATUS "GeoDesk: Building with Python support (Development).")
+            find_package(Python REQUIRED COMPONENTS Development.Module)
+        #endif()
+    endif()
+    message(STATUS "Python_INCLUDE_DIRS: ${Python_INCLUDE_DIRS}")
+    message(STATUS "Python_LIBRARIES: ${Python_LIBRARIES}")
+    target_include_directories(geodesk PUBLIC ${Python_INCLUDE_DIRS})
     target_link_libraries(geodesk PUBLIC ${Python_LIBRARIES})
 endif()
 

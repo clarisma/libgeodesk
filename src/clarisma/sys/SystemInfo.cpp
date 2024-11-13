@@ -31,4 +31,3 @@ SystemInfo::SystemInfo()
 } // namespace clarisma
 
 #endif
-
