@@ -11,6 +11,9 @@ using namespace geodesk;
 // Structure to hold test information
 struct GeodeskConcurTest
 {
+    GeodeskConcurTest(const std::string& n, std::function<int64_t()> f) :
+        name(n), function(f) {}
+
     std::string name;
     std::function<int64_t()> function;
 };
