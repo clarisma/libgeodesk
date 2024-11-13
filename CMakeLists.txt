@@ -101,8 +101,8 @@ endif()
 # Ensure correct export/import of symbols for shared libraries
 if(BUILD_SHARED_LIBS)
     message(STATUS "GeoDesk: Building dynamic library")
-    target_compile_definitions(libgeodesk PUBLIC GEODESK_SHARED)
-    target_compile_definitions(libgeodesk PRIVATE GEODESK_EXPORTS)
+    target_compile_definitions(geodesk PUBLIC GEODESK_SHARED)
+    target_compile_definitions(geodesk PRIVATE GEODESK_EXPORTS)
 else()
     message(STATUS "GeoDesk: Building static library")
 endif()
@@ -123,11 +123,13 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
         DESTINATION include 
         FILES_MATCHING PATTERN "*.h")
 
-# Define a simple test target (optional)
-enable_testing()
-file(GLOB_RECURSE TEST_SOURCE_FILES "test/*.cpp")
-add_executable(geodesk-test ${TEST_SOURCE_FILES})
-# add_executable(geodesk-test test/test_main.cpp test/test_concur.cpp)
-target_include_directories(geodesk-test PRIVATE include src ${Catch2_SOURCE_DIR})
-target_link_libraries(geodesk-test geodesk Catch2::Catch2WithMain)  # or zlib for shared
-add_test(NAME geodesk-test COMMAND geodesk-test)
+if(NOT GEODESK_PYTHON)
+    # Define a simple test target (optional)
+    enable_testing()
+    file(GLOB_RECURSE TEST_SOURCE_FILES "test/*.cpp")
+    add_executable(geodesk-test ${TEST_SOURCE_FILES})
+    # add_executable(geodesk-test test/test_main.cpp test/test_concur.cpp)
+    target_include_directories(geodesk-test PRIVATE include src ${Catch2_SOURCE_DIR})
+    target_link_libraries(geodesk-test geodesk Catch2::Catch2WithMain)  # or zlib for shared
+    add_test(NAME geodesk-test COMMAND geodesk-test)
+endif()
