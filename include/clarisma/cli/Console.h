@@ -11,7 +11,9 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
-#endif 
+#else
+#include <termios.h>
+#endif
 #include <clarisma/text/Format.h>
 
 namespace clarisma {
@@ -77,7 +79,7 @@ public:
 	void start(const char* task);
 	void setTask(const char* task);
 	void setProgress(int percentage);
-	void log(std::string_view msg);
+	static void log(std::string_view msg);
 	ConsoleWriter success();
 	ConsoleWriter failed();
 
@@ -133,12 +135,15 @@ public:
 
 	void print(const char* s, size_t len);
 
+	char readKeyPress();
+
 	static constexpr AnsiColor DEFAULT{"\033[0m"};
 	static constexpr AnsiColor BRIGHT_GREEN{"\033[38;5;84m"};
 	static constexpr AnsiColor BRIGHT_ORANGE{"\033[38;5;208m"};
 	static constexpr AnsiColor FAINT_LAVENDER{"\033[38;5;147m"};
 	static constexpr AnsiColor FAINT_LIGHT_BEIGE{"\033[38;5;217m"};
 	static constexpr AnsiColor FAINT_LIGHT_BLUE{"\033[38;5;111m"};
+	// static constexpr AnsiColor FAINT_LIGHT_BLUE{"\033[38;5;117m"};
 	static constexpr AnsiColor GOLDEN_YELLOW{"\033[38;5;221m"};
 	static constexpr AnsiColor GREEN{"\033[38;5;34m"};
 	static constexpr AnsiColor HIGHLIGHT_YELLOW{"\033[38;5;148m"};
@@ -170,6 +175,8 @@ private:
 	#ifdef _WIN32
 	HANDLE hConsole_;
 	DWORD prevConsoleMode_;
+    #else
+    struct termios prevConsoleMode_;
 	#endif
 	std::atomic<const char*> currentTask_ = "";
 	std::chrono::time_point<std::chrono::steady_clock> startTime_;

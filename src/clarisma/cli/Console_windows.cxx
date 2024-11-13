@@ -4,7 +4,7 @@
 #include <clarisma/cli/Console.h>
 // #define NOMINMAX
 #include <windows.h>
-#include <io.h> 
+#include <conio.h>  // For getch on Windows
 
 namespace clarisma {
 
@@ -51,6 +51,11 @@ void Console::print(const char* s, size_t len)
 {
 	DWORD written;
 	WriteConsoleA(hConsole_, s, static_cast<DWORD>(len), &written, NULL);
+}
+
+char Console::readKeyPress()
+{
+	return _getch();  // Read a single key on Windows
 }
 
 } // namespace clarisma

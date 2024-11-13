@@ -54,8 +54,8 @@ void WaySlicer::slice(MonotoneChain* chain, int maxVertexes)
 				assert(!next.isNull());
 				assert(iter_.coordinatesRemaining() >= 0);
 
-				// We end th1e chain if Y-coordinate changes direction, or the next segment
-				// if horizontal (We slice each horizontal segment individually)
+				// We end the chain if Y-coordinate changes direction, or the next segment
+				// is horizontal (We slice each horizontal segment individually)
 				int newDirection = (next.y == prev.y ? 4 : 0) | Quadrant::quadrant(prev, next);
 				if (newDirection != quadrant)
 				{

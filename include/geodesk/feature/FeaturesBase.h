@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <geodesk/filter/Filters.h>
 #include <geodesk/feature/FeatureUtils.h>
 #include <geodesk/feature/QueryException.h>

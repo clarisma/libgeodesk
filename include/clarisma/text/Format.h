@@ -174,6 +174,12 @@ namespace Format
         return p;
     }
 
+    inline char* fractionalReverse(unsigned long long d, char** pEnd, int precision, bool zeroFill);
+
+    inline char* doubleReverse(char** pEnd, double d, int precision=15, bool zeroFill=false);
+
+    inline char* integerNice(char* p, int64_t d);
+
     //char* formatDouble(char* buf, double d, int precision, bool zeroFill);
     //char* formatFractionalReverse(unsigned long long d, char** pEnd, int precision, bool zeroFill);
 
@@ -201,6 +207,8 @@ namespace Format
     {
         return hex(buf, v, nDigits, HEX_DIGITS_UPPER);
     }
+
+    char* timeAgo(char* buf, int64_t secs);
 }
 
 

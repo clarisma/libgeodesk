@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/feature/FeatureStore.h>
+#include <geodesk/feature/TileIndexEntry.h>
 #include <filesystem>
+#include <clarisma/io/FilePath.h>
 #include <clarisma/util/log.h>
 #include <clarisma/util/PbfDecoder.h>
 #ifdef GEODESK_PYTHON
@@ -20,8 +22,8 @@ using namespace clarisma;
 
 // std::unordered_map<std::string, FeatureStore*> FeatureStore::openStores_;
 
-FeatureStore::FeatureStore()
-  : refcount_(1),
+FeatureStore::FeatureStore() :
+    refcount_(1),
 	matchers_(this),	// TODO: this not initialized yet!
 	#ifdef GEODESK_PYTHON
 	emptyTags_(nullptr),
@@ -37,7 +39,7 @@ FeatureStore* FeatureStore::openSingle(std::string_view relativeFileName)
 	try
 	{
 		path = std::filesystem::canonical(
-			(*File::extension(relativeFileName) != 0) ? relativeFileName :
+			(*FilePath::extension(relativeFileName) != 0) ? relativeFileName :
 			std::string(relativeFileName) + ".gol");
 	}
 	catch (const std::filesystem::filesystem_error&)
@@ -77,11 +79,15 @@ FeatureStore* FeatureStore::openSingle(std::string_view relativeFileName)
 	}
 }
 
-void FeatureStore::initialize()
+void FeatureStore::initialize(bool create)
 {
-	strings_.create(getPointer(STRING_TABLE_PTR_OFS));
-	zoomLevels_ = DataPtr(mainMapping() + ZOOM_LEVELS_OFS).getUnsignedInt();
-	readIndexSchema();
+	BlobStore::initialize(create);
+
+	strings_.create(reinterpret_cast<const uint8_t*>(
+		mainMapping() + header()->stringTablePtr));
+	zoomLevels_ = ZoomLevels(header()->zoomLevels);
+	// readIndexSchema();
+		// TODO: disabled for now, RE-enable
 }
 
 FeatureStore::~FeatureStore()
@@ -101,18 +107,18 @@ FeatureStore::~FeatureStore()
 // TODO: Return TilePtr
 DataPtr FeatureStore::fetchTile(Tip tip)
 {
-	uint32_t pageEntry = (tileIndex() + (tip * 4)).getUnsignedInt();
+	TileIndexEntry entry((tileIndex() + (tip * 4)).getUnsignedInt());
 	// Bit 0 is a flag bit (page vs. child pointer)
 	// TODO: load tiles
 
-	return pagePointer(pageEntry >> 1);
+	return pagePointer(entry.page());
 }
 
 
 
 void FeatureStore::readIndexSchema()
 {
-	DataPtr p = getPointer(INDEX_SCHEMA_PTR_OFS);
+	DataPtr p(mainMapping() + header()->indexSchemaPtr);
 	int32_t count = p.getInt();
 	keysToCategories_.reserve(count);
 	for (int i = 0; i < count; i++)
@@ -130,6 +136,33 @@ int FeatureStore::getIndexCategory(int keyCode) const
 		return it->second;
 	}
 	return 0;
+}
+
+// TODO: inefficient, should store strign table size when initializing
+std::span<byte> FeatureStore::stringTableData() const
+{
+	DataPtr pTable (mainMapping() + header()->stringTablePtr);
+	int count = pTable.getUnsignedShort();
+	byte* p = pTable.bytePtr();
+	p += 2;
+	for(int i=0; i<count; i++)
+	{
+		p += reinterpret_cast<ShortVarString*>(p)->totalSize();
+	}
+	return { pTable.bytePtr(), static_cast<size_t>(p - pTable.bytePtr()) };
+}
+
+std::span<byte> FeatureStore::propertiesData() const
+{
+	DataPtr pTable (mainMapping() + header()->propertiesPointer);
+	int count = pTable.getUnsignedShort();
+	byte* p = pTable.bytePtr();
+	p += 2;
+	for(int i=0; i<count * 2; i++)
+	{
+		p += reinterpret_cast<ShortVarString*>(p)->totalSize();
+	}
+	return { pTable.bytePtr(), static_cast<size_t>(p - pTable.bytePtr()) };
 }
 
 const MatcherHolder* FeatureStore::getMatcher(const char* query)
@@ -173,6 +206,63 @@ std::mutex& FeatureStore::getOpenStoresMutex()
 {
 	static std::mutex openStoresMutex;
 	return openStoresMutex;
+}
+
+
+void FeatureStore::Transaction::addTile(Tip tip, ByteSpan data)
+{
+	PageNum page = addBlob(data);
+	MutableDataPtr ptr = dataPtr(tileIndexOfs_ + tip * 4);
+	assert(ptr.getUnsignedInt() == 0);
+	ptr.putUnsignedInt(TileIndexEntry(page, TileIndexEntry::CURRENT));
+}
+
+
+void FeatureStore::Transaction::setup(const Metadata& metadata)
+{
+	ZoomLevels zoomLevels(ZoomLevels::DEFAULT); // TODO: Take from settings
+
+	BlobStore::Transaction::setup();
+	Header* header = reinterpret_cast<Header*>(getRootBlock());
+	header->subtypeMagic = SUBTYPE_MAGIC;
+	header->subtypeVersionHigh = 2;
+	header->subtypeVersionLow = 0;
+	header->guid = metadata.guid;
+	header->revision = metadata.revision;
+	header->revisionTimestamp = metadata.revisionTimestamp;
+	header->zoomLevels = static_cast<uint16_t>(zoomLevels);
+
+	// Place the Tile Index
+	byte* mainMapping = store()->mainMapping();
+	size_t tileIndexSize = (*metadata.tileIndex + 1) * 4;
+	size_t tileIndexOfs = HEADER_BLOCK_SIZE;
+	memcpy(mainMapping + tileIndexOfs, metadata.tileIndex, tileIndexSize);
+
+	// Place the Indexed Keys Schema
+	size_t indexedKeysOfs = tileIndexOfs + tileIndexSize;
+	size_t indexedKeysSize = (*metadata.indexedKeys + 1) * 4;
+	memcpy(mainMapping + indexedKeysOfs, metadata.indexedKeys, indexedKeysSize);
+
+	// Place the Global String Table
+	size_t stringTableOfs = indexedKeysOfs + indexedKeysSize;
+	memcpy(mainMapping + stringTableOfs, metadata.stringTable, metadata.stringTableSize);
+
+	// Place the Properties Table
+	size_t propertiesOfs = stringTableOfs + metadata.stringTableSize;
+	propertiesOfs += propertiesOfs & 1;
+		// properties must be 2-byte aligned
+	memcpy(mainMapping + propertiesOfs, metadata.properties, metadata.propertiesSize);
+
+	size_t metadataSize = propertiesOfs + metadata.propertiesSize;
+
+	header->tileIndexPtr = static_cast<int>(tileIndexOfs);
+	header->indexSchemaPtr = static_cast<int>(indexedKeysOfs);
+	header->stringTablePtr = static_cast<int>(stringTableOfs);
+	header->propertiesPointer = static_cast<int>(propertiesOfs);
+	tileIndexOfs_ = static_cast<uint32_t>(tileIndexOfs);
+	setMetadataSize(header, metadataSize);
+
+	store()->zoomLevels_ = zoomLevels;
 }
 
 } // namespace geodesk

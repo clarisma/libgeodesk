@@ -33,11 +33,9 @@ public:
 
 private:
     void searchNodeIndexes();
-    void searchNodeRoot(DataPtr ppRoot);
     void searchNodeBranch(DataPtr p);
     void searchNodeLeaf(DataPtr p);
     void searchIndexes(FeatureIndexType indexType);
-    void searchRoot(DataPtr ppRoot);
     void searchBranch(DataPtr p);
     void searchLeaf(DataPtr p);
     void addResult(uint32_t item);

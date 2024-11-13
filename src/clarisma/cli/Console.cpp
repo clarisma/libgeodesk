@@ -62,6 +62,10 @@ void Console::start(const char* task)
 
 void Console::log(std::string_view msg)
 {
+	ConsoleWriter out(ConsoleWriter::LOGGED);
+	out.writeString(msg);
+	out.writeByte('\n');
+	/*
 	auto elapsed = std::chrono::steady_clock::now() - startTime_;
 	char buf[1024];
 	int ms = static_cast<int>(
@@ -85,6 +89,7 @@ void Console::log(std::string_view msg)
 	const char* task = currentTask_.load(std::memory_order_acquire);
 	size_t bytesPrinted = printWithStatus(buf, p, elapsed, percentage, task);
 	assert(bytesPrinted < sizeof(buf));
+	*/
 }
 
 /*
@@ -116,7 +121,7 @@ char* Console::formatProgress(char* p, int percentage) const
 	// Progress percentage
 
 	// if(hasColor_) p = putString(p, "\033[33m");
-	if(hasColor_) p = putString(p, "\033[38;5;34m");	// 70
+	if(hasColor_) p = putString(p, "\033[38;5;172m");	// 70
 	div_t d;
 	int v1, v2, v3;
 	d = div(percentage, 10);
@@ -133,7 +138,7 @@ char* Console::formatProgress(char* p, int percentage) const
 
 	*p++ = ' ';
 	// if(hasColor_) p = putString(p, "\033[33;100m");
-	if(hasColor_) p = putString(p, "\033[38;5;2;48;5;236m");
+	if(hasColor_) p = putString(p, "\033[38;5;172;48;5;236m");
 		// 28 is slightly more saturated
 	int fullBlocks = percentage / 4;
 	char* pEnd = p + fullBlocks * 3;

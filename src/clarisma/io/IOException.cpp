@@ -33,8 +33,10 @@ void IOException::checkAndThrow()
 
 #elif defined(__linux__) || defined(__APPLE__) 
 
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
+
+namespace clarisma {
 
 void IOException::checkAndThrow()
 {

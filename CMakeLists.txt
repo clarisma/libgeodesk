@@ -2,10 +2,11 @@
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
- 
-# Define _WIN32_WINNT to be at least Windows 8.1
-# (Needed for virtual memory management)
+
+# Define _WIN32_WINNT to be at least Windows 8.1, Update 1 (KBSPRING14)
+# (Needed for advanced virtual memory management)
 add_compile_definitions(_WIN32_WINNT=0x0603)
+add_compile_definitions(WINBLUE_KBSPRING14)
 if (MSVC)
     add_compile_options(/Zc:__cplusplus)
 endif()
@@ -32,6 +33,11 @@ FetchContent_Declare(boost_crc
     GIT_TAG boost-1.86.0
 )
 FetchContent_MakeAvailable(boost_crc)
+
+FetchContent_Declare(gtl
+    GIT_REPOSITORY https://github.com/greg7mdp/gtl.git
+    GIT_TAG v1.2.0)
+FetchContent_MakeAvailable(gtl)
 
 set(PREVIOUS_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF)

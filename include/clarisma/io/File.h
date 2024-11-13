@@ -89,6 +89,7 @@ public:
     void seek(uint64_t posAbsolute);
     size_t read(void* buf, size_t length);
     size_t read(uint64_t ofs, void* buf, size_t length);
+    ByteBlock readBlock(size_t length);
     size_t write(const void* buf, size_t length);
 
     template <typename Container>
@@ -110,11 +111,13 @@ public:
 
     static bool exists(const char* fileName);
     static void remove(const char* fileName);
+    static void rename(const char* from, const char* to);
 
     /**
      * Returns the extension of the given filename (as pointer to ".ext"),
      * or an empty string if the filename does not have an extension.
      */
+    /*
     static const char* extension(const char* filename, size_t len);
     static const char* extension(const char* filename)
     {
@@ -125,11 +128,17 @@ public:
         return extension(filename.data(), filename.length());
     }
     static std::string_view simpleName(std::string_view path);
+    */
 
     static ByteBlock readAll(const char* filename);
     static ByteBlock readAll(const std::filesystem::path& path)
     {
         return readAll(path.string().c_str());
+    }
+    static std::string readString(const char* filename);
+    static std::string readString(const std::filesystem::path& path)
+    {
+        return readString(path.string().c_str());
     }
     static void writeAll(const char* filename, const void* data, size_t size);
     static void writeAll(const std::filesystem::path& path, const void* data, size_t size)

@@ -47,12 +47,6 @@ public:
     const clarisma::ShortVarString* getGlobalString(int code) const noexcept
     {
         assert(code >= 0 && code < static_cast<int>(stringCount_));
-        if(code == 0)
-        {
-            // TODO: In v2, "" is a member of the GOL's string table,
-            //  so we won't need this check
-            return clarisma::ShortVarString::empty();
-        }
         return reinterpret_cast<const clarisma::ShortVarString*>(stringBase_ + entries_[code].relPointer);
     }
     bool isValidCode(int code);

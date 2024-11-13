@@ -208,4 +208,9 @@ void File::remove(const char* fileName)
     }
 }
 
+void File::rename(const char* from, const char* to)
+{
+    if(std::rename(from, to) != 0) IOException::checkAndThrow();
+}
+
 } // namespace clarisma

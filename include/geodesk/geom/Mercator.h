@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <climits>
 #include <cmath>
 #include <clarisma/math/Math.h>
 

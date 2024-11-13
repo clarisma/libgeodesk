@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
-#include <clarisma/util/BufferWriter.h>
+#include <clarisma/util/StreamWriter.h>
 #include <filesystem>
 #include <clarisma/io/FileBuffer2.h>
 
 namespace clarisma {
 
-class FileWriter : public BufferWriter
+class FileWriter : public AbstractStreamWriter<FileWriter>
 {
 public:
 	FileWriter()
@@ -16,14 +16,14 @@ public:
 		setBuffer(&buf_);
 	}
 
-	FileWriter(const char* filename, size_t capacity = 64 * 1024) :
+	explicit FileWriter(const char* filename, size_t capacity = 64 * 1024) :
 		buf_(capacity)
 	{
 		setBuffer(&buf_);
 		open(filename);
 	}
 
-	FileWriter(std::filesystem::path path, size_t capacity = 64 * 1024) :
+	explicit FileWriter(std::filesystem::path path, size_t capacity = 64 * 1024) :
 		buf_(capacity)
 	{
 		setBuffer(&buf_);

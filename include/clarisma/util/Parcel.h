@@ -39,7 +39,7 @@ public:
 		return *this;
 	}
 
-	operator bool() const noexcept
+	operator bool() const noexcept	// NOLINT implicit
 	{
 		return p_ != nullptr;
 	}

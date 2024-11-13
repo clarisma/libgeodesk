@@ -15,7 +15,7 @@ namespace geodesk {
 class WaySlicer
 {
 public:
-	WaySlicer(WayPtr way);
+	explicit WaySlicer(WayPtr way);
 	bool hasMore() const { return hasMore_; }
 	void slice(MonotoneChain* chain, int maxVertexes);
 

@@ -11,28 +11,26 @@
 
 namespace clarisma {
 
-const char* File::extension(const char* filename, size_t len)
-{
-	const char* p = filename + len - 1;
-	while (p > filename && *p != '.' && *p != '/' && *p != '\\')
-	{
-		p--;
-	}
-	return *p == '.' ? p : "";
-}
 
 
-std::string_view File::simpleName(std::string_view path)
-{
-    return path.substr(path.find_last_of("/\\:") + 1);
-}
-
-
+// TODO
 void File::error(const char* what)
 {
 
 }
 
+
+ByteBlock File::readBlock(size_t length)
+{
+    ByteBlock block(length);
+    size_t bytesRead = read(block.data(), block.size());
+    if(bytesRead != length)
+    {
+        throw IOException("Read %ull bytes instead of %lld",
+            bytesRead, length);
+    }
+    return block;
+}
 
 ByteBlock File::readAll(const char* filename)
 {
@@ -47,6 +45,24 @@ ByteBlock File::readAll(const char* filename)
             filename, size, bytesRead);
     }
     return ByteBlock(data, size);
+}
+
+
+std::string File::readString(const char* filename)
+{
+    File file;
+    file.open(filename, READ);
+    uint64_t size = file.size();
+    std::string s;
+    s.resize(size+1);
+    uint64_t bytesRead = file.read(&s[0], size);
+    if (bytesRead != size)
+    {
+        throw IOException("%s: Expected to read %lld bytes instead of %lld",
+            filename, size, bytesRead);
+    }
+    s[size] = '\0';
+    return s;
 }
 
 

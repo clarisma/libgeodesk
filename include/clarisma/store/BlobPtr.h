@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <clarisma/store/BlobStore.h>
 #include <clarisma/util/DataPtr.h>
 
 namespace clarisma {
@@ -14,11 +15,12 @@ class BlobPtr
 public:
 	BlobPtr(const uint8_t* p) : p_(p) {}
 
-	static uint32_t headerSize() { return 4; }
+	static uint32_t headerSize() { return 8; }
 
 	uint32_t payloadSize() const
-	{ 
-		return p_.getInt() & 0x3fff'ffff;
+	{
+		const BlobStore::Blob* blob = reinterpret_cast<const BlobStore::Blob*>(p_.ptr());
+		return blob->payloadSize;
 	}
 
 	uint32_t totalSize() const

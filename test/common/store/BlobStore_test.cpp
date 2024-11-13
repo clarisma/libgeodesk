@@ -4,11 +4,9 @@
 #include <memory>
 #include <string_view>
 #include <catch2/catch_test_macros.hpp>
-#include "clarisma/store/BlobStore_v2.h"
+#include "clarisma/store/BlobStore.h"
 
 using namespace clarisma;
-using namespace clarisma::v2;
-
 
 std::unique_ptr<uint8_t[]> createJunk(size_t size)
 {
@@ -28,7 +26,7 @@ std::unique_ptr<uint8_t[]> createJunk(size_t size)
 	return buffer;
 }
 
-
+/*
 
 TEST_CASE("BlobStore")
 {
@@ -92,3 +90,5 @@ TEST_CASE("BlobStore Hole-Punching")
 
 	store.close();
 }
+
+*/

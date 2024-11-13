@@ -46,6 +46,8 @@ public:
 	uint32_t get(uint64_t key);
 	void put(uint64_t key, uint32_t value);
 
+	void clear() { ExpandableMappedFile::clear(); }
+
 private:
 	static const uint32_t BLOCK_SIZE = 4096;
 

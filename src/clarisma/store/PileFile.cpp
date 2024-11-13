@@ -223,4 +223,10 @@ PileFile::Chunk* PileFile::getChunk(uint32_t page)
 	return reinterpret_cast<Chunk*>(file_.translate(
 		static_cast<uint64_t>(page) << pageSizeShift_));
 }
+
+void PileFile::clear()
+{
+	file_.clear();
+}
+
 } // namespace clarisma

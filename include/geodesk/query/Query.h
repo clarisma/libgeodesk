@@ -5,7 +5,6 @@
 
 #include "AbstractQuery.h"
 #include <condition_variable>
-#include <unordered_set>
 #include <geodesk/query/QueryResults.h>
 #include <geodesk/query/TileIndexWalker.h>
 #include <geodesk/feature/FeatureStore.h>
@@ -33,7 +32,7 @@ public:
 
     FeaturePtr next();
 
-    static constexpr uint32_t REQUIRES_DEDUP = 0x8000'0000;
+    // static constexpr uint32_t REQUIRES_DEDUP = 0x8000'0000;
 
 private:
     const QueryResults* take();
@@ -48,7 +47,6 @@ private:
     const QueryResults* currentResults_;
     int32_t currentPos_;
     bool allTilesRequested_;
-    std::unordered_set<uint64_t> potentialDupes_;
     TileIndexWalker tileIndexWalker_;
 
     // these are used by multiple threads:

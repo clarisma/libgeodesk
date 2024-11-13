@@ -52,6 +52,11 @@ public:
 	byte* mapping(int n);
 	size_t mappingSize(int n) const;
 	int mappingNumber(uint64_t ofs) const;
+	void syncMapping(int n);
+
+	/// @brief Set file size to zero and remove all mappings.
+	///
+	void clear();
 
 public:
 	static const uint64_t SEGMENT_LENGTH = 1024 * 1024 * 1024;		// 1 GB
@@ -62,6 +67,7 @@ protected:
 	static const int EXTENDED_MAPPINGS_SLOT_COUNT = 16;
 	static const uint64_t MAX_FILE_SIZE = 64ULL * 1024 * 1024 * 1024 * 1024;		// 64 TB
 
+	void discard();
 	void unmapSegments();
 
 private:

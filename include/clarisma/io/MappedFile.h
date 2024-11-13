@@ -41,6 +41,7 @@ public:
     }
     */
 
+    static void discard(void* address, uint64_t length);
     static void unmap(void* address, uint64_t length);
     void prefetch(void* address, uint64_t length);
         // TODO: technically, does not need to be part of MappedFile

@@ -26,6 +26,7 @@ public:
 	void append(int pile, const uint8_t* data, uint32_t len);
 	void load(int pile, ReusableBlock& block);
 	void close() { file_.close(); }
+	void clear();
 
 	static const int MAX_PILE_COUNT = (1 << 26) - 1;
 		

@@ -193,14 +193,6 @@ FeaturePtr Query::next()
         }
         uint32_t item = currentResults_->items[currentPos_++];
         DataPtr pTile = currentResults_->pTile;
-        if (item & REQUIRES_DEDUP)
-        {
-            FeaturePtr pFeature (pTile + (item & ~REQUIRES_DEDUP));
-            uint64_t idBits = pFeature.idBits();  // getUnsignedLong() & 0xffff'ffff'ffff'ff18LL;
-            if (potentialDupes_.count(idBits)) continue;
-            potentialDupes_.insert(idBits);
-            return pFeature;
-        }
         return FeaturePtr(pTile + item);
     }
 }

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 
 namespace clarisma {
@@ -13,7 +14,7 @@ namespace Pointers
 
 inline int32_t nearDelta(const void* dest, const void* source)
 {
-	ptrdiff_t d = reinterpret_cast<const uint8_t*>(dest) - reinterpret_cast<const uint8_t*>(source);
+	std::ptrdiff_t d = reinterpret_cast<const uint8_t*>(dest) - reinterpret_cast<const uint8_t*>(source);
 	assert(d == static_cast<int32_t>(d));
 	return static_cast<int32_t>(d);
 }
@@ -21,7 +22,7 @@ inline int32_t nearDelta(const void* dest, const void* source)
 inline uint32_t nearOffset(const void* dest, const void* source)
 {
 	assert(dest >= source);
-	ptrdiff_t d = reinterpret_cast<const uint8_t*>(dest) - reinterpret_cast<const uint8_t*>(source);
+    std::ptrdiff_t d = reinterpret_cast<const uint8_t*>(dest) - reinterpret_cast<const uint8_t*>(source);
 	assert(d == static_cast<uint32_t>(d));
 	return static_cast<uint32_t>(d);
 }

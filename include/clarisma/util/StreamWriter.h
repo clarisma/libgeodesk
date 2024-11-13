@@ -32,15 +32,21 @@ public:
   		return static_cast<S&>(*this);
   	}
 
-	BufferWriter& operator<<(char ch)
+	S& operator<<(char ch)
   	{
   		writeByte(ch);
-  		return *this;
+  		return static_cast<S&>(*this);
   	}
 
 	S& operator<<(int n)
   	{
   		formatInt(n);
+  		return static_cast<S&>(*this);
+  	}
+
+	S& operator<<(uint32_t n)
+  	{
+  		formatUnsignedInt(n);
   		return static_cast<S&>(*this);
   	}
 

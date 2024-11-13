@@ -46,5 +46,11 @@ void MappedFile::prefetch(void* address, uint64_t length)
     }
 }
 
+void MappedFile::discard(void* address, uint64_t length)
+{
+    madvise(address, length, MADV_DONTNEED);
+    // OK to silently ignore error
+}
+
 } // namespace clarisma
 

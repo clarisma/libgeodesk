@@ -254,24 +254,6 @@ public:
 		for (int i = 0; i < times; i++) writeByte(ch);
 	}
 
-	BufferWriter& operator<<(char ch)
-	{
-		writeByte(ch);
-		return *this;
-	}
-
-	BufferWriter& operator<<(uint32_t value)
-	{
-		formatUnsignedInt(value);
-		return *this;
-	}
-
-	BufferWriter& operator<<(uint64_t value)
-	{
-		formatUnsignedInt(value);
-		return *this;
-	}
-
 protected:
 	static char* formatUnsignedLongReverse(unsigned long long d, char* end)
 	{

@@ -108,7 +108,7 @@ byte* ExpandableMappedFile::createExtendedMapping(int slot)
 
 void ExpandableMappedFile::unmapSegments()
 {
-	std::unique_lock<std::mutex> lock(extendedMappingsMutex_);
+	std::unique_lock lock(extendedMappingsMutex_);
 	if (mainMapping_)
 	{
 		unmap(mainMapping_, mainMappingSize_);
@@ -123,6 +123,26 @@ void ExpandableMappedFile::unmapSegments()
 			byte* mapping = extendedMappings_[slot].load();
 			unmap(mapping, mappingSize);
 			extendedMappings_[slot].store(nullptr);
+		}
+	}
+}
+
+// TODO: consolidate with unmapSegments?
+void ExpandableMappedFile::discard()
+{
+	std::unique_lock lock(extendedMappingsMutex_);
+	if (mainMapping_)
+	{
+		MappedFile::discard(mainMapping_, mainMappingSize_);
+	}
+
+	uint64_t mappingSize = SEGMENT_LENGTH;
+	for (auto& extendedMapping : extendedMappings_)
+	{
+		if (extendedMapping)
+		{
+			byte* mapping = extendedMapping.load();
+			MappedFile::discard(mapping, mappingSize);
 		}
 	}
 }
@@ -148,6 +168,19 @@ int ExpandableMappedFile::mappingNumber(uint64_t ofs) const
 	int slot = 63 - Bits::countLeadingZerosInNonZero64(ofsBits);
 	assert(slot < EXTENDED_MAPPINGS_SLOT_COUNT);
 	return slot + 1;
+}
+
+
+void ExpandableMappedFile::syncMapping(int n)
+{
+	sync(mapping(n), mappingSize(n));
+}
+
+void ExpandableMappedFile::clear()
+{
+	discard();
+	unmapSegments();
+	truncate(0);
 }
 
 

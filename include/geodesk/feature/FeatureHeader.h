@@ -4,7 +4,7 @@
 #pragma once
 
 #include <cstdint>
-#include <geodesk/feature/Featuretype.h>
+#include <geodesk/feature/FeatureType.h>
 
 namespace geodesk {
 

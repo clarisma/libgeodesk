@@ -26,6 +26,9 @@ ConsoleWriter::ConsoleWriter(int mode) :
 		timestamp();
 		writeConstString("  ");
 		break;
+	case PROMPT:
+		prompt();
+		break;
 	}
 }
 
@@ -67,6 +70,7 @@ void ConsoleWriter::flush()
 ConsoleWriter& ConsoleWriter::timestamp()
 {
 	ensureCapacityUnsafe(64);
+	putStringUnsafe("\033[2K");	// clear current line
 	auto elapsed = std::chrono::steady_clock::now() - console_->startTime();
 	int ms = static_cast<int>(
 		std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
@@ -107,7 +111,7 @@ void ConsoleWriter::success()
 void ConsoleWriter::failed()
 {
 	ensureCapacityUnsafe(64);
-	putStringUnsafe("\033[2K");	// clear current line
+	putStringUnsafe("\r\033[2K");	// clear current line
 	if(console_->hasColor())
 	{
 		putStringUnsafe("\033[38;5;9m ─────── \033[0m");
@@ -116,6 +120,71 @@ void ConsoleWriter::failed()
 	{
 		putStringUnsafe(" ------- ");
 	}
+}
+
+void ConsoleWriter::prompt()
+{
+	ensureCapacityUnsafe(64);
+	putStringUnsafe("\033[2K");	// clear current line
+	if(console_->hasColor())
+	{
+		putStringUnsafe("\033[38;5;148m ──────▶ \033[0m");
+	}
+	else
+	{
+		putStringUnsafe(" ------> ");
+	}
+}
+
+int ConsoleWriter::prompt(bool defaultYes)
+{
+	ensureCapacityUnsafe(64);
+	if(console_->hasColor())
+	{
+		if(defaultYes)
+		{
+			putStringUnsafe(" [\033[38;5;148mY\033[0m/n]");
+		}
+		else
+		{
+			putStringUnsafe(" [y/\033[38;5;148mN\033[0m]");
+		}
+	}
+	else
+	{
+		if(defaultYes)
+		{
+			putStringUnsafe(" [Y/n]");
+		}
+		else
+		{
+			putStringUnsafe(" [y/N]");
+		}
+	}
+	flush();
+	int res = defaultYes;
+	for(;;)
+	{
+		char key = console_->readKeyPress();
+		if(key == '\n' || key == '\r') break;
+		if(key == 'y' || key == 'Y')
+		{
+			res = 1;
+			break;
+		}
+		if(key == 'n' || key == 'N')
+		{
+			res = 0;
+			break;
+		}
+		if(key == 3 || key == 27)
+		{
+			res = -1;
+			break;
+		}
+	}
+	console_->print("\r\033[2K", 5);
+	return res;
 }
 
 } // namespace clarisma

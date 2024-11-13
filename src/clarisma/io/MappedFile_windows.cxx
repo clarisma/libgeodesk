@@ -56,5 +56,10 @@ void MappedFile::prefetch(void* address, uint64_t length)
     PrefetchVirtualMemory(GetCurrentProcess(), 1, &entry, 0);
 }
 
+void MappedFile::discard(void* address, uint64_t length)
+{
+    DiscardVirtualMemory(address, length);
+}
+
 } // namespace clarisma
 

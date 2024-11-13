@@ -155,13 +155,23 @@ bool TileIndexWalker::next()
                 turboFlags_ = 0;
             }
             int tip = level->pChildEntries + childEntry;
-            uint32_t pageOrPtr = (pIndex_ + (tip << 2)).getUnsignedInt();
-            if ((pageOrPtr & 1) != 0)
+            uint32_t pageOrPtr;
+            if(tip == 1)
             {
-                // TODO: This changes for v2: The lowest 2 bits
+                // TODO: Fix this, this special-case logic for
+                //  the root tile is inefficient
+                pageOrPtr = 1;
+            }
+            else
+            {
+                pageOrPtr = (pIndex_ + (tip << 2)).getUnsignedInt();
+            }
+            if ((pageOrPtr & 3) == 1)
+            {
+                // Changed for v2: The lowest 2 bits
                 //  are flags. A value of 01 indicates a pointer
                 //  to a child level
-                //  Use TileIndexEntry class
+                //  TODO: Use TileIndexEntry class
 
                 // current tile has children: prepare to move up to the
                 // next level in the tile tree
@@ -198,6 +208,7 @@ void TileIndexWalker::startLevel(Level* level, int tip)
     level->currentRow = startRow;
 
     level->childTileMask = (pIndex_ + (tip + 1) * 4).getUnsignedLong();
+        // TODO: Is this unaligned???
     level->pChildEntries = tip + (step == 3 ? 3 : 2);
     level->turboFlags = 0; // TODO
 }

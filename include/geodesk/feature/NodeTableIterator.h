@@ -22,6 +22,14 @@ public:
 	{
 		return NodePtr(pTile_ + localHandle());
 	}
+
+	bool next()
+	{
+		if(isLast()) return false;
+		ofs_ -= 2;
+		fetchNext();
+		return true;
+	}
 };
 
 // \endcond

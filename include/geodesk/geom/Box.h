@@ -155,7 +155,7 @@ public:
 	 * This method assumes both are non-empty.
 	 * Returns an empty Box if the boxes don't intersect.
 	 */
-	inline static Box simpleIntersection(const Box& a, const Box& b) 
+	static Box simpleIntersection(const Box& a, const Box& b)
 	{
 		assert(a.isSimple());
 		assert(b.isSimple());
@@ -182,14 +182,14 @@ public:
 	}
 
 
-	inline double area() const
+	double area() const
 	{
 		double w = (double)maxX() - (double)minX();
 		double h = (double)maxY() - (double)minY();
 		return w * h;
 	}
 
-	inline static const Box& simpleSmaller(const Box& a, const Box& b)
+	static const Box& simpleSmaller(const Box& a, const Box& b)
 	{
 		assert(a.isSimple());
 		assert(b.isSimple());
@@ -197,7 +197,7 @@ public:
 	}
 
 	// TODO: define and test Antimeridian behaviour
-	inline void buffer(int32_t b)
+	void buffer(int32_t b)
 	{
 		if (isEmpty()) return;
 		m_minX -= b;

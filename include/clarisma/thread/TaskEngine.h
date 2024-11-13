@@ -140,7 +140,7 @@ private:
         catch (std::exception& ex)
         {
             // TODO
-            printf(ex.what());
+            Console::debug(ex.what());
         }
     }
     

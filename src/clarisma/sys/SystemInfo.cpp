@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifdef _WIN32
+
 #include <clarisma/sys/SystemInfo.h>
 #include <windows.h>
 #include <clarisma/cli/Console.h>
@@ -27,5 +28,7 @@ SystemInfo::SystemInfo()
     Console::msg("Max working set: %llu", maxWorkingSet);
 }
 
-#endif
 } // namespace clarisma
+
+#endif
+

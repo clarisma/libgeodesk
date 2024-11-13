@@ -7,6 +7,16 @@
 
 namespace clarisma {
 
+bool CliCommandConfigurator::isPotentialOptionValue(const char* s)
+{
+    if(s)
+    {
+        if(s[0] == '-') return std::isdigit(s[1]);
+        return true;
+    }
+    return false;
+}
+
 bool CliCommandConfigurator::configure(char* argv[])
 {
     int paramCount = 0;
@@ -43,7 +53,7 @@ bool CliCommandConfigurator::configure(char* argv[])
             if(value.empty())
             {
                 // For "-o", we try to use the following argument (if any) as value
-                if(argv[n+1])
+                if(isPotentialOptionValue(argv[n+1]))
                 {
                     // Try "-o <value>"
                     try
@@ -60,9 +70,17 @@ bool CliCommandConfigurator::configure(char* argv[])
                     {
                         // If <value> is invalid, try if the option is accepted
                         // without value
-                        accepted = command_.setOption(name, std::string_view());
-                        if(accepted == 0) continue;		// option accepted without value
-                        assert(accepted > 0);
+                        try
+                        {
+                            accepted = command_.setOption(name, std::string_view(""));
+                            if(accepted == 0) continue;		// option accepted without value
+                            assert(accepted > 0);
+                        }
+                        catch(const std::exception& ex2)
+                        {
+                            // do nothing, fall through and report the
+                            // original exception
+                        }
                         failed(name, ex.what());
                         n++;
                         continue;

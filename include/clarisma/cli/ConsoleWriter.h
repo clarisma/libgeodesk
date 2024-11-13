@@ -33,17 +33,21 @@ public:
 		return *this;
 	}
 
+	int prompt(bool defaultYes);
+
 	enum
 	{
 		NONE = 0,
 		SUCCESS = 1,
 		FAILED = 2,
-		LOGGED = 3
+		LOGGED = 3,
+		PROMPT = 4
 	};
 
 private:
 	void success();
 	void failed();
+	void prompt();
 
 	DynamicStackBuffer<1024> buf_;
 	Console* console_;

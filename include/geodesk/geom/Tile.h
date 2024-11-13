@@ -36,10 +36,17 @@ public:
 		return *this;
 	}
 
+	/*
 	explicit operator uint_fast32_t() const
 	{
 		return tile_;
 	}
+	*/
+
+    explicit operator uint32_t() const
+    {
+        return tile_;
+    }
 
 	bool operator==(const Tile& other) const 
 	{

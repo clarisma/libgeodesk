@@ -12,7 +12,7 @@ namespace clarisma {
 class Decimal
 {
 public:
-	Decimal(std::string_view s, bool strict = false) :
+	explicit Decimal(std::string_view s, bool strict = false) :
 		value_(parse(s, strict))
 	{
 	}
@@ -179,4 +179,5 @@ Stream& operator<<(Stream& out, const Decimal& d)
 	out.write(buf, p - buf);
 	return out;
 }
+
 } // namespace clarisma

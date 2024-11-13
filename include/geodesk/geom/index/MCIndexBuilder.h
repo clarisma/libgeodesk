@@ -8,6 +8,7 @@
 #endif
 #include <geodesk/geom/index/MonotoneChain.h>
 #include <geodesk/geom/index/MCIndex.h>
+#include <geodesk/geom/index/MCSlicer.h>
 #include <geodesk/feature/WayPtr.h>
 #include <geodesk/feature/RelationPtr.h>
 #include <clarisma/alloc/Arena.h>
@@ -32,6 +33,26 @@ public:
 		MCIndexBuilder builder;
 		builder.segmentizeAreaRelation(store, rel);
 		return builder.build(rel.bounds());
+	}
+
+	template<typename LineString, typename Iter>
+	void segmentize(LineString src)
+	{
+		MCSlicer<LineString,Iter> slicer(src);
+		do
+		{
+			MCHolder* holder = arena_.allocWithExplicitSize<MCHolder>(
+				MCHolder::storageSize(MAX_VERTEX_COUNT));
+			slicer.slice(&holder->chain, MAX_VERTEX_COUNT);
+			// Give back the unused space to the Arena
+			int unusedVertexes = MAX_VERTEX_COUNT - holder->chain.vertexCount();
+			arena_.reduceLastAlloc(unusedVertexes * sizeof(Coordinate));
+			holder->next = first_;
+			first_ = holder;
+			chainCount_++;
+			totalChainSize_ += holder->chain.storageSize();
+		}
+		while (slicer.hasMore());
 	}
 
 private:

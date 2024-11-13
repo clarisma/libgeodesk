@@ -3,10 +3,16 @@
 
 #include <clarisma/store/BlobStore.h>
 #include <clarisma/util/Bits.h>
+#include <clarisma/util/ShortVarString.h>
 
 namespace clarisma {
 
-uint64_t BlobStore::getLocalCreationTimestamp() const 
+// TODO: must move JournalFile to store
+//  because inside a CreateTransaction it is initialzied
+//  before the Store itself is valid (it is a member of CreateTransaction,
+//  therefore initialzied after base class Transaction)
+
+DateTime BlobStore::getLocalCreationTimestamp() const
 {
 	return getRoot()->creationTimestamp;
 }
@@ -16,25 +22,23 @@ uint64_t BlobStore::getTrueSize() const
     return static_cast<uint64_t>(getRoot()->totalPageCount) << pageSizeShift_;
 }
 
-void BlobStore::verifyHeader() const 
+// TODO: When does pageSize get set when creating a new BlobStore?
+//  This affects the true size of the store
+//  It must be set before Transaction::begin() is called
+void BlobStore::initialize(bool create)
 {
-    const Header* root = getRoot();
-	if (root->magic != MAGIC)
-	{
-		error("Not a BlobStore file");
-	}
-}
-
-
-void BlobStore::createStore()
-{
-	// TODO
-}
-
-
-void BlobStore::initialize()
-{
-	// Do nothing (TOOD: may change)
+    Header* root = getRoot();
+    if (root->magic != MAGIC)
+    {
+        if(create && root->magic == 0)
+        {
+            root->totalPageCount = 1;
+        }
+        else
+        {
+            error("Not a BlobStore file");
+        }
+    }
 }
 
 uint32_t BlobStore::pagesForPayloadSize(uint32_t payloadSize) const
@@ -59,7 +63,7 @@ BlobStore::PageNum BlobStore::Transaction::alloc(uint32_t payloadSize)
     assert (payloadSize <= SEGMENT_LENGTH - BLOB_HEADER_SIZE);
     // int precedingBlobFreeFlag = 0;
     uint32_t requiredPages = store()->pagesForPayloadSize(payloadSize);
-    Header* rootBlock = getRootBlock();
+    HeaderBlock* rootBlock = getRootBlock();
     uint32_t trunkRanges = rootBlock->trunkFreeTableRanges;
     if (trunkRanges != 0)
     {
@@ -216,8 +220,8 @@ BlobStore::PageNum BlobStore::Transaction::alloc(uint32_t payloadSize)
                         Blob* nextBlock = getBlobBlock(freeBlob + freePages);
                         nextBlock->precedingFreeBlobPages = freePages - requiredPages;
 
-
-                        // TODO: freeBlock.putInt(0, payloadSize);
+                        freeBlock->isFree = false;
+                        freeBlock->payloadSize = payloadSize;
                         // debugCheckRootFT();
                         return freeBlob;
                     }
@@ -268,19 +272,18 @@ BlobStore::PageNum BlobStore::Transaction::alloc(uint32_t payloadSize)
     return totalPages;
 }
 
-/**
- * Removes a free blob from its freetable. If this blob is the last 
- * free blob in a given size range, removes the leaf freetable from 
- * the trunk freetable. If this free blob contains the leaf freetable, 
- * and this freetable is still needed, it is the responsibility of 
- * the caller to copy it to another free blob in the same size range.
- *
- * This method does not affect the precedingFreeBlobPages field of the 
- * successor blob; it is the responsibility of the caller to clear 
- * the flag, if necessary.
- *
- * @param freeBlock
- */
+/// Removes a free blob from its freetable. If this blob is the last 
+/// free blob in a given size range, removes the leaf freetable from 
+/// the trunk freetable. If this free blob contains the leaf freetable, 
+/// and this freetable is still needed, it is the responsibility of 
+/// the caller to copy it to another free blob in the same size range.
+///
+/// This method does not affect the precedingFreeBlobPages field of the 
+/// successor blob; it is the responsibility of the caller to clear 
+/// the flag, if necessary.
+///
+/// @param freeBlock The block representing the free blob.
+///
 void BlobStore::Transaction::removeFreeBlob(Blob* freeBlock)
 {
     PageNum prevBlob = freeBlock->prevFreeBlob;
@@ -310,7 +313,7 @@ void BlobStore::Transaction::removeFreeBlob(Blob* freeBlock)
 
     // log.debug("     Removing blob with {} pages", pages);
 
-    Header* rootBlock = getRootBlock();
+    HeaderBlock* rootBlock = getRootBlock();
     PageNum leafBlob = rootBlock->trunkFreeTable[trunkSlot];
 
     // If the leaf FT has already been dropped, there's nothing
@@ -366,17 +369,16 @@ void BlobStore::Transaction::removeFreeBlob(Blob* freeBlock)
 }
 
 
-/**
- * Adds a blob to the freetable, and sets its size, header flags and trailer.
- *
- * This method does not affect the precedingFreeBlobPages field of the 
- * successor blob; it is the responsibility of the caller to set this, 
- * if necessary.
- *
- * @param firstPage the first page of the blob
- * @param pages     the number of pages of this blob
- * @param precedingFreePages
- */
+/// Adds a blob to the freetable, and sets its size, header flags, and trailer.
+///
+/// This method does not affect the precedingFreeBlobPages field of the 
+/// successor blob; it is the responsibility of the caller to set this, 
+/// if necessary.
+///
+/// @param firstPage the first page of the blob
+/// @param pages     the number of pages of this blob
+/// @param precedingFreePages the number of preceding free pages
+///
 void BlobStore::Transaction::addFreeBlob(PageNum firstPage, uint32_t pages, uint32_t precedingFreePages)
 {
     Blob* block = getBlobBlock(firstPage);
@@ -384,7 +386,7 @@ void BlobStore::Transaction::addFreeBlob(PageNum firstPage, uint32_t pages, uint
     block->payloadSize = (pages << store()->pageSizeShift_) - BLOB_HEADER_SIZE;
     block->isFree = true;
     block->prevFreeBlob = 0;
-    Header* rootBlock = getRootBlock();
+    HeaderBlock* rootBlock = getRootBlock();
     uint32_t trunkSlot = (pages - 1) / 512;
     PageNum leafBlob = rootBlock->trunkFreeTable[trunkSlot];
     Blob* leafBlock;
@@ -437,7 +439,7 @@ void BlobStore::Transaction::addFreeBlob(PageNum firstPage, uint32_t pages, uint
  */
 void BlobStore::Transaction::free(PageNum firstPage)
 {
-    Header* rootBlock = getRootBlock();
+    HeaderBlock* rootBlock = getRootBlock();
     Blob* block = getBlobBlock(firstPage);
     
     assert(!block->isFree);
@@ -579,15 +581,15 @@ void BlobStore::Transaction::free(PageNum firstPage)
     freedBlobs_.insert({ firstPage, pages });
 }
 
-/**
- * Copies a blob's free table to another free blob. The original blob's 
- * free table and the free-range bits must be valid, all other data is 
- * allowed to have been modified at this point.
- *
- * @param page        the first page of the original blob
- * @param sizeInPages the blob's size in pages
- * @return the page of the blob to which the free table has been assigned, or 0 if the table has not been relocated.
- */
+/// Copies a blob's free table to another free blob. The original blob's 
+/// free table and the free-range bits must be valid, all other data is 
+/// allowed to have been modified at this point.
+///
+/// @param page        the first page of the original blob
+/// @param sizeInPages the blob's size in pages
+/// @return the page of the blob to which the free table has been assigned, 
+///         or 0 if the table has not been relocated.
+///
 BlobStore::PageNum BlobStore::Transaction::relocateFreeTable(PageNum page, int sizeInPages)
 {
     Blob* block = getBlobBlock(page);
@@ -611,7 +613,7 @@ BlobStore::PageNum BlobStore::Transaction::relocateFreeTable(PageNum page, int s
                     memcpy(otherBlock->leafFreeTable, block->leafFreeTable, sizeof(block->leafFreeTable));
                     otherBlock->leafFreeTableRanges = originalRanges;
                     // don't use `ranges`; search consumes the bits
-                    Header* rootBlock = getRootBlock();
+                    HeaderBlock* rootBlock = getRootBlock();
                     uint32_t trunkSlot = (sizeInPages - 1) / 512;
                     rootBlock->trunkFreeTable[trunkSlot] = otherPage;
 
@@ -633,6 +635,29 @@ BlobStore::PageNum BlobStore::Transaction::relocateFreeTable(PageNum page, int s
 }
 
 
+BlobStore::PageNum BlobStore::Transaction::addBlob(const ByteSpan data)
+{
+    PageNum firstPage = alloc(data.size());
+    Blob* blob = getBlobBlock(firstPage);
+    size_t firstPayloadSize = JournaledBlock::SIZE - 8;
+    if (data.size() <= firstPayloadSize)
+    {
+        // All the data fits into the first block
+        memcpy(blob->payload, data.data(), data.size());
+    }
+    else
+    {
+        // We only journal the first block (because it may contain freelist
+        // data that we would otherwise overwrite in an unsafe way), but the
+        // rest of the payload we write directly into the memory-mapped file
+        memcpy(blob->payload, data.data(),firstPayloadSize);
+        byte* unjournaledPayload = store()->translatePage(firstPage) + JournaledBlock::SIZE;
+        memcpy(unjournaledPayload, data.data() + firstPayloadSize, data.size() - firstPayloadSize);
+    }
+    return firstPage;
+}
+
+
 void BlobStore::Transaction::commit()
 {
     Store::Transaction::commit();
@@ -642,9 +667,60 @@ void BlobStore::Transaction::commit()
         PageNum firstPage = it.first;
         uint32_t pages = it.second;
 
+        uint64_t ofs = store()->offsetOf(firstPage);
+        uint64_t size = store()->offsetOf(pages);
+
+        ofs += JournaledBlock::SIZE;
+        size -= JournaledBlock::SIZE;
+        store()->deallocate(ofs, size);
+
         // TODO: punch hole (but respect filesystem block sizes)
         // Do not deallocate the first 4KB block, as it contains
+        // metadata
     }
+}
+
+void BlobStore::setMetadataSize(Header* header, size_t size)
+{
+    header->metadataSize = size;
+    int pageSizeShift = header->pageSize + 12;
+    size_t pageSize = 1 << pageSizeShift;
+    header->totalPageCount = (size + pageSize - 1) >> pageSizeShift;
+}
+
+void BlobStore::Transaction::setup()
+{
+    HeaderBlock* header = getRootBlock();
+    header->magic = MAGIC;
+    header->versionHigh = 2;
+    header->versionLow = 0;
+    header->creationTimestamp = DateTime::now();
+    header->pageSize = 0; // TODO: default
+    header->totalPageCount = 1;
+    header->metadataSize = 4096;        // TODO
+    header->trunkFreeTableRanges = 0;
+    memset(header->trunkFreeTable, 0, sizeof(header->trunkFreeTable));
+}
+
+std::map<std::string_view,std::string_view> BlobStore::properties() const
+{
+    std::map<std::string_view,std::string_view> properties;
+    uint32_t ptr = getRoot()->propertiesPointer;
+    if(ptr)
+    {
+        DataPtr p(mainMapping() + ptr);
+        int count = p.getUnsignedShort();
+        p += 2;
+        for(int i=0; i<count; i++)
+        {
+            const ShortVarString* name = reinterpret_cast<const ShortVarString*>(p.ptr());
+            p += name->totalSize();
+            const ShortVarString* value = reinterpret_cast<const ShortVarString*>(p.ptr());
+            p += value->totalSize();
+            properties[name->toStringView()] = value->toStringView();
+        }
+    }
+    return properties;
 }
 
 } // namespace clarisma
