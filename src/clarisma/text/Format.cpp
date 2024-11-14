@@ -2,6 +2,7 @@
 // Created by marti on 9/29/2024.
 //
 
+#include <cmath>
 #include <clarisma/math/Math.h>
 #include <clarisma/text/Format.h>
 
