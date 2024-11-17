@@ -14,7 +14,6 @@ public:
     {
         END,
         TAG_START,
-        TAG_END,
         ATTR,
         TEXT
     };

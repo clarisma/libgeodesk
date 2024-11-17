@@ -27,7 +27,7 @@ int SimpleXmlParser::next()
             if(*p_ != '=')
             {
                 error_ = Error::EXPECTED_EQUAL;
-                return TAG_END;
+                return END;
             }
             p_++;
             skipWhitespace();
@@ -35,7 +35,7 @@ int SimpleXmlParser::next()
             if(quote != '\'' && quote != '\"')
             {
                 error_ = Error::EXPECTED_QUOTE;
-                return TAG_END;
+                return END;
             }
             p_++;
             parseValue(quote, true);
@@ -46,7 +46,7 @@ int SimpleXmlParser::next()
         if(ch == 0)
         {
             error_ = Error::INCOMPLETE_TAG;
-            return TAG_END;
+            return END;
         }
         p_++;
         if(ch != '>')
@@ -57,7 +57,7 @@ int SimpleXmlParser::next()
                 if(ch != '>')
                 {
                     error_ = Error::INCOMPLETE_TAG;
-                    return TAG_END;
+                    return END;
                 }
                 p_++;
             }
@@ -65,7 +65,7 @@ int SimpleXmlParser::next()
             {
                 error_ = Error::INCOMPLETE_TAG;
             }
-            return TAG_END;
+            return END;
         }
         ch = *p_;
         // fall through
@@ -102,7 +102,7 @@ int SimpleXmlParser::next()
             {
                 error_ = Error::INCOMPLETE_TAG;
             }
-            return TAG_END;
+            return END;
         }
         if(parseName())
         {
