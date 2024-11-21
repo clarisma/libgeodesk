@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <geodesk/export.h>
 #include <geodesk/feature/forward.h>
 #include <geodesk/geom/Coordinate.h>
 
@@ -11,7 +12,7 @@ namespace geodesk {
 class Filter;
 
 /// \cond lowlevel
-class Filters
+class GEODESK_API Filters
 {
 public:
     static const Filter* intersects(Feature feature);

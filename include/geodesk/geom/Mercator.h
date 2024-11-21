@@ -37,54 +37,77 @@ public:
 
     /// @brief Converts longitude (in WGS-84 degrees) to a %Mercator X-coordinate.
     ///
-    static int32_t xFromLon(double lon)
+    static int32_t xFromLon(double lon) noexcept
     {
         return static_cast<int32_t>(round(MAP_WIDTH * lon / 360.0));
     }
 
-    static int32_t xFromLon100nd(int lon)
+    /// @brief Converts WGS-84 longitude (in 100-nanodegree increments)
+    /// to a %Mercator X-coordinate.
+    ///
+    static int32_t xFromLon100nd(int lon) noexcept
     {
         return xFromLon(static_cast<double>(lon) / 10000000.0);
     }
 
-    static int32_t yFromLat(double lat)
+    /// @brief Converts latitude (in WGS-84 degrees) to a %Mercator Y-coordinate.
+    ///
+    static int32_t yFromLat(double lat) noexcept
     {
         return static_cast<int32_t>(round(std::log(std::tan((lat + 90.0) 
             * M_PI / 360.0)) * (MAP_WIDTH / 2.0 / M_PI)));
     }
 
-    static int32_t yFromLat100nd(int lat)
+    /// @brief Converts WGS-84 latitude (in 100-nanodegree increments)
+    /// to a %Mercator Y-coordinate.
+    ///
+    static int32_t yFromLat100nd(int lat) noexcept
     {
         return yFromLat(static_cast<double>(lat) / 10000000.0);
     }
 
-    static double roundTo100nd(double deg)
+    static double roundTo100nd(double deg) noexcept
     {
-        const double factor = 1e7;  // 10^7
+        constexpr double factor = 1e7;  // 10^7
         return std::round(deg * factor) / factor;
     }
 
-    static double lonFromX(double x)
+    /// @brief Converts a %Mercator X-coordinate to longitude (in WGS-84 degrees).
+    ///
+    static double lonFromX(double x) noexcept
     {
         return x * 360.0 / MAP_WIDTH;
     }
 
-    static double lon100ndFromX(double x)
+    /// @brief Converts a %Mercator X-coordinate to longitude
+    /// (in WGS-84 degrees, rounded to 7 digits of precision).
+    ///
+    static double roundedLonFromX(double x) noexcept
     {
         return roundTo100nd(lonFromX(x));
     }
 
-    static double latFromY(double y)
+    /// @brief Converts a %Mercator Y-coordinate to latitude (in WGS-84 degrees).
+    ///
+    static double latFromY(double y) noexcept
     {
         return std::atan(std::exp(y * M_PI * 2.0 / MAP_WIDTH)) * 360.0 / M_PI - 90.0;
     }
 
-    static double lat100ndFromY(double y)
+    /// @brief Converts a %Mercator Y-coordinate to latitude
+    /// (in WGS-84 degrees, rounded to 7 digits of precision).
+    ///
+    static double roundedLatFromY(double y) noexcept
     {
         return roundTo100nd(latFromY(y));
     }
-    
-    static double scale(double y)
+
+    /// @brief Calculates the scaling factor for the given Y-coordinate.
+    /// This factor is `1` at the equator and progressively increases
+    /// towards the polar regions, and is used to compensate for the
+    /// distortion introduced by the %Mercator projection.
+    ///
+    static double scale(double y) noexcept
     {
         /*
         for (double lat = 0; lat <= 86; lat++)
@@ -117,7 +140,17 @@ public:
         return EARTH_CIRCUMFERENCE / MAP_WIDTH / scale(y);
     }
 
-    static double unitsFromMeters(double meters, double atY)
+    /// Calculates the number of Mercator units represented
+    /// by the given distance (in meters), at the given
+    /// Y-coordinate.
+    ///
+    /// The Y-coordinate must be between `INT_MIN` and
+    /// `INT_MAX` (inclusive), or the result will be undefined.
+    ///
+    /// @param meters distance in meters
+    /// @param atY valid Y-coordinate
+    ///
+    static double unitsFromMeters(double meters, double atY) noexcept
     {
         return meters * MAP_WIDTH / EARTH_CIRCUMFERENCE * scale(atY);
     }

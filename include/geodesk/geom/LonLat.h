@@ -3,11 +3,13 @@
 
 #pragma once
 
-#include <geodesk/geom/Mercator.h>
+#include <geodesk/geom/Coordinate.h>
 #include <clarisma/text/Format.h>
 
 namespace geodesk {
 
+/// @brief A WGS-84 coordinate pair.
+///
 class LonLat
 {
 public:
@@ -17,7 +19,7 @@ public:
 
 	void format(char* buf) const
 	{
-		Format::unsafe(buf, "%.7f,%.7f", lon, lat);
+		clarisma::Format::unsafe(buf, "%.7f,%.7f", lon, lat);
 	}
 
 	std::string toString() const

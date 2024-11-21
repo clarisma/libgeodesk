@@ -7,6 +7,9 @@
 
 namespace geodesk {
 
+/// \cond
+/// @brief A collection containing only Way features.
+///
 class Ways : public FeaturesBase<Way>
 {
 public:
@@ -21,4 +24,7 @@ public:
 	Ways parentsOf(FeatureBase<P> feature) const;
 };
 
+/// \endcond
+
 } // namespace geodesk
+

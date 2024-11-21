@@ -12,30 +12,58 @@
 
 namespace geodesk {
 
-// TODO: Use a borrowed arena?
-// No, needs to be reset after each polygon is built, or else arena will
-// just keep growing
-
+/// @brief Utility class for creating polygon rings from Relation members.
+/// In OpenStreetMap, polygons with holes and multi-polygons are represented
+/// as relations. Member ways with role `outer` and `inner` form the linework.
+/// The Polygonizer assembles these linestrings into rings and ensures that
+/// inner rings are matched with their corresponding outer rings.
+///
 class Polygonizer
 {
 public:
+    /// @brief A successfully assembled ring.
     class Ring;
 
     Polygonizer();
+
+    /// @brief Returns the assembled outer rings.
+    /// The Ring objects form a linked list. createRings()
+    /// must have been called, or the result of this method
+    /// will be `nullptr`.
+    ///
+    /// @return a pointer the first outer ring, or `nullptr` if
+    ///     no valid outer rings could be assembled.
+    ///
     const Ring* outerRings() const { return outerRings_; };
+
+    /// @brief Returns the assembled outer rings.
+    /// The Ring objects form a linked list. createRings()
+    /// must have been called, or the result of this method
+    /// will be `nullptr`. After a subsequent call to
+    /// assignAndMergeHoles() this method will always return
+    /// `nullptr`, as the inner rings will have been assigned
+    /// to their outer rings.
+    ///
+    /// @return a pointer the first outer ring, or `nullptr` if
+    ///     no valid outer rings could be assembled, or if they
+    ///     have been assigned to their outer rings.
+    ///
     const Ring* innerRings() const { return innerRings_; };
 
-    /**
-     * Creates only the raw outer and inner rings, without assigning
-     * the inner rings to outer, and without merging inner rings 
-     * whose edges touch. (This is sufficient for area calculation)
-     */
+    /// @brief Creates only the raw outer and inner rings, without assigning
+    /// the inner rings to outer, and without merging inner rings
+    /// whose edges touch. (This is sufficient for many operations
+    /// such as area or centroid calculation)
+    ///
+    /// @param store    the FeatureStore
+    /// @param relation pointer to the stored Relation
+    ///
     void createRings(FeatureStore* store, RelationPtr relation);
 
-    /**
-     * Assigns inner rings to outer, and merges any inner rings whose
-     * edges touch. The createRings() method must have been called.
-     */
+    /// @brief Assigns inner rings to outer, and merges any inner
+    /// rings whose edges touch. The createRings() method must
+    /// have been called.
+    ///
     void assignAndMergeHoles();
     #ifdef GEODESK_WITH_GEOS
     GEOSGeometry* createPolygonal(GEOSContextHandle_t context);
@@ -59,7 +87,5 @@ private:
 
     friend class RingCoordinateIterator;
 };
-
-
 
 } // namespace geodesk

@@ -8,6 +8,8 @@
 
 using namespace clarisma;
 
+/*
+
 std::unique_ptr<uint8_t[]> createJunk(size_t size)
 {
 	// Define the pattern "ABCDEFG..."
@@ -26,7 +28,6 @@ std::unique_ptr<uint8_t[]> createJunk(size_t size)
 	return buffer;
 }
 
-/*
 
 TEST_CASE("BlobStore")
 {

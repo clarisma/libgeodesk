@@ -6,11 +6,11 @@
 #include "RingBuilder.h"
 #include "RingAssigner.h"
 #include "RingMerger.h"
+#include "Segment.h"
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/feature/MemberIterator.h>
 
 namespace geodesk {
-
 
 Polygonizer::Polygonizer() :
 	outerRings_(nullptr),

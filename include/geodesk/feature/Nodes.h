@@ -7,6 +7,9 @@
 
 namespace geodesk {
 
+/// \cond
+/// @brief A collection containing only Node features.
+///
 class Nodes : public FeaturesBase<Node>
 {
 public:
@@ -18,5 +21,7 @@ public:
 	Nodes(const FeaturesBase<Relation>& other) : FeaturesBase(empty()) {}
 
 };
+
+/// \endcond
 
 } // namespace geodesk

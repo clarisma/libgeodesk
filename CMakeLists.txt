@@ -20,6 +20,7 @@ set(BUILD_SHARED_LIBS OFF)
 
 option(GEODESK_PYTHON "Build GeoDesk with Python support" OFF)
 option(GEODESK_PYTHON_WHEELS "Enable Support for Python Wheels" OFF)
+option(GEODESK_EXAMPLES "Build example applications" ON)
 
 # Option to choose between static or shared library
 # Only set the option if BUILD_SHARED_LIBS is not already defined
@@ -132,4 +133,8 @@ if(NOT GEODESK_PYTHON)
     target_include_directories(geodesk-test PRIVATE include src ${Catch2_SOURCE_DIR})
     target_link_libraries(geodesk-test geodesk Catch2::Catch2WithMain)  # or zlib for shared
     add_test(NAME geodesk-test COMMAND geodesk-test)
+
+    if(GEODESK_EXAMPLES)
+        add_subdirectory(examples)
+    endif()
 endif()

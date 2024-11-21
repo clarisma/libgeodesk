@@ -17,7 +17,11 @@ class MatcherHolder;
 class Filter;
 class StringTable;
 
-
+/// Pointer to a Feature's data.
+///
+/// This class if part of the **Low-Level API**. It is not intended to
+/// be used directly by applications.
+///
 class GEODESK_API FeaturePtr
 {
 public:

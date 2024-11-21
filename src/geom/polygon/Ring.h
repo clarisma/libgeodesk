@@ -5,9 +5,10 @@
 
 #include <geodesk/geom/polygon/Polygonizer.h>
 #include <geodesk/geom/polygon/PointInPolygon.h>
-#include "Segment.h"
 
 namespace geodesk {
+
+// TODO: Why won't Doxygen include this class?!
 
 /// @brief An inner or outer ring produced by the Polygonizer.
 /// Rings form a linked list; use `next()` to obtain the next ring.
@@ -42,7 +43,7 @@ public:
     }
 
 private:
-    bool containsBoundsOf(Ring* potentialInner)
+    bool containsBoundsOf(const Ring* potentialInner) const
     {
         return bounds_.containsSimple(potentialInner->bounds_);
     }
@@ -51,8 +52,8 @@ private:
      * Tests if potentialInner lies definitely within this Ring
      * (assumes containsBoundsOf() has already been checked)
      */
-    bool contains(Ring* potentialInner);
-    PointInPolygon::Location locateCoordinate(Coordinate c);
+    bool contains(const Ring* potentialInner) const;
+    PointInPolygon::Location locateCoordinate(Coordinate c) const;
 
     void addInner(Ring* inner)
     {

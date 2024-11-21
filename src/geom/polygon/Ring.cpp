@@ -3,6 +3,7 @@
 
 #include "Ring.h"
 #include <geodesk/geom/polygon/PointInPolygon.h>
+#include "Segment.h"
 
 namespace geodesk {
 
@@ -73,10 +74,10 @@ void Polygonizer::Ring::calculateBounds()
 }
 
 
-PointInPolygon::Location Polygonizer::Ring::locateCoordinate(Coordinate c)
+PointInPolygon::Location Polygonizer::Ring::locateCoordinate(Coordinate c) const
 {
     PointInPolygon tester(c);
-    Segment* seg = firstSegment_;
+    const Segment* seg = firstSegment_;
     do
     {
         if (tester.testAgainstWay(seg->way)) return PointInPolygon::Location::BOUNDARY;
@@ -87,7 +88,7 @@ PointInPolygon::Location Polygonizer::Ring::locateCoordinate(Coordinate c)
 }
 
 
-bool Polygonizer::Ring::contains(Ring* potentialInner)
+bool Polygonizer::Ring::contains(const Ring* potentialInner) const
 {
     // An inner ring may touch an outer in one point, which doesn't necessarily
     // mean that it lies within the outer. Therefore, if the first point checked

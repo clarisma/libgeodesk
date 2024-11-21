@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifdef GEODESK_WITH_GEOS
-#include "Geos.h"
+#include <geodesk/geom/geos/Geos.h>
 
 namespace geodesk {
 

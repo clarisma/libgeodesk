@@ -16,6 +16,7 @@ class TagValue;
 }
 
 class GEOSGeometry;
+class GEOSContextHandle_t;
 
 namespace geodesk {
 

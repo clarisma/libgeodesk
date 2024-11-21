@@ -7,7 +7,10 @@
 
 namespace geodesk {
 
-class Relations : public geodesk::FeaturesBase<Relation>
+/// \cond
+/// @brief A collection containing only Relation features.
+///
+class Relations : public FeaturesBase<Relation>
 {
 public:
 	using FeaturesBase::FeaturesBase;
@@ -33,5 +36,7 @@ public:
 	}
 
 };
+
+/// \endcond
 
 } // namespace geodesk

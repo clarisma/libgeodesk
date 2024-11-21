@@ -401,6 +401,24 @@ public:
     /// @}
 };
 
+/// @brief A collection containing only Node features.
+///
+class Nodes : public Features
+{
+};
+
+/// @brief A collection containing only Way features.
+///
+class Ways : public Features
+{
+};
+
+/// @brief A collection containing only Relation features.
+///
+class Relations : public Features
+{
+};
+
 } // namespace geodesk
 
 

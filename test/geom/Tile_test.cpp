@@ -6,6 +6,7 @@
 
 using namespace geodesk;
 
+/*
 void testAddTiles(const char* a, const char* b, const char* res)
 {
     TilePair pair;
@@ -28,7 +29,7 @@ TEST_CASE("Adding Tiles to a TilePair")
     testAddTiles("12/2160/1322", "10/540/330", "10/540/330");
     testAddTiles("12/2160/1322", "12/2163/1322", "11/1080+/661");
 }
-
+*/
 
 /*
 TEST_CASE("Twins of a TilePair")

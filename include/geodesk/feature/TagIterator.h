@@ -9,7 +9,7 @@ namespace geodesk {
 
 /// \cond lowlevel
 
-class TagIterator
+class GEODESK_API TagIterator
 {
 public:
 	TagIterator(TagTablePtr tags, StringTable& strings);

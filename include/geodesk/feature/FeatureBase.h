@@ -22,12 +22,13 @@
 
 namespace geodesk {
 
+/// \cond
+
 class Features;
 class Nodes;
 template <typename T>
 class FeatureIterator;
 
-/// \cond
 ///
 /// Do not show this class.
 ///
@@ -258,12 +259,12 @@ public:
 
     [[nodiscard]] double lon() const noexcept
     {
-        return Mercator::lon100ndFromX(x());
+        return Mercator::roundedLonFromX(x());
     }
 
     [[nodiscard]] double lat() const noexcept
     {
-        return Mercator::lat100ndFromY(y());
+        return Mercator::roundedLatFromY(y());
     }
 
     /// Calculates the centroid of this Feature

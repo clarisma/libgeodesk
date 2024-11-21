@@ -33,7 +33,7 @@ public:
 		SAME_SIZE = 63,
 	};
 
-	Arena(size_t chunkSize = 4096, GrowthPolicy growth = GrowthPolicy::DOUBLE) :
+	explicit Arena(size_t chunkSize = 4096, GrowthPolicy growth = GrowthPolicy::DOUBLE) :
 		current_(nullptr),
 		p_(nullptr),
 		end_(nullptr),
