@@ -15,6 +15,11 @@ class Query;
 
 /// \cond lowlevel
 ///
+/// Instead of passing a pointer to the tile, we could let the task
+/// retrieve it based on the TIP; however, this would require accessing
+/// the Tile Index, which may not be in the cache of the core that is
+/// executing the task.
+///
 class TileQueryTask
 {
 public:

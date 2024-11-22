@@ -16,6 +16,10 @@ class Filter;
 
 // TODO: Maybe call this a "Cursor"
 
+// TODO: Where to put bounds and filter?
+//  These are used by TIW, but are also part of the Query descriptor
+//  (need store, box, matcher, filter and type)
+
 class Query : public AbstractQuery
 {
 public:
