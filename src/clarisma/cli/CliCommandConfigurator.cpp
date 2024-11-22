@@ -92,7 +92,14 @@ bool CliCommandConfigurator::configure(char* argv[])
             try
             {
                 accepted = command_.setOption(name, value);
-                if(accepted == 1) continue;
+                if(accepted == 1)
+                {
+                    if(value.empty())
+                    {
+                        failed(name, "Missing value");
+                    }
+                    continue;
+                }
                 if(accepted == 0)
                 {
                     // Return value 0 means the option does not allow a value

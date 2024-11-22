@@ -5,9 +5,11 @@
 
 #include <cstdint>
 #include <clarisma/util/DataPtr.h>
+#include <geodesk/feature/FeaturePtr.h>
 
 namespace geodesk {
 
+class Query;
 struct QueryResults;
 
 /// \cond lowlevel
@@ -22,7 +24,6 @@ struct QueryResultsHeader
 struct QueryResults : public QueryResultsHeader
 {
     static const uint32_t DEFAULT_BUCKET_SIZE = 256;
-    static const uint32_t POTENTIAL_DUPLICATE = 0x8000'0000;
 
     static QueryResultsHeader EMPTY_HEADER;
     static QueryResults* const EMPTY;
@@ -32,8 +33,55 @@ struct QueryResults : public QueryResultsHeader
         return count == DEFAULT_BUCKET_SIZE;
     }
 
+    class Iterator
+    {
+    public:
+        Iterator(const QueryResults* results, int n) :
+            p_(&results->items[n]),
+            pTile_(results->pTile)
+        {
+        }
+
+        FeaturePtr operator*() const
+        {
+            return { pTile_ + *p_ };
+        }
+
+        Iterator& operator++()
+        {
+            ++p_;
+            return *this;
+        }
+
+        bool operator==(const Iterator& other) const
+        {
+            return p_ == other.p_;
+        }
+
+        bool operator!=(const Iterator& other) const
+        {
+            return p_ != other.p_;
+        }
+
+    private:
+        const uint32_t* p_;
+        clarisma::DataPtr pTile_;
+    };
+
+    Iterator begin() const
+    {
+        return Iterator(this, 0);
+    }
+
+    Iterator end() const
+    {
+        return Iterator(this, count);
+    }
+
     uint32_t items[DEFAULT_BUCKET_SIZE];
 };
+
+using QueryResultsConsumer = void(*)(Query* query, QueryResults*);
 
 // \endcond
 
