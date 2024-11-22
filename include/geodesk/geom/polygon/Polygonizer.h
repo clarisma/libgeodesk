@@ -53,7 +53,7 @@ public:
     /// @brief Creates only the raw outer and inner rings, without assigning
     /// the inner rings to outer, and without merging inner rings
     /// whose edges touch. (This is sufficient for many operations
-    /// such as area or centroid calculation)
+    /// such as area or centroid computation)
     ///
     /// @param store    the FeatureStore
     /// @param relation pointer to the stored Relation

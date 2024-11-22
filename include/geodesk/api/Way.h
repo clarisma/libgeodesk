@@ -9,9 +9,8 @@ namespace geodesk {
 
 ///
 /// @brief A Feature that represents a linestring, linear ring,
-/// or a simple polygon.
-///
-/// Every Way has two or more nodes, which can be retrieved via nodes().
+/// or a simple polygon. A Way consists of two or more nodes,
+/// which define its shape and can be accessed via nodes().
 ///
 class Way : public Feature
 {

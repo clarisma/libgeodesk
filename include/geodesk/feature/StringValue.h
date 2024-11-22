@@ -9,6 +9,7 @@
 namespace geodesk {
 
 /// @brief A string pointer (used for keys, values and roles).
+/// Character data is encoded as UTF-8.
 ///
 /// Converts implicitly to `std::string` and `std::string_view`.
 ///
@@ -65,7 +66,8 @@ public:
 
     operator bool() const noexcept { return !isEmpty(); }   // NOLINT implicit conversion
 
-    /// The string as a `std::string_view`
+    /// @fn operator std::string_view() const noexcept
+    /// @brief The string as a `std::string_view`
     ///
     /// **Warning:** This `string_view` becomes invalid once the
     /// FeatureStore containing its data is closed.
@@ -73,7 +75,7 @@ public:
     // NOLINTNEXTLINE(google-explicit-constructor)
     operator std::string_view() const noexcept { return str_->toStringView(); }
 
-    /// Creates this string as a new `std::string`.
+    /// @brief Creates this string as a new `std::string`.
     ///
     // NOLINTNEXTLINE(google-explicit-constructor)
     operator std::string() const { return str_->toString(); }       // may throw
@@ -83,7 +85,7 @@ public:
     /// **Warning:** This pointer becomes invalid once the
     /// FeatureStore containing its data is closed.
     ///
-    const uint8_t* rawBytes() const { return str_->rawBytes(); }
+    const uint8_t* rawBytes() const noexcept { return str_->rawBytes(); }
 
 private:
     const clarisma::ShortVarString* str_;

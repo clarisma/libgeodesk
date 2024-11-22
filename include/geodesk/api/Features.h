@@ -21,18 +21,19 @@ namespace geodesk {
 ///
 /// @brief A collection of geographic features.
 ///
-/// A Features object isn't a classical container; it doesn't actually
-/// hold any Feature objects, but merely describes which features should
-/// be fetched from a Geographic Object Library. A query is only
+/// A Features object isn't a traditional container; it doesn't actually
+/// hold any Feature objects. Instead, it defines the criteria for retrieving
+/// features from a Geographic Object Library. A query is only
 /// executed whenever the Features object is iterated, assigned to a container,
 /// or when one of its scalar functions (such as count() or length()) is called.
-/// This also means that query results are not cached: If you call count()
-/// prior to iterating over the Features, *two* queries will be executed.
+/// Query results are not cached. For example, calling count() before
+/// iterating over a Features object will result in the query being
+/// executed twice.
 ///
-/// Features objects are lightweight and suitable for passing by value.
-/// They are threadsafe and can be freely shared among different threads.
-/// Their various matchers and filters (and associated resources such as
-/// temporary indexes) are shared via refcounting.
+/// Features objects are lightweight, thread-safe, and designed to be
+/// passed by value. They can be safely shared across threads. Matchers,
+/// filters, and related resources (such as temporary indexes) use
+/// reference counting to ensure efficient and safe resource management.
 ///
 /// To start working with a GOL, simply create a `Features` object
 /// with the path of its file (the `.gol` extension may be omitted):
@@ -91,21 +92,21 @@ namespace geodesk {
 /// Features world("world");
 ///
 /// Relations busRoutes =                  // Only relations that
-///     world("[type=route][route=bus]")   // are tagged as bus routes
+///     world("[type=route][route=bus]");  // are tagged as bus routes
 ///
 /// Nodes nodes = busRoutes;               // empty collection
 /// ```
 ///
-/// Upon destruction of last of the Features objects that refer to the
-/// same FeatureStore, the Geographic Object Library is automatically
-/// closed and all of the FeatureStore's resources are released (This
-/// differs from [GeoDesk for Java](https://docs.geodesk.com/java/libraries#closing-a-library),
+/// When the last Features object referring to a FeatureStore is destroyed,
+/// the associated Geographic Object Library is automatically closed,
+/// and all resources managed by the FeatureStore are released. (This differs
+/// from [GeoDesk for Java](https://docs.geodesk.com/java/libraries#closing-a-library),
 /// which requires GOLs to be closed explicitly).
 ///
-/// **Important:** Once a GOL has been closed, all Feature objects retrieved
-/// via queries to that GOL are no longer valid; calling any of their
-/// methods will result in undefined behavior (The same applies to Tags,
-/// Tag, TagValue and StringValue objects).
+/// **Important:** After a GOL has been closed, any Feature objects obtained
+/// from it become invalid. Calling their methods results in undefined behavior.
+/// This restriction also applies to related types, such as Tags, Tag, TagValue
+/// and StringValue.
 ///
 class Features
 {
@@ -134,8 +135,7 @@ public:
     ///
     bool operator!() const;
 
-    /// @brief Returns `true` if this collection contains
-    /// the given Feature.
+    /// @brief Checks if the specified Feature exists in this collection.
     ///
     bool contains(const Feature& feature) const;
 
@@ -163,7 +163,7 @@ public:
     ///
     /// @throws QueryException if the query is malformed.
     ///
-    Nodes nodes(const char* query);
+    Nodes nodes(const char* query) const;
 
     ///
     /// @brief Only ways.
@@ -243,7 +243,7 @@ public:
     ///
     uint64_t count() const;
 
-    /// @brief Calculates the total length (in meters) of the features
+    /// @brief Computes the total length (in meters) of the features
     /// in this collection.
     ///
     /// @throws QueryException if one or more tiles that contain
@@ -251,7 +251,7 @@ public:
     ///
     double length() const;
 
-    /// @brief Calculates the total area (in square meters) of the features
+    /// @brief Computes the total area (in square meters) of the features
     /// in this collection.
     ///
     /// @throws QueryException if one or more tiles that contain
@@ -329,7 +329,7 @@ public:
     /// `distance` meters of `xy`.
     ///
     /// @param distance the maximum distance (in meters)
-    /// @param xy thew center of the search radius
+    /// @param xy the center of the search radius
     ///
     Features maxMetersFrom(double distance, Coordinate xy) const;
 
@@ -337,8 +337,8 @@ public:
     /// `distance` meters of the given location.
     ///
     /// @param distance the maximum distance (in meters)
-    /// @param lon degrees longitude of the center of the search radius
-    /// @param lat degrees latitude of the center of the search radius
+    /// @param lon  longitude of the search radius center
+    /// @param lat  latitude of the search radius center
     ///
     Features maxMetersFrom(double distance, double lon, double lat) const;
 

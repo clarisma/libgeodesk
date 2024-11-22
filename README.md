@@ -11,13 +11,16 @@ Also available [for Python](http://www.github.com/clarisma/geodesk-py) and [for 
 
 - **Fast to get started** &mdash; Converting `.osm.pbf` data to a GOL is 20 times faster than an import into an SQL database. Alternatively, download pre-made data tiles for just the regions you need and automatically assemble them into a GOL.
 
-- **Intuitive API** &mdash; No need for object-relational mapping; GeoDesk queries return Python objects. Quickly discover tags, way-nodes and relation members. Get a feature's geometry, measure its length/area. 
+- **Intuitive API** &mdash; No need for object-relational mapping; GeoDesk queries return lightweight C++ objects. Quickly discover tags, way-nodes and relation members. Get a feature's geometry, measure its length/area. 
  
 - **Proper handling of relations** &mdash; (Traditional geospatial databases deal with geometric shapes and require workarounds to support this unique and powerful aspect of OSM data.)
 
-- **Seamless integration with Shapely** for advanced geometric operations, such as buffer, union, simplify, convex and concave hulls, Voronoi diagrams, and much more.
+- **Optional integration with GEOS** for advanced geometric operations, such as buffer, union, simplify, convex and concave hulls, Voronoi diagrams, and much more.
 
 - **Modest hardware requirements** &mdash; any 64-bit Windows, Linux or MacOS system will run GeoDesk.
+
+- **Lightweight** &mdash; the full query engine adds less than 250 KB and has no link-time dependencies. 
+  It runs entirely in-process, no database server required.
  
 ## Get Started
 
@@ -25,11 +28,22 @@ Also available [for Python](http://www.github.com/clarisma/geodesk-py) and [for 
 
 - [CMake](https://cmake.org/download) 3.14 or later
 - C++20 compiler with a Standard Library for Windows, Linux or MacOS
-- Java 16 or above (for the GOL Tool)
+- Java 16 or above (to run the [GOL Tool](https://docs.geodesk.com/gol))
  
-### Build & Install
+### Build & Link
 
-GeoDesk has no dependencies and can be built with **CMake**:
+If your project uses **CMake**, add this to your `CMakeLists.txt`:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(geodesk GIT_REPOSITORY 
+    https://github.com/clarisma/libgeodesk.git)
+FetchContent_MakeAvailable(geodesk)
+
+target_link_libraries(my_program geodesk)
+```
+
+Alternatively, build GeoDesk explicitly:
 
 ```
 git clone https://github.com/clarisma/libgeodesk.git
@@ -38,12 +52,6 @@ mkdir build
 cd build
 cmake ..
 cmake --build .
-```
-
-To install (*optional*):
-
-```
-cmake --install .
 ```
 
 ### Create a GOL
@@ -62,7 +70,7 @@ gol build switzerland switzerland-latest.osm.pbf
 Find all the pubs in Zurich (Switzerland) and print their names:
 
 ```cpp
-#include <geodesk.h>
+#include <geodesk/geodesk.h>
 
 using namespace geodesk;
 

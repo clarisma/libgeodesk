@@ -20,6 +20,8 @@ public:
 	Coordinate(double x_, double y_) :
 		x(static_cast<int32_t>(std::round(x_))),
 		y(static_cast<int32_t>(std::round(y_))) {}
+		// TODO: This should be constexpr, but needs a constexpr
+		//  rounding function
 	constexpr Coordinate() : x(0), y(0) {}
 
 	/// @brief Creates a Coordinate with the given longitude and latitude.
@@ -36,9 +38,16 @@ public:
 		return {Mercator::xFromLon(lon), Mercator::yFromLat(lat)};
 	}
 
+	/// @brief The X-coordinate, converted to longitude (WGS-84)
+	///
 	double lon() const noexcept { return Mercator::lonFromX(x); }
+
+	/// @brief The Y-coordinate, converted to latitude (WGS-84)
+	///
 	double lat() const noexcept { return Mercator::latFromY(y); }
 
+	/// @brief Checks whether both X and Y are `0`.
+	///
 	bool isNull() const noexcept { return (x | y) == 0; };
 
 	bool operator== (const Coordinate& other) const noexcept
@@ -51,7 +60,17 @@ public:
 		return (static_cast<int64_t>(y) << 32) | static_cast<uint32_t>(x);
 	}
 
+	bool operator!=(const Coordinate& other) const noexcept
+	{
+		return !(*this == other);
+	}
+
+	/// X-coordinate (in Mercator projection)
+	///
 	int32_t	x;
+
+	/// Y-coordinate (in Mercator projection)
+	///
 	int32_t	y;
 };
 

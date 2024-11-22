@@ -28,7 +28,7 @@ namespace geodesk {
 /// ```
 ///
 /// **Note:** By default, tags are returned in *storage order*
-/// of their keys, which is the same for all tag sets stored in
+/// of their keys, which is consistent across all tag sets stored in
 /// the same GOL, but which generally is not *alphabetical order*.
 /// If you want tags sorted alphabetically by key, assign the
 /// Tags object to a `std::map`, or to a `std::vector` which you

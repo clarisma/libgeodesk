@@ -49,7 +49,7 @@ public:
     ///
     /// An anonymous node is a Node that has no tags and does not belong
     /// to any relation; it merely exists as a vertex of a Way.
-    /// Its ID is always `0` and its `FeaturePtr` is a `nullptr`.
+    /// Its ID is always `0` and its `FeaturePtr` is `nullptr`.
     ///
     bool isAnonymousNode() const noexcept;
 
@@ -173,7 +173,7 @@ public:
     ///
     double lat() const noexcept;
 
-    /// Calculates the centroid of this Feature
+    /// Computes the centroid of this Feature
     ///
     /// @return the Feature's centroid (in Mercator projection)
     /// @throws QueryException if one or more tiles that contain

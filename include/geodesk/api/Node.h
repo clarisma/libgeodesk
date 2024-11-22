@@ -33,7 +33,7 @@ public:
     ///
     /// An anonymous node is a Node that has no tags and does not belong
     /// to any relation; it merely exists as a vertex of a Way.
-    /// Its ID is always `0` and its `FeaturePtr` is a `nullptr`.
+    /// Its ID is always `0` and its `FeaturePtr` is `nullptr`.
     ///
     bool isAnonymousNode() const noexcept;
 

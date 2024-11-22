@@ -14,7 +14,7 @@ namespace geodesk {
 class Polygonizer::RingMerger
 {
 public:
-    RingMerger(clarisma::Arena& arena) :
+    explicit RingMerger(clarisma::Arena& arena) :
         arena_(arena),
         firstValid_(nullptr) {}
 
@@ -24,7 +24,7 @@ private:
     class EdgeTracker
     {
     public:
-        EdgeTracker(size_t capacity)
+        explicit EdgeTracker(size_t capacity)
         {
             counts_.reserve(capacity);
         }

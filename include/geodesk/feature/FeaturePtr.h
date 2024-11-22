@@ -17,7 +17,7 @@ class MatcherHolder;
 class Filter;
 class StringTable;
 
-/// Pointer to a Feature's data.
+/// @brief Pointer to a Feature's data.
 ///
 /// This class if part of the **Low-Level API**. It is not intended to
 /// be used directly by applications.
@@ -43,7 +43,7 @@ public:
 		return (id() << 2) | typeCode();
 	}
 
-	FeatureHeader header()
+	FeatureHeader header() const noexcept
 	{
 		return FeatureHeader(p_.getUnsignedLongUnaligned());
 	}

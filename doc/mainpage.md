@@ -8,9 +8,11 @@
 - Work with collections of [Features](\ref geodesk::Features) 
   and individual [Feature](\ref geodesk::Feature) objects
 
+- Access a Feature's [Tags](\ref geodesk::Tags)
+
 - Geometry primitives: [Coordinate](\ref geodesk::Coordinate) and [Box](\ref geodesk::Box)
 
-- Convert coordinates form and to [Mercator](\ref geodesk::Mercator) projection
+- Convert coordinates from and to [Mercator](\ref geodesk::Mercator) projection
 
 
 
