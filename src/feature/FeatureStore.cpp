@@ -86,8 +86,7 @@ void FeatureStore::initialize(bool create)
 	strings_.create(reinterpret_cast<const uint8_t*>(
 		mainMapping() + header()->stringTablePtr));
 	zoomLevels_ = ZoomLevels(header()->zoomLevels);
-	// readIndexSchema();
-		// TODO: disabled for now, RE-enable
+	readIndexSchema();
 }
 
 FeatureStore::~FeatureStore()
