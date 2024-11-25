@@ -85,7 +85,7 @@ void FeatureStore::initialize(bool create)
 
 	strings_.create(reinterpret_cast<const uint8_t*>(
 		mainMapping() + header()->stringTablePtr));
-	zoomLevels_ = ZoomLevels(header()->zoomLevels);
+	zoomLevels_ = ZoomLevels(header()->settings.zoomLevels);
 	// readIndexSchema();
 		// TODO: disabled for now, RE-enable
 }
@@ -231,6 +231,7 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 	header->revision = metadata.revision;
 	header->revisionTimestamp = metadata.revisionTimestamp;
 	header->zoomLevels = static_cast<uint16_t>(zoomLevels);
+		// TODO: set flags
 
 	// Place the Tile Index
 	byte* mainMapping = store()->mainMapping();

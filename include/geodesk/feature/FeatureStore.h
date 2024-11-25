@@ -46,8 +46,10 @@ class GEODESK_API FeatureStore final : public clarisma::BlobStore
 public:
     using IndexedKeyMap = std::unordered_map<uint16_t, uint16_t>;
 
-    struct IndexSettings
+    struct Settings
     {
+        uint16_t    zoomLevels;
+        uint16_t    reserved;
         uint16_t    rtreeBranchSize;
         uint8_t     rtreeAlgo;
         uint8_t     maxKeyIndexes;
@@ -59,8 +61,7 @@ public:
         uint32_t subtypeMagic;
         uint16_t subtypeVersionHigh;
         uint16_t subtypeVersionLow;
-        uint16_t zoomLevels;
-        uint16_t flags;
+        uint32_t flags;
         int32_t tileIndexPtr;
         int32_t stringTablePtr;
         int32_t indexSchemaPtr;
@@ -70,6 +71,7 @@ public:
         DateTime revisionTimestamp;
         DateTime modifiedSinceTimestamp;
         uint32_t sourceReplicationNumber;
+        Settings settings;
     };
 
     using Store::LockLevel;
@@ -134,7 +136,8 @@ public:
     struct Metadata
     {
         Metadata(const clarisma::UUID& guid_, uint32_t rev) :
-            guid(guid_), revision(rev), tileIndex(nullptr),
+            guid(guid_), revision(rev), settings(nullptr),
+            tileIndex(nullptr),
             stringTable(nullptr), stringTableSize(0),
             properties(nullptr), propertiesSize(0),
             indexedKeys(nullptr)
@@ -144,6 +147,7 @@ public:
         clarisma::UUID guid;
         uint32_t revision;
         DateTime revisionTimestamp;
+        const Settings* settings;
         const uint32_t* tileIndex;
         const uint8_t* stringTable;
         size_t stringTableSize;
