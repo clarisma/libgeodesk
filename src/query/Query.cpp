@@ -12,7 +12,7 @@ namespace geodesk {
 
 Query::Query(FeatureStore* store, const Box& box, FeatureTypes types,
     const MatcherHolder* matcher, const Filter* filter) :
-    AbstractQuery(store),
+    store_(store),
     types_(types),
     matcher_(matcher),
     filter_(filter),

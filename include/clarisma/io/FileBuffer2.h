@@ -29,6 +29,11 @@ public:
 		file_.open(filename, mode);
 	}
 
+	void close()
+	{
+		file_.close();
+	}
+
 	void filled(char* p) override
 	{
 		flush(p);

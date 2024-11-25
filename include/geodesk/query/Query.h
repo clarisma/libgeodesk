@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "AbstractQuery.h"
 #include <condition_variable>
 #include <geodesk/query/QueryResults.h>
 #include <geodesk/query/TileIndexWalker.h>
@@ -20,7 +19,7 @@ class Filter;
 //  These are used by TIW, but are also part of the Query descriptor
 //  (need store, box, matcher, filter and type)
 
-class Query : public AbstractQuery
+class Query
 {
 public:
     Query(FeatureStore* store, const Box& box, FeatureTypes types, 
@@ -43,7 +42,7 @@ private:
     void requestTiles();
     static void deleteResults(const QueryResults* res);
 
-    // FeatureStore* store_;  // moved to AbstractQuery
+    FeatureStore* store_;
     FeatureTypes types_;
     const MatcherHolder* matcher_;
     const Filter* filter_;
