@@ -219,23 +219,22 @@ void FeatureStore::Transaction::addTile(Tip tip, ByteSpan data)
 
 void FeatureStore::Transaction::setup(const Metadata& metadata)
 {
-	ZoomLevels zoomLevels(ZoomLevels::DEFAULT); // TODO: Take from settings
-
 	BlobStore::Transaction::setup();
 	Header* header = reinterpret_cast<Header*>(getRootBlock());
 	header->subtypeMagic = SUBTYPE_MAGIC;
 	header->subtypeVersionHigh = 2;
 	header->subtypeVersionLow = 0;
+	header->flags = 0;
+		// TODO: set flags (waynode-ids)
 	header->guid = metadata.guid;
 	header->revision = metadata.revision;
 	header->revisionTimestamp = metadata.revisionTimestamp;
-	header->zoomLevels = static_cast<uint16_t>(zoomLevels);
-		// TODO: set flags
+	header->settings = *metadata.settings;
 
 	// Place the Tile Index
 	byte* mainMapping = store()->mainMapping();
-	size_t tileIndexSize = (*metadata.tileIndex + 1) * 4;
-	size_t tileIndexOfs = HEADER_BLOCK_SIZE;
+	const size_t tileIndexSize = (*metadata.tileIndex + 1) * 4;
+	const size_t tileIndexOfs = HEADER_BLOCK_SIZE;
 	memcpy(mainMapping + tileIndexOfs, metadata.tileIndex, tileIndexSize);
 
 	// Place the Indexed Keys Schema
@@ -262,7 +261,7 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 	tileIndexOfs_ = static_cast<uint32_t>(tileIndexOfs);
 	setMetadataSize(header, metadataSize);
 
-	store()->zoomLevels_ = zoomLevels;
+	store()->zoomLevels_ = ZoomLevels(header->settings.zoomLevels);
 }
 
 } // namespace geodesk
