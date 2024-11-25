@@ -9,6 +9,8 @@ namespace geodesk {
 
 using namespace clarisma;
 
+// TODO: Check single-tile GOLs
+
 TileIndexWalker::TileIndexWalker(
     DataPtr pIndex, uint32_t zoomLevels, const Box& box, const Filter* filter) :
     box_(box),
@@ -22,7 +24,8 @@ TileIndexWalker::TileIndexWalker(
     tileBasedAcceleration_(false),
     trackAcceptedTiles_(false)
 {
-	int zoom = -1;
+	int zoom = 0;
+    zoomLevels >>= 1;
     Level* level = levels_;
     for (;;)
     {
@@ -46,7 +49,7 @@ TileIndexWalker::TileIndexWalker(
             }
         }
     }
-    startRoot();
+    startLevel(&levels_[0], 1);
 }
 
 bool TileIndexWalker::next()
@@ -175,7 +178,7 @@ bool TileIndexWalker::next()
                 // current tile has children: prepare to move up to the
                 // next level in the tile tree
 
-                currentLevel_++;;
+                currentLevel_++;
                 tip += (static_cast<int32_t>(pageOrPtr) ^ 1) >> 2;
                 startLevel(level+1, tip);
             }
@@ -208,20 +211,6 @@ void TileIndexWalker::startLevel(Level* level, int tip)
         // TODO: Is this unaligned???
     level->pChildEntries = tip + (step == 3 ? 3 : 2);
     level->turboFlags = 0; // TODO
-}
-
-void TileIndexWalker::startRoot()
-{
-    Level* level = &levels_[0];
-
-    level->topLeftChildTile = Tile::fromColumnRowZoom(0,0,0);
-    level->startCol = 0;
-    level->endCol = 0;
-    level->endRow = 0;
-    level->currentCol = -1;
-    level->currentRow = 0;
-    level->childTileMask = ~0;
-    level->pChildEntries = 1;   // TODO: not used for root?
 }
 
 } // namespace geodesk

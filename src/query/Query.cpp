@@ -139,13 +139,20 @@ void Query::requestTiles()
     int submitCount = std::max(store_->executor().minimumRemainingCapacity(), 1);
     while (submitCount > 0)
     {
-        TileQueryTask task(this,
-            (tileIndexWalker_.currentTip() << 8) |
-            tileIndexWalker_.northwestFlags(),
-            FastFilterHint(tileIndexWalker_.turboFlags(), tileIndexWalker_.currentTile()));
-        store_->executor().post(task);
-        pendingTiles_++;
-        submitCount--;
+        if(tileIndexWalker_.currentEntry().isLoadedAndCurrent()) [[likely]]
+        {
+            TileQueryTask task(this,
+                (tileIndexWalker_.currentTip() << 8) |
+                tileIndexWalker_.northwestFlags(),
+                FastFilterHint(tileIndexWalker_.turboFlags(), tileIndexWalker_.currentTile()));
+            store_->executor().post(task);
+            pendingTiles_++;
+            submitCount--;
+        }
+        else
+        {
+            tileIndexWalker_.skipChildren();
+        }
         if (!tileIndexWalker_.next())
         {
             allTilesRequested_ = true;

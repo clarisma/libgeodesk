@@ -26,6 +26,7 @@ public:
     clarisma::BlobStore::PageNum page() const { return data_ >> 2; }
     Status status() const { return static_cast<Status>(data_ & 3); }
     operator uint32_t() const { return data_; } // NOLINT implicit conversion
+    bool isLoadedAndCurrent() const { return (data_ & 3) != 0; }
 
 private:
     uint32_t data_;

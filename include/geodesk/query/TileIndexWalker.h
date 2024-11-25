@@ -5,6 +5,7 @@
 
 #include <unordered_set>
 #include <geodesk/feature/FeatureStore.h>
+#include <geodesk/feature/TileIndexEntry.h>
 #include <geodesk/feature/Tip.h>
 #include <geodesk/geom/Box.h>
 #include <geodesk/geom/Tile.h>
@@ -57,12 +58,13 @@ public:
 
     Tip currentTip() const { return Tip(currentTip_); }
     Tile currentTile() const { return currentTile_; }
+    TileIndexEntry currentEntry() const { return pIndex_[currentTip_ << 2]; }
     uint32_t northwestFlags() const { return northwestFlags_; }
     uint32_t turboFlags() const { return turboFlags_; }
     const Box& bounds() const { return box_; }
 
 private:
-    static const int MAX_LEVELS = 13;   // currently 0 - 12
+    static constexpr int MAX_LEVELS = 13;   // currently 0 - 12
         // TODO: Limit to 8 levels in GOL 2.0?
 
     // TODO: uint16 supports max level 15 (not 16, because of sign;
@@ -82,8 +84,7 @@ private:
 	};
 
     void startLevel(Level* level, int tip);
-    void startRoot();
-    
+
     Box box_;
     const Filter* filter_;
     DataPtr pIndex_;
@@ -95,8 +96,8 @@ private:
     bool tileBasedAcceleration_;
     bool trackAcceptedTiles_;
     std::unordered_set<Tile> acceptedTiles_;
-    Level levels_[MAX_LEVELS];
-        // TODO: can we drop one level? (Zoom 12 cannot have children)
+    Level levels_[MAX_LEVELS-1];
+        // -1 because leaf tiles don't need a Level
 };
 
 // \endcond
