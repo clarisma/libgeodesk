@@ -214,13 +214,15 @@ void FeatureStore::Transaction::addTile(Tip tip, ByteSpan data)
 	MutableDataPtr ptr = dataPtr(tileIndexOfs_ + tip * 4);
 	assert(ptr.getUnsignedInt() == 0);
 	ptr.putUnsignedInt(TileIndexEntry(page, TileIndexEntry::CURRENT));
+	getHeaderBlock()->tileCount++;
+	LOGS << "TileCount is now " << getHeaderBlock()->tileCount << "\n";
 }
 
 
 void FeatureStore::Transaction::setup(const Metadata& metadata)
 {
 	BlobStore::Transaction::setup();
-	Header* header = reinterpret_cast<Header*>(getRootBlock());
+	Header* header = getHeaderBlock();
 	header->subtypeMagic = SUBTYPE_MAGIC;
 	header->subtypeVersionHigh = 2;
 	header->subtypeVersionLow = 0;
@@ -230,6 +232,7 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 	header->revision = metadata.revision;
 	header->revisionTimestamp = metadata.revisionTimestamp;
 	header->settings = *metadata.settings;
+	header->tileCount = 0;
 
 	// Place the Tile Index
 	byte* mainMapping = store()->mainMapping();

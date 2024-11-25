@@ -71,6 +71,7 @@ public:
         DateTime revisionTimestamp;
         DateTime modifiedSinceTimestamp;
         uint32_t sourceReplicationNumber;
+        uint32_t tileCount;
         Settings settings;
     };
 
@@ -99,7 +100,7 @@ public:
     const clarisma::UUID& guid() const { return header()->guid; }
     uint32_t revision() const { return header()->revision; }
     DateTime revisionTimestamp() const { return header()->revisionTimestamp; }
-
+    uint32_t tileCount() const { return header()->tileCount; }
     ZoomLevels zoomLevels() const { return zoomLevels_; }
     StringTable& strings() { return strings_; }
     const IndexedKeyMap& keysToCategories() const { return keysToCategories_; }
@@ -175,9 +176,13 @@ public:
             return reinterpret_cast<FeatureStore*>(store_);
         }
 
-        // TODO: zoom level, other settings
-        void setup(const Metadata& metadata);
+        // TODO: We should cache this so we don't have to keep looking it up
+        Header* getHeaderBlock()
+        {
+            return reinterpret_cast<Header*>(getRootBlock());
+        }
 
+        void setup(const Metadata& metadata);
         void addTile(Tip tip, clarisma::ByteSpan data);
 
     protected:
