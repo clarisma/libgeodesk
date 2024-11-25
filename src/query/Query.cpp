@@ -139,11 +139,6 @@ void Query::requestTiles()
     int submitCount = std::max(store_->executor().minimumRemainingCapacity(), 1);
     while (submitCount > 0)
     {
-        if (!tileIndexWalker_.next())
-        {
-            allTilesRequested_ = true;
-            break;
-        }
         TileQueryTask task(this,
             (tileIndexWalker_.currentTip() << 8) |
             tileIndexWalker_.northwestFlags(),
@@ -151,6 +146,11 @@ void Query::requestTiles()
         store_->executor().post(task);
         pendingTiles_++;
         submitCount--;
+        if (!tileIndexWalker_.next())
+        {
+            allTilesRequested_ = true;
+            break;
+        }
     }
     
 }
