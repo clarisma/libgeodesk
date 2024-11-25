@@ -11,10 +11,14 @@ using namespace clarisma;
 
 TileIndexWalker::TileIndexWalker(
     DataPtr pIndex, uint32_t zoomLevels, const Box& box, const Filter* filter) :
-	pIndex_(pIndex),
-	currentLevel_(0),
     box_(box),
     filter_(filter),
+    pIndex_(pIndex),
+	currentLevel_(0),
+    currentTile_(Tile::fromColumnRowZoom(0,0,0)),
+    currentTip_(1),
+    northwestFlags_(0),
+    turboFlags_(0),
     tileBasedAcceleration_(false),
     trackAcceptedTiles_(false)
 {
@@ -52,7 +56,10 @@ bool TileIndexWalker::next()
     for (;;)
     {
         // TODO: could restructure so we don't overflow uint16
-        // by checking *before* incrementing
+        //  by checking *before* incrementing
+        //  (only relevant if we ever support zoom levels up to 16,
+        //  because then we'll need a uint16_t to represent all
+        //  columns and rows
 
         level->currentCol++;
         if (level->currentCol > level->endCol)
@@ -71,10 +78,7 @@ bool TileIndexWalker::next()
                 childTileMask = level->childTileMask;
                 continue;
             }
-            else
-            {
-                level->currentCol = level->startCol;
-            }
+            level->currentCol = level->startCol;
         }
         int childNumber = (level->currentRow << level->step) + level->currentCol;
         if ((childTileMask & (1LL << childNumber)) != 0)
@@ -111,7 +115,12 @@ bool TileIndexWalker::next()
             if (tileBasedAcceleration_)
             {
                 // TODO: Don't call acceptTile() if all turbo-flags are
-                // set for the current tile
+                //  set for the current tile
+                //  If the parent is fast-accept, children by definition
+                //  are fast-accept as well
+                //  It's more complicated if there are multiple
+                //  spatial filters, as a tile may be accelerated for
+                //  some but not others
                 
                 int turboFlags = filter_->acceptTile(currentTile_);
                 if (turboFlags < 0) continue;
@@ -155,17 +164,7 @@ bool TileIndexWalker::next()
                 turboFlags_ = 0;
             }
             int tip = level->pChildEntries + childEntry;
-            uint32_t pageOrPtr;
-            if(tip == 1)
-            {
-                // TODO: Fix this, this special-case logic for
-                //  the root tile is inefficient
-                pageOrPtr = 1;
-            }
-            else
-            {
-                pageOrPtr = (pIndex_ + (tip << 2)).getUnsignedInt();
-            }
+            uint32_t pageOrPtr = (pIndex_ + (tip << 2)).getUnsignedInt();
             if ((pageOrPtr & 3) == 1)
             {
                 // Changed for v2: The lowest 2 bits
@@ -188,8 +187,6 @@ bool TileIndexWalker::next()
 
 void TileIndexWalker::startLevel(Level* level, int tip)
 {
-    // this.filter = filter; // TODO
-
     int zoom = level->topLeftChildTile.zoom();
     int step = level->step;
     int extent = 1 << step;     
@@ -215,8 +212,6 @@ void TileIndexWalker::startLevel(Level* level, int tip)
 
 void TileIndexWalker::startRoot()
 {
-    // this.filter = filter; // TODO
-
     Level* level = &levels_[0];
 
     level->topLeftChildTile = Tile::fromColumnRowZoom(0,0,0);

@@ -15,13 +15,46 @@ class Filter;
 
 /// \cond lowlevel
 
+/// @brief A class that traverses the Tile Index Tree of a
+/// FeatureStore in an iterator-like fashion, returning all
+/// tiles that intersect a given bounding box.
+///
+/// Tile traversal always starts at the root tile (TIP 1, 0/0/0),
+/// which is neither rejected not accelerated, and by definition
+/// does not have any NW neighbors.
+///
+/// Important: Index-walking changes in v2 -- since the root tile is
+/// always included, we no longer call next() to obtain the root
+/// tile; the TIW always starts in a valid state, and hence we
+/// call next() *after* we've processed the root tile.
+///
+/// TODO: If a GOL only contains a single tile (the root tile),
+///  make sure the TileIndexBuilder creates an empty child mask
+///  (i.e. the TI must contain 3 slots: count, root tile, root
+///  tile child mask)
+///
 class TileIndexWalker
 {
 public:
     TileIndexWalker(DataPtr pIndex, uint32_t zoomLevels,
         const Box& box, const Filter* filter);
 
+    /// Moves to the next tile (depth-first).
+    ///
+    /// @return `true` if another accepted tile exists,
+    ///   or `false` if traversal reached the end
+    ///
     bool next();
+
+    /// @brief If the current tile has children, ensures
+    /// that any subsequent call to next() does not visit them.
+    ///
+    void skipChildren()
+    {
+        const Level& level = levels_[currentLevel_];
+        currentLevel_ -= (level.currentCol < level.startCol);
+    }
+
     Tip currentTip() const { return Tip(currentTip_); }
     Tile currentTile() const { return currentTile_; }
     uint32_t northwestFlags() const { return northwestFlags_; }
@@ -30,7 +63,7 @@ public:
 
 private:
     static const int MAX_LEVELS = 13;   // currently 0 - 12
-        // TODO: GOL 2.0 has max 8 levels
+        // TODO: Limit to 8 levels in GOL 2.0?
 
     // TODO: uint16 supports max level 15 (not 16, because of sign;
     //  we start columns at -1)
@@ -63,6 +96,7 @@ private:
     bool trackAcceptedTiles_;
     std::unordered_set<Tile> acceptedTiles_;
     Level levels_[MAX_LEVELS];
+        // TODO: can we drop one level? (Zoom 12 cannot have children)
 };
 
 // \endcond
