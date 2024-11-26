@@ -8,6 +8,8 @@
 namespace geodesk {
 
 /// \cond lowlevel
+/// An iterator that returns all members of a relation, without
+/// any filtering and without retrieving roles.
 ///
 class FastMemberIterator
 {
