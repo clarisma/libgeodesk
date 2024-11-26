@@ -18,7 +18,7 @@ public:
 
     ~MapWriter() = default;
 
-    void writeHeader();
+    void writeHeader(const char* extraStyles = nullptr);
     void writeFooter();
     void beginPoint(Coordinate c);
     void beginBox(const Box& box);

@@ -168,7 +168,7 @@ public:
         {
             BlobStore::Transaction::begin(lockLevel);
             const Header* header = store()->header();
-            tileIndexOfs_ = header->tileIndexPtr + offsetof(Header, tileIndexPtr);
+            tileIndexOfs_ = header->tileIndexPtr;
         }
 
         FeatureStore* store() const

@@ -5,7 +5,7 @@
 
 namespace geodesk {
 
-void MapWriter::writeHeader()
+void MapWriter::writeHeader(const char* extraStyles)
 {
 	writeConstString(
 	  "<html><head><meta charset=\"utf-8\">"
@@ -13,9 +13,9 @@ void MapWriter::writeHeader()
 	writeReplacedString(leafletStylesheetUrl_, "{leaflet_version}", leafletVersion_);
 	writeConstString("\">\n<script src=\"");
 	writeReplacedString(leafletUrl_, "{leaflet_version}", leafletVersion_);
-	writeConstString(
-		"\"></script>\n<style>\n#map {height: 100%;}\nbody {margin:0;}\n</style>\n"
-		"</head>\n<body>\n<div id=\"map\"> </div>\n"
+	writeConstString("\"></script>\n<style>\n#map {height: 100%;}\nbody {margin:0;}\n");
+	if(extraStyles) writeString(extraStyles);
+	writeConstString("</style>\n</head>\n<body>\n<div id=\"map\"> </div>\n"
 		"<script>");
 
 	writeConstString(
