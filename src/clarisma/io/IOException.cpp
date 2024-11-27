@@ -38,8 +38,6 @@ void IOException::checkAndThrow()
 
 namespace clarisma {
 
-namespace clarisma {
-
 void IOException::checkAndThrow()
 {
     if (errno)
