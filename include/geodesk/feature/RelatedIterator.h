@@ -86,7 +86,11 @@ public:
                 if(!pExports_)
                 {
                     DataPtr pTile = store_->fetchTile(currentTip_);
-                    // TODO: Deal with missing tiles
+                    if(!pTile)  [[unlikely]]
+                    {
+                        // TODO: set flag to indicate missing tiles
+                        continue;
+                    }
                     pExports_ = (pTile + TileConstants::EXPORTS_OFS).follow();
                 }
                 feature = FeaturePtr((pExports_ + currentTex_ * 4).follow());

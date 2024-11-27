@@ -107,9 +107,11 @@ FeatureStore::~FeatureStore()
 DataPtr FeatureStore::fetchTile(Tip tip)
 {
 	TileIndexEntry entry((tileIndex() + (tip * 4)).getUnsignedInt());
-	// Bit 0 is a flag bit (page vs. child pointer)
-	// TODO: load tiles
-
+	if(!entry.isLoadedAndCurrent())	[[unlikely]]
+	{
+		return DataPtr();
+		// TODO: load tiles?
+	}
 	return pagePointer(entry.page());
 }
 
