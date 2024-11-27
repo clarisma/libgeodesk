@@ -3,29 +3,22 @@
 
 #pragma once
 
+#include <geodesk/feature/RelatedIterator.h>
 #include <geodesk/feature/RelationPtr.h>
 
 namespace geodesk {
 
 /// \cond lowlevel
 ///
-class ParentRelationIterator
+class ParentRelationIterator : public RelatedIterator<ParentRelationIterator,RelationPtr,0,2>
 {
 public:
-	ParentRelationIterator(FeatureStore* store, DataPtr pRelTable,
-		const MatcherHolder* matcher, const Filter* filter);
-
-	FeatureStore* store() const { return store_; }
-	RelationPtr next();
-
-private:
-	FeatureStore* store_;
-	const MatcherHolder* matcher_;
-	const Filter* filter_;
-	Tip currentTip_;
-	int32_t currentRel_;
-	DataPtr p_;
-	DataPtr pForeignTile_;
+    ParentRelationIterator(FeatureStore* store, DataPtr pRelTable,
+        const MatcherHolder* matcher, const Filter* filter) :
+        RelatedIterator(store, pRelTable, Tex::RELATIONS_START_TEX,
+            matcher, filter)
+    {
+    }
 };
 
 // \endcond

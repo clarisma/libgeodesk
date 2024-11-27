@@ -61,7 +61,6 @@ void Polygonizer::createRings(FeatureStore* store, RelationPtr relation)
     {
         WayPtr way(iter.next());
         if (way.isNull()) break;
-        if (way.isPlaceholder()) continue;
 
         /*
         LOG("Creating segment for way/%ld", way.id());

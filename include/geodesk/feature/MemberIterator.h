@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <geodesk/feature/RelatedIterator.h>
 #include <clarisma/util/ShortVarString.h>
 #include <geodesk/feature/FeaturePtr.h>
 #include <geodesk/feature/FeatureStore.h>
@@ -24,11 +25,29 @@ namespace geodesk {
 
 /// \cond lowlevel
 ///
-class MemberIterator
+
+class MemberIterator : public RelatedIterator<MemberIterator,FeaturePtr,1,2>
 {
 public:
 	MemberIterator(FeatureStore* store, DataPtr pMembers,
-		FeatureTypes types, const MatcherHolder* matcher, const Filter* filter);
+		FeatureTypes types, const MatcherHolder* matcher, const Filter* filter) :
+		RelatedIterator(store, pMembers, Tex::MEMBERS_START_TEX,
+		matcher, filter),
+		types_(types),
+		currentRoleCode_(0),
+		currentRoleStr_(nullptr)
+	{
+		currentMatcher_ = &matcher->mainMatcher(); // TODO: select based on role
+		#ifdef GEODESK_PYTHON
+		// currentRoleObject_ = store->strings().getStringObject(0);
+		// TODO: this bumps the refcount; let's use a "borrow" function instead!
+		// TODO: check for refcount handling in code below
+		// No, see comments below -- must refcount because local strings are
+		// treated as owned
+		// assert(currentRoleObject_);
+		currentRoleObject_ = nullptr;
+		#endif
+	}
 
 	~MemberIterator()
 	{
@@ -36,15 +55,6 @@ public:
 		Py_XDECREF(currentRoleObject_);
 		#endif
 	}
-
-	FeatureStore* store() const { return store_; }
-
-	FeaturePtr next();
-	bool isCurrentForeign() const 
-	{
-		return currentMember_ & MemberFlags::FOREIGN; 
-	}
-	Tip currentTip() const { return currentTip_; }
 
 	std::string_view currentRole() const
 	{
@@ -69,8 +79,8 @@ public:
 	 * Obtains a borrowed reference to the Python string object that
 	 * represents the role of the current member.
 	 */
-	PyObject* borrowCurrentRole() // const 
-	{ 
+	PyObject* borrowCurrentRole() // const
+	{
 		if (!currentRoleObject_)
 		{
 			if (currentRoleCode_ >= 0)
@@ -105,25 +115,81 @@ public:
 			}
 			assert(currentRoleObject_);
 		}
-		return currentRoleObject_; 
+		return currentRoleObject_;
 	}
 	#endif
 
-private:
-	FeatureStore* store_;
+	bool readAndAcceptRole()    // CRTP override
+	{
+		if (member_ & MemberFlags::DIFFERENT_ROLE)
+		{
+			int rawRole = p_.getUnsignedShort();
+			p_ += 2;
+			if (rawRole & 1)	[[likely]]
+			{
+				// common role
+				currentRoleCode_ = rawRole >> 1;
+				// TODO: ensure this will be unsigned
+				currentRoleStr_ = nullptr;
+#ifdef GEODESK_PYTHON
+				if (currentRoleObject_)
+				{
+					Py_DECREF(currentRoleObject_);
+					currentRoleObject_ = nullptr;
+				}
+				// move out of if?
+				// TODO: This is wrong, needs to borrow!
+				//  No, it has to addref, because refs to local strings are owned
+				//  and we have no way to distinguish between them that is cheaper
+				//  than refcounting
+				// currentRoleObject_ = store_->strings().getStringObject(currentRoleCode_);
+				// assert(currentRoleObject_);
+#endif
+			}
+			else
+			{
+				rawRole |= static_cast<int>(p_.getShort()) << 16;
+				currentRoleCode_ = -1;
+				currentRoleStr_ = reinterpret_cast<const clarisma::ShortVarString*>(
+					p_.ptr() + ((rawRole >> 1) - 2)); // signed
+#ifdef GEODESK_PYTHON
+				if (currentRoleObject_)
+				{
+					Py_DECREF(currentRoleObject_);
+					currentRoleObject_ = nullptr;
+				}
+				// currentRoleObject_ = currentRoleStr_.toStringObject();
+				// assert(currentRoleObject_);
+#endif
+				p_ += 2;
+			}
+			// TODO: we may increase efficiency by only fetching the currentRoleStr_
+			// if the role is accepted by the matcher, but this design is simpler
+
+			// TODO: get matcher for this new role
+			// (null if role is not accepted)
+			// currentMatcher = matcher.acceptRole(role, roleString);
+		}
+
+		return currentMatcher_ != nullptr;
+	}
+
+	bool accept(FeaturePtr feature) const	// CRTP override
+	{
+		if (!types_.acceptFlags(feature.flags())) return false;
+		if (!currentMatcher_->accept(feature)) return false;
+		return filter_ == nullptr || filter_->accept(
+			store_, feature, FastFilterHint());
+	}
+
+protected:
 	FeatureTypes types_;
-	const MatcherHolder* matcher_;
-	const Filter* filter_;
 	int currentRoleCode_;
 	const clarisma::ShortVarString* currentRoleStr_;
 	#ifdef GEODESK_PYTHON
 	PyObject* currentRoleObject_;
 	#endif
-	Tip currentTip_;
-	int32_t currentMember_;
 	const Matcher* currentMatcher_;
-	DataPtr p_;
-	DataPtr pForeignTile_;
 };
 
 // \endcond

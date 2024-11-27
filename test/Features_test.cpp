@@ -12,7 +12,7 @@ using namespace geodesk;
 
 TEST_CASE("Features")
 {
-	Features world(R"(c:\geodesk\tests\w3.gol)");
+	Features world(R"(c:\geodesk\tests\wxx.gol)");
 	Feature france = world("a[boundary=administrative][admin_level=2][name=France]").one();
 	Feature paris = world("a[boundary=administrative][admin_level=8][name=Paris]")(france).one(); // first().value();
 	std::cout << "Population of Paris: " << paris["population"] << std::endl;
@@ -33,7 +33,7 @@ TEST_CASE("Features")
 
 TEST_CASE("Features2")
 {
-	Features world(R"(c:\geodesk\tests\w3.gol)");
+	Features world(R"(c:\geodesk\tests\wxx.gol)");
 	Feature usa = world("a[boundary=administrative][admin_level=2][name='United States']").one();
 	Features buildings = world("a[building]");
 	Features usaBuildings = buildings(usa);
@@ -46,7 +46,7 @@ TEST_CASE("Features2")
 
 TEST_CASE("Features 3")
 {
-	Features france(R"(c:\geodesk\tests\fr-good.gol)");
+	Features france(R"(c:\geodesk\tests\frxx.gol)");
 	Feature paris = france("a[boundary=administrative][admin_level=8][name=Paris]").one();
 	Features museums = france("na[tourism=museum]");
 	Features subwayStops = france("n[railway=station][station=subway]");
@@ -85,7 +85,7 @@ static Node asNode(Feature f)
 
 TEST_CASE("Type safety of Features")
 {
-	Features world(R"(c:\geodesk\tests\monaco.gol)");
+	Features world(R"(c:\geodesk\tests\mcxx.gol)");
 	Ways ways = world;
 	for(Feature f: ways)
 	{

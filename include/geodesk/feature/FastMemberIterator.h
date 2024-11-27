@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <geodesk/feature/RelatedIterator.h>
 #include <geodesk/feature/RelationPtr.h>
 
 namespace geodesk {
@@ -11,6 +12,29 @@ namespace geodesk {
 /// An iterator that returns all members of a relation, without
 /// any filtering and without retrieving roles.
 ///
+
+class FastMemberIterator : public RelatedIteratorBase<FastMemberIterator,FeaturePtr,1,2>
+{
+public:
+	FastMemberIterator(FeatureStore* store, RelationPtr relation) :
+		RelatedIteratorBase(store, relation.bodyptr(), Tex::MEMBERS_START_TEX)
+	{
+	}
+
+	bool readAndAcceptRole()    // CRTP override
+	{
+		if (member_ & MemberFlags::DIFFERENT_ROLE)
+		{
+			int rawRole = p_.getUnsignedShort();
+			p_ += (rawRole & 1) ? 2 : 4;
+		}
+		return true;
+	}
+};
+
+
+
+/*
 class FastMemberIterator
 {
 public:
@@ -26,6 +50,7 @@ private:
 	DataPtr p_;
 	DataPtr pForeignTile_;
 };
+*/
 
 // \endcond
 
