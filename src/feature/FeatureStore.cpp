@@ -86,7 +86,7 @@ void FeatureStore::initialize(bool create)
 	strings_.create(reinterpret_cast<const uint8_t*>(
 		mainMapping() + header()->stringTablePtr));
 	zoomLevels_ = ZoomLevels(header()->settings.zoomLevels);
-	readIndexSchema();
+	readIndexSchema(mainMapping() + header()->indexSchemaPtr);
 }
 
 FeatureStore::~FeatureStore()
@@ -115,9 +115,8 @@ DataPtr FeatureStore::fetchTile(Tip tip)
 
 
 
-void FeatureStore::readIndexSchema()
+void FeatureStore::readIndexSchema(DataPtr p)
 {
-	DataPtr p(mainMapping() + header()->indexSchemaPtr);
 	int32_t count = p.getInt();
 	keysToCategories_.reserve(count);
 	for (int i = 0; i < count; i++)
@@ -135,6 +134,17 @@ int FeatureStore::getIndexCategory(int keyCode) const
 		return it->second;
 	}
 	return 0;
+}
+
+std::vector<std::string_view> FeatureStore::indexedKeyStrings() const
+{
+	std::vector<std::string_view> keys;
+	keys.reserve(keysToCategories_.size());
+	for(auto& entry: keysToCategories_)
+	{
+		keys.emplace_back(strings_.getGlobalString(entry.first)->toStringView());
+	}
+	return keys;
 }
 
 // TODO: inefficient, should store strign table size when initializing
@@ -265,6 +275,14 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 	setMetadataSize(header, metadataSize);
 
 	store()->zoomLevels_ = ZoomLevels(header->settings.zoomLevels);
+	store()->readIndexSchema(mainMapping + indexedKeysOfs);
+		// TODO: This assumes we've written the metadata directly
+		//  into the store, without journaling
+		//  Block 0, which contains the pointer to the IndexSchema,
+		//  has not been committed at this point, hence we need to
+		//  explicitly pass the pointer
+		// TODO: We should consolidate the store initialization?
+
 }
 
 } // namespace geodesk

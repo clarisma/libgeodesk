@@ -104,6 +104,7 @@ public:
     ZoomLevels zoomLevels() const { return zoomLevels_; }
     StringTable& strings() { return strings_; }
     const IndexedKeyMap& keysToCategories() const { return keysToCategories_; }
+    std::vector<std::string_view> indexedKeyStrings() const;
     int getIndexCategory(int keyCode) const;
     const Header* header() const
     {
@@ -200,7 +201,7 @@ protected:
 private:
 	static constexpr uint32_t SUBTYPE_MAGIC = 0x1CE50D6E;
 
-    void readIndexSchema();
+    void readIndexSchema(DataPtr pSchema);
 
     void readTileSchema();
 
