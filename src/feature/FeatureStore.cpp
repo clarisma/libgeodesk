@@ -29,7 +29,11 @@ FeatureStore::FeatureStore() :
 	emptyTags_(nullptr),
 	emptyFeatures_(nullptr),
 	#endif
-	executor_(/* 1 */ std::thread::hardware_concurrency(), 0)  // TODO: disabled for testing
+	#ifdef NDEBUG
+	executor_(std::thread::hardware_concurrency(), 0)
+	#else
+	executor_(1, 0)		// run single-threaded in debug mode
+	#endif
 {
 }
 
@@ -285,6 +289,11 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 		//  explicitly pass the pointer
 		// TODO: We should consolidate the store initialization?
 
+	// TODO: We're not reading the string table, so this approach
+	//  is inconsistent
+	//  Idea: Since we only journal the root block, use common
+	//  initialization that uses pointer to header (real or journaled)
+	//  to perform initialization
 }
 
 } // namespace geodesk

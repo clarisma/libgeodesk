@@ -49,7 +49,7 @@ public:
 
     /// @brief If the current tile has children, ensures
     /// that any subsequent call to next() does not visit them.
-    ///
+    /// TODO: Ensure that this does not interfere with fast-filter hints
     void skipChildren()
     {
         const Level& level = levels_[currentLevel_];
