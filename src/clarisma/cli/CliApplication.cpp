@@ -20,8 +20,22 @@ BOOL WINAPI consoleHandler(DWORD signal)
 			//  may be in the process of being destroyed
 			//  Safer: remove the handler once CliApplication
 			//  destructor has been called
-			CliApplication::get()->fail("Cancelled.\n");
+			Console::get()->end();
+			//printf("\n\nEnded progress\n\n");
+			Console::get()->setState(Console::ConsoleState::OFF);
+			//printf("\n\nTurned console off\n\n");
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			//printf("\n\nStarted final msg\n\n");
+			{
+				ConsoleWriter out(ConsoleWriter::CANCELLED);
+				out << "Cancelled.\n";
+			}
+			//printf("\n\nFlushed final msg\n\n");
 			Console::get()->restore();
+			//printf("\n\nConsole restored\n\n");
+
+			// Unregister the handler to avoid further signals during cleanup
+			SetConsoleCtrlHandler(consoleHandler, FALSE);
 		}
 	}
 	return FALSE;

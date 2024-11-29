@@ -8,6 +8,7 @@ namespace clarisma {
 
 ConsoleWriter::ConsoleWriter(int mode) :
 	console_(Console::get()),
+	mode_(mode),
 	indent_(0),
 	timestampSeconds_(-1)
 {
@@ -20,6 +21,7 @@ ConsoleWriter::ConsoleWriter(int mode) :
 		success();
 		break;
 	case FAILED:
+	case CANCELLED:
 		failed();
 		break;
 	case LOGGED:
@@ -61,6 +63,18 @@ void ConsoleWriter::flush()
 	}
 	else
 	{
+		if(console_->consoleState_ == Console::ConsoleState::OFF) [[unlikely]]
+		{
+			if(mode_ == CANCELLED)
+			{
+				//printf("\n\n\n\nConsole off, mode = %d\n\n\n", mode_);
+			}
+			if(mode_ != CANCELLED)
+			{
+				// printf("\n\n\n\nNot printing this\n\n\n", mode_);
+				return;
+			}
+		}
 		writeConstString("\033[K");
 	}
 	console_->print(data(), length());

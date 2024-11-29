@@ -10,7 +10,7 @@ namespace clarisma {
 
 void Console::init()
 {
-	hConsole_ = GetStdHandle(STD_OUTPUT_HANDLE);
+	hConsole_ = GetStdHandle(STD_ERROR_HANDLE);
 
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	

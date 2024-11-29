@@ -31,7 +31,8 @@ static char* putString(char* p, const char(&s)[N])
 	return p + N-1;
 }
 
-Console::Console()
+Console::Console() :
+	consoleState_(ConsoleState::NORMAL)
 {
 	init();
 	theConsole_ = this;
@@ -313,17 +314,21 @@ ConsoleWriter Console::finish(TaskResult result)
 }
 */
 
-ConsoleWriter Console::success()
+void Console::end()
 {
 	consoleState_.store(ConsoleState::NORMAL, std::memory_order_release);
 	if(thread_.joinable()) thread_.detach();
+}
+
+ConsoleWriter Console::success()
+{
+	end();
 	return ConsoleWriter(ConsoleWriter::SUCCESS);
 }
 
 ConsoleWriter Console::failed()
 {
-	consoleState_.store(ConsoleState::NORMAL, std::memory_order_release);
-	if(thread_.joinable()) thread_.detach();
+	end();
 	return ConsoleWriter(ConsoleWriter::FAILED);
 }
 

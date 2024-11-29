@@ -40,8 +40,9 @@ public:
 		NONE = 0,
 		SUCCESS = 1,
 		FAILED = 2,
-		LOGGED = 3,
-		PROMPT = 4
+		CANCELLED = 3,
+		LOGGED = 4,
+		PROMPT = 5
 	};
 
 private:
@@ -51,7 +52,8 @@ private:
 
 	DynamicStackBuffer<1024> buf_;
 	Console* console_;
-	int indent_;
+	uint16_t mode_;
+	uint16_t indent_;
 	int timestampSeconds_;
 };
 

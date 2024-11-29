@@ -49,15 +49,12 @@ private:
 class Console
 {
 public:
-	/*
-	enum TaskResult
+	enum ConsoleState
 	{
-		NONE,
-		SUCCESS,
-		FAILED,
-		CANCELLED
+		OFF,
+		NORMAL,
+		PROGRESS
 	};
-	*/
 
 	Console();
 	~Console()
@@ -76,7 +73,9 @@ public:
 		return startTime_;
 	}
 
+	void setState(ConsoleState state) { consoleState_ = state;}
 	void start(const char* task);
+	void end();
 	void setTask(const char* task);
 	void setProgress(int percentage);
 	static void log(std::string_view msg);
@@ -152,13 +151,6 @@ public:
 	static constexpr AnsiColor WHITE{"\033[38;5;15m"};
 
 private:
-	enum ConsoleState
-	{
-		OFF,
-		NORMAL,
-		PROGRESS
-	};
-
 	static const char* BLOCK_CHARS_UTF8;
 	// static const int MAX_LINE_LENGTH = 78;
 	static const int MAX_TASK_CHARS = 38;

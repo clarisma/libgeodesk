@@ -266,4 +266,12 @@ void File::rename(const char* from, const char* to)
     }
 }
 
+std::string File::path(FileHandle handle)
+{
+    // TODO: long-path support (res will be > MAX_PATH)
+    char buf[MAX_PATH];
+    DWORD res = GetFinalPathNameByHandleA(handle, buf, MAX_PATH, FILE_NAME_NORMALIZED);
+    return std::string(buf, res);
+}
+
 } // namespace clarisma
