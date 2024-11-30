@@ -65,6 +65,16 @@ public:
 		return Box(min, min, max, max);
 	}
 
+	/// @brief Returns a Box that encompasses is bounded by
+	///		   the given coordinates (degrees WGS-84)
+	///
+	static Box ofWSEN(double west, double south, double east, double north)
+	{
+		return Box(
+			Mercator::xFromLon(west), Mercator::yFromLat(south),
+			Mercator::xFromLon(east), Mercator::yFromLat(north));
+	}
+
 	/**
 	 * Creates a simple Box regardless of order of coordinates.
 	 */
