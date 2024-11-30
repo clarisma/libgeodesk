@@ -20,6 +20,7 @@ public:
 	static CliApplication* get() { return theApp_; }
 
 	void fail(std::string msg);
+	static void shutdown(const char* msg);
 
 protected:
 	Console console_;

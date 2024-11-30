@@ -13,30 +13,9 @@ BOOL WINAPI consoleHandler(DWORD signal)
 {
 	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT)
 	{
-		CliApplication* theApp = CliApplication::get();
-		if(theApp)
-		{
-			// TODO: This could still race, as the Console
-			//  may be in the process of being destroyed
-			//  Safer: remove the handler once CliApplication
-			//  destructor has been called
-			Console::get()->end();
-			//printf("\n\nEnded progress\n\n");
-			Console::get()->setState(Console::ConsoleState::OFF);
-			//printf("\n\nTurned console off\n\n");
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			//printf("\n\nStarted final msg\n\n");
-			{
-				ConsoleWriter out(ConsoleWriter::CANCELLED);
-				out << "Cancelled.\n";
-			}
-			//printf("\n\nFlushed final msg\n\n");
-			Console::get()->restore();
-			//printf("\n\nConsole restored\n\n");
-
-			// Unregister the handler to avoid further signals during cleanup
-			SetConsoleCtrlHandler(consoleHandler, FALSE);
-		}
+		CliApplication::shutdown("Cancelled.");
+		// Unregister the handler to avoid further signals during cleanup
+		SetConsoleCtrlHandler(consoleHandler, FALSE);
 	}
 	return FALSE;
 }
@@ -45,20 +24,37 @@ BOOL WINAPI consoleHandler(DWORD signal)
 
 void signalHandler(int signal)
 {
-    CliApplication* theApp = CliApplication::get();
-    if(theApp)
-    {
-        // TODO: This could still race, as the Console
-        //  may be in the process of being destroyed
-        //  Safer: remove the handler once CliApplication
-        //  destructor has been called
-        CliApplication::get()->fail("Cancelled.\n");
-        Console::get()->restore();
-    }
+    CliApplication::shutdown("Cancelled.");
     std::exit(128 + signal);
 }
 
 #endif
+
+void terminateHandler()
+{
+	CliApplication::shutdown("Abnormal termination.");
+	std::abort();
+}
+
+void CliApplication::shutdown(const char* msg)
+{
+	CliApplication* theApp = get();
+	if(theApp)
+	{
+		// TODO: This could still race, as the Console
+		//  may be in the process of being destroyed
+		//  Safer: remove the handler once CliApplication
+		//  destructor has been called
+		Console::get()->end();
+		Console::get()->setState(Console::ConsoleState::OFF);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		{
+			ConsoleWriter out(ConsoleWriter::CANCELLED);
+			out << msg << "\n";
+		}
+		Console::get()->restore();
+	}
+}
 
 CliApplication* CliApplication::theApp_ = nullptr;
 
@@ -71,6 +67,7 @@ CliApplication::CliApplication()
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 	#endif
+	std::set_terminate(terminateHandler);
 }
 
 CliApplication::~CliApplication()
