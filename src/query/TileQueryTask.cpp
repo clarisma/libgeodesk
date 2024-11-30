@@ -5,7 +5,7 @@
 #include <geodesk/feature/FeaturePtr.h>
 #include <geodesk/feature/TileConstants.h>
 #include <geodesk/feature/types.h>
-#include <geodesk/query/Query.h>
+#include <geodesk/query/QueryBase.h>
 
 using namespace TileConstants;
 
@@ -33,7 +33,7 @@ void TileQueryTask::operator()()
 	if (types & FeatureTypes::NONAREA_WAYS) searchIndexes(FeatureIndexType::WAYS);
 	if (types & FeatureTypes::AREAS) searchIndexes(FeatureIndexType::AREAS);
 	if (types & FeatureTypes::NONAREA_RELATIONS) searchIndexes(FeatureIndexType::RELATIONS);
-	query_->offer(results_);
+	query_->consumer()(query_, results_);
 }
 
 void TileQueryTask::searchNodeIndexes()
