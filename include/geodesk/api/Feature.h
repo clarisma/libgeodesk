@@ -76,6 +76,14 @@ public:
     ///
     StringValue role() const noexcept;
 
+    /// @brief Tests two features for equality.
+    /// Two features are equal if they have the same type and ID.
+    /// Anonymous nodes are equal if they are coincident.
+    ///
+    bool operator==(const Feature& other) const noexcept;
+    bool operator!=(const Feature& other) const noexcept;
+
+
     /// @}
     /// @name Display
     /// @{

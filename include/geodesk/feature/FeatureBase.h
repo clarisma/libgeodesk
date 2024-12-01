@@ -155,6 +155,24 @@ public:
         return feature_.role;
     }
 
+    bool operator==(const Feature& other) const noexcept
+    {
+        if(isAnonymousNode())
+        {
+            return other.isAnonymousNode() &&
+                anonymousNode_.id == other.anonymousNode_.id &&
+                anonymousNode_.xy == other.anonymousNode_.xy;
+        }
+        return !other.isAnonymousNode() &&
+            feature_.ptr.idBits() == other.feature_.ptr.idBits();
+    }
+
+    bool operator!=(const Feature& other) const noexcept
+    {
+        return !(*this == other);
+    }
+
+
     /// @}
     /// @name Display
     /// @{
