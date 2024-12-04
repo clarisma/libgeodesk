@@ -6,32 +6,12 @@
 
 namespace clarisma {
 
-ConsoleWriter::ConsoleWriter(int mode) :
+ConsoleWriter::ConsoleWriter() :
 	console_(Console::get()),
-	mode_(mode),
 	indent_(0),
 	timestampSeconds_(-1)
 {
 	setBuffer(&buf_);
-	switch(mode)
-	{
-	case NONE:
-		break;
-	case SUCCESS:
-		success();
-		break;
-	case FAILED:
-	case CANCELLED:
-		failed();
-		break;
-	case LOGGED:
-		timestamp();
-		writeConstString("  ");
-		break;
-	case PROMPT:
-		prompt();
-		break;
-	}
 }
 
 void ConsoleWriter::color(int color)
@@ -47,7 +27,7 @@ void ConsoleWriter::normal()
 }
 
 
-void ConsoleWriter::flush()
+void ConsoleWriter::flush(bool forceDisplay)
 {
 	if(console_->consoleState_ == Console::ConsoleState::PROGRESS)
 	{
@@ -65,17 +45,10 @@ void ConsoleWriter::flush()
 	{
 		if(console_->consoleState_ == Console::ConsoleState::OFF) [[unlikely]]
 		{
-			if(mode_ == CANCELLED)
-			{
-				//printf("\n\n\n\nConsole off, mode = %d\n\n\n", mode_);
-			}
-			if(mode_ != CANCELLED)
-			{
-				// printf("\n\n\n\nNot printing this\n\n\n", mode_);
-				return;
-			}
+			if(!forceDisplay) return;
 		}
 		writeConstString("\033[K");	// clear remainder of line
+			// TODO: needed? Why not clear start of line?
 	}
 	console_->print(data(), length());
 	clear();
@@ -96,13 +69,20 @@ ConsoleWriter& ConsoleWriter::timestamp()
 	bool color = console_->hasColor();
 	if(color) writeConstString("\033[38;5;242m");
 	p_ = Format::timer(p_, s, ms);
-	if(color) writeConstString("\033[0m");
+	if(color)
+	{
+		writeConstString("\033[0m  ");
+	}
+	else
+	{
+		writeConstString("  ");
+	}
 	timestampSeconds_ = s;
 	indent_ = 14;
 	return *this;
 }
 
-void ConsoleWriter::success()
+ConsoleWriter& ConsoleWriter::success()
 {
 	bool color = console_->hasColor();
 	ensureCapacityUnsafe(64);
@@ -120,9 +100,10 @@ void ConsoleWriter::success()
 	{
 		putStringUnsafe(" ");
 	}
+	return *this;
 }
 
-void ConsoleWriter::failed()
+ConsoleWriter& ConsoleWriter::failed()
 {
 	ensureCapacityUnsafe(64);
 	putStringUnsafe("\r\033[2K");	// clear current line
@@ -134,9 +115,10 @@ void ConsoleWriter::failed()
 	{
 		putStringUnsafe(" ------- ");
 	}
+	return *this;
 }
 
-void ConsoleWriter::prompt()
+ConsoleWriter& ConsoleWriter::arrow()
 {
 	ensureCapacityUnsafe(64);
 	putStringUnsafe("\033[2K");	// clear current line
@@ -148,6 +130,7 @@ void ConsoleWriter::prompt()
 	{
 		putStringUnsafe(" ------> ");
 	}
+	return *this;
 }
 
 int ConsoleWriter::prompt(bool defaultYes)

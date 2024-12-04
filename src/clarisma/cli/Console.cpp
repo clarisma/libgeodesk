@@ -64,7 +64,8 @@ void Console::start(const char* task)
 
 void Console::log(std::string_view msg)
 {
-	ConsoleWriter out(ConsoleWriter::LOGGED);
+	ConsoleWriter out;
+	out.timestamp();
 	out.writeString(msg);
 	out.writeByte('\n');
 	/*
@@ -319,16 +320,19 @@ ConsoleWriter Console::finish(TaskResult result)
 }
 */
 
-void Console::end()
+ConsoleWriter Console::end()
 {
-	consoleState_.store(ConsoleState::NORMAL, std::memory_order_release);
-	if(thread_.joinable()) thread_.detach();
+	Console* self = get();
+	self->consoleState_.store(ConsoleState::NORMAL, std::memory_order_release);
+	if(self->thread_.joinable()) self->thread_.detach();
+	return ConsoleWriter();
 }
 
+/*
 ConsoleWriter Console::success()
 {
 	end();
-	return ConsoleWriter(ConsoleWriter::SUCCESS);
+	return ConsoleWriter().success();
 }
 
 ConsoleWriter Console::failed()
@@ -336,6 +340,7 @@ ConsoleWriter Console::failed()
 	end();
 	return ConsoleWriter(ConsoleWriter::FAILED);
 }
+*/
 
 void Console::displayTimer()
 {

@@ -101,12 +101,12 @@ public:
 
 	void setState(ConsoleState state) { consoleState_ = state;}
 	void start(const char* task);
-	void end();
+	static ConsoleWriter end();
 	void setTask(const char* task);
 	void setProgress(int percentage);
 	static void log(std::string_view msg);
-	ConsoleWriter success();
-	ConsoleWriter failed();
+	//ConsoleWriter success();
+	//ConsoleWriter failed();
 
 	template <size_t N>
 	void log(const char(&msg)[N])
