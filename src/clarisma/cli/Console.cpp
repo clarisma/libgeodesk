@@ -32,7 +32,8 @@ static char* putString(char* p, const char(&s)[N])
 }
 
 Console::Console() :
-	consoleState_(ConsoleState::NORMAL)
+	consoleState_(ConsoleState::NORMAL),
+	verbosity_(Verbosity::NORMAL)
 {
 	init();
 	theConsole_ = this;
@@ -127,7 +128,7 @@ char* Console::formatProgress(char* p, int percentage) const
 	int v1, v2, v3;
 	d = div(percentage, 10);
 	v3 = d.rem;
-	d = div(d.quot, 10);
+	d = div(d.quot, 10);		// TODO: not needed
 	v2 = d.rem;
 	v1 = d.quot;
 	*p++ = v1 ? ('0' + v1) : ' ';
@@ -221,7 +222,7 @@ void Console::setProgress(int percentage)
 	{
 		currentPercentage_.store(percentage, std::memory_order_release);
 		char buf[256];
-		char* p = putString(buf, "\033[9C");
+		char* p = putString(buf, "\033[9C");	// move cursor 9 chars to right
 		p = formatProgress(p, percentage);
 		*p++ = '\r';
 		assert(p-buf < sizeof(buf));

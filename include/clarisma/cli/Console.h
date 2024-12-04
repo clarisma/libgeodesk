@@ -49,6 +49,20 @@ private:
 class Console
 {
 public:
+	enum class Verbosity
+	{
+		SILENT,
+		QUIET,
+		NORMAL,
+		VERBOSE,
+		DEBUG
+	};
+
+	friend constexpr std::strong_ordering operator<=>(Verbosity lhs, Verbosity rhs) noexcept
+	{
+		return static_cast<int>(lhs) <=> static_cast<int>(rhs);
+	}
+
 	enum ConsoleState
 	{
 		OFF,
@@ -65,6 +79,18 @@ public:
 
 	void init();
 	void restore();
+
+	static Verbosity verbosity()
+	{
+		return get()->verbosity_;
+	}
+
+	static void setVerbosity(Verbosity verbosity)
+	{
+		// TODO: Turn off output if silent?
+		get()->verbosity_ = verbosity;
+	}
+
 
 	bool hasColor() const noexcept { return hasColor_; }
 	void enableColor(bool b) noexcept { hasColor_ = b; }
@@ -177,6 +203,7 @@ private:
 	std::thread thread_;
 	int consoleWidth_ = 80;
 	bool hasColor_ = true;
+	Verbosity verbosity_;
 
 	friend class ConsoleWriter;
 };

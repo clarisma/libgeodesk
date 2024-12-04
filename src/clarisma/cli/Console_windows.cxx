@@ -36,10 +36,13 @@ void Console::init()
 	{
 		printf("Failed to enable UTF-8 support.\n");  // TODO
 	}
+
 	CONSOLE_CURSOR_INFO cursorInfo;
 	GetConsoleCursorInfo(hConsole_, &cursorInfo);
 	cursorInfo.bVisible = false; // Set the cursor visibility
 	SetConsoleCursorInfo(hConsole_, &cursorInfo);
+
+	// hConsole_ = GetStdHandle(STD_ERROR_HANDLE);	// TODO
 }
 
 
