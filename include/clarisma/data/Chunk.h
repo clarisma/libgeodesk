@@ -62,16 +62,16 @@ template<typename T>
 class ChunkChain
 {
 public:
-    explicit ChunkChain() noexcept : first_(nullptr) {}
+    ChunkChain() noexcept : first_(nullptr) {}
     explicit ChunkChain(size_t size) noexcept :
         first_(Chunk<T>::create(size)) {}
-    explicit ChunkChain(ChunkChain&& other) noexcept :
+    ChunkChain(ChunkChain&& other) noexcept :
         first_(other.first_)
     {
         other.first_ = nullptr;
     }
 
-    ChunkChain<T>& operator=(ChunkChain&& other) noexcept
+    ChunkChain& operator=(ChunkChain&& other) noexcept
     {
         if (this != &other)
         {

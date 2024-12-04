@@ -5,12 +5,19 @@
 // #define NOMINMAX
 #include <windows.h>
 #include <conio.h>  // For getch on Windows
+#include <corecrt_io.h>
+#include <fcntl.h>
 
 namespace clarisma {
 
 void Console::init()
 {
-	hConsole_ = GetStdHandle(STD_ERROR_HANDLE);
+	// hConsole_ = GetStdHandle(STD_ERROR_HANDLE);
+	hConsole_ = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// setvbuf(stdout, nullptr, _IONBF, 0); // 64 * 1024);	// TODO
+	// setvbuf(stdout, nullptr, _IOFBF, 1024 * 1024);	// TODO
+	// _setmode(_fileno(stdout), _O_BINARY);
 
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	
@@ -18,7 +25,7 @@ void Console::init()
 	{
 		consoleWidth_ = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 	}
-		
+
 	DWORD consoleMode;
 	GetConsoleMode(hConsole_, &consoleMode);
 	prevConsoleMode_ = consoleMode;
@@ -50,7 +57,8 @@ void Console::restore()
 void Console::print(const char* s, size_t len)
 {
 	DWORD written;
-	WriteConsoleA(hConsole_, s, static_cast<DWORD>(len), &written, NULL);
+	// WriteConsoleA(hConsole_, s, static_cast<DWORD>(len), &written, NULL);
+	WriteFile(hConsole_, s, static_cast<DWORD>(len), &written, NULL);
 }
 
 char Console::readKeyPress()

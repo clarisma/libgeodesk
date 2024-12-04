@@ -10,6 +10,12 @@ namespace clarisma {
 class ChunkBuffer : public Buffer
 {
 public:
+    ChunkBuffer(size_t size) :
+        chain_(size)
+    {
+        useChunk(chain_.first());
+    }
+
     void filled(char* p) override
     {
         assert(p >= buf_);
@@ -19,9 +25,7 @@ public:
         chunk->trim(p_ - buf_);
         Chunk<char>* newChunk = Chunk<char>::create(capacity);
         chunk->setNext(newChunk);
-        buf_ = chunk->data();
-        p_ = buf_;
-        end_ = buf_ + capacity;
+        useChunk(newChunk);
     }
 
     void flush(char* p) override
@@ -33,6 +37,7 @@ public:
 
     ChunkChain<char> take()
     {
+        buf_ = p_ = end_ = nullptr;
         return std::move(chain_);
     }
 
@@ -40,10 +45,17 @@ public:
     {
         ChunkChain<char> old(std::move(chain_));
         chain_ = ChunkChain<char>(size);
+        useChunk(chain_.first());
         return std::move(old);
     }
 
-private:
+protected:
+    void useChunk(Chunk<char>* chunk)
+    {
+        buf_ = chunk->data();
+        p_ = buf_;
+        end_ = buf_ + chunk->size();
+    }
     ChunkChain<char> chain_;
 };
 

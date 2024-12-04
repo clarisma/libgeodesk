@@ -75,7 +75,7 @@ void ConsoleWriter::flush()
 				return;
 			}
 		}
-		writeConstString("\033[K");
+		writeConstString("\033[K");	// clear remainder of line
 	}
 	console_->print(data(), length());
 	clear();

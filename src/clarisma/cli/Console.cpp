@@ -212,6 +212,10 @@ char* Console::formatStatus(char* buf, int secs, int percentage, const char* tas
 
 void Console::setProgress(int percentage)
 {
+	if(consoleState_ == ConsoleState::OFF)	[[unlikely]]
+	{
+		return;
+	}
 	int oldPercentage = currentPercentage_.load(std::memory_order_relaxed);
 	if (percentage != oldPercentage)
 	{
