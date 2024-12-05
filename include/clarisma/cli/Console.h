@@ -14,6 +14,7 @@
 #else
 #include <termios.h>
 #endif
+#include <clarisma/io/File.h>
 #include <clarisma/text/Format.h>
 
 namespace clarisma {
@@ -49,6 +50,26 @@ private:
 class Console
 {
 public:
+	enum class Verbosity
+	{
+		SILENT,
+		QUIET,
+		NORMAL,
+		VERBOSE,
+		DEBUG
+	};
+
+	friend constexpr std::strong_ordering operator<=>(Verbosity lhs, Verbosity rhs) noexcept
+	{
+		return static_cast<int>(lhs) <=> static_cast<int>(rhs);
+	}
+
+	enum class Stream
+	{
+		STDOUT,
+		STDERR
+	};
+
 	enum ConsoleState
 	{
 		OFF,
@@ -66,8 +87,37 @@ public:
 	void init();
 	void restore();
 
-	bool hasColor() const noexcept { return hasColor_; }
-	void enableColor(bool b) noexcept { hasColor_ = b; }
+	static Verbosity verbosity()
+	{
+		return get()->verbosity_;
+	}
+
+	static void setVerbosity(Verbosity verbosity)
+	{
+		// TODO: Turn off output if silent?
+		get()->verbosity_ = verbosity;
+	}
+
+	static void setOutputFile(FileHandle handle)
+	{
+		Console* self = get();
+		// self->restoreStream(0);
+		self->handle_[0] = handle;
+		self->isTerminal_[0] = false;
+		self->hasColor_[0] = false;
+	}
+
+	bool hasColor(Stream stream) const noexcept
+	{
+		return hasColor_[static_cast<int>(stream)];
+	}
+
+	void enableColor(bool b) noexcept
+	{
+		hasColor_[0] = isTerminal_[0] & b;
+		hasColor_[1] = isTerminal_[1] & b;
+	}
+
 	std::chrono::time_point<std::chrono::steady_clock> startTime() const noexcept
 	{
 		return startTime_;
@@ -75,12 +125,16 @@ public:
 
 	void setState(ConsoleState state) { consoleState_ = state;}
 	void start(const char* task);
-	void end();
+
+	/// @brief Stops the progress display and returns a ConsoleWriter
+	/// to write to stderr.
+	///
+	static ConsoleWriter end();
 	void setTask(const char* task);
 	void setProgress(int percentage);
 	static void log(std::string_view msg);
-	ConsoleWriter success();
-	ConsoleWriter failed();
+	//ConsoleWriter success();
+	//ConsoleWriter failed();
 
 	template <size_t N>
 	void log(const char(&msg)[N])
@@ -132,7 +186,7 @@ public:
 
 	static Console* get() { return theConsole_; }
 
-	void print(const char* s, size_t len);
+	void print(Stream stream, const char* s, size_t len);
 
 	char readKeyPress();
 
@@ -162,13 +216,15 @@ private:
 	size_t printWithStatus(char* buf, char* p, std::chrono::steady_clock::duration elapsed,
 		int percentage = -1, const char* task = nullptr);
 	void displayTimer();
+	void initStream(int streamNo);
+	void restoreStream(int streamNo);
 
 	static Console* theConsole_;
+	FileHandle handle_[2];
 	#ifdef _WIN32
-	HANDLE hConsole_;
-	DWORD prevConsoleMode_;
+	DWORD prevConsoleMode_[2];
     #else
-    struct termios prevConsoleMode_;
+    struct termios prevConsoleMode_[2];
 	#endif
 	std::atomic<const char*> currentTask_ = "";
 	std::chrono::time_point<std::chrono::steady_clock> startTime_;
@@ -176,7 +232,9 @@ private:
 	std::atomic<int> currentPercentage_ = -1;
 	std::thread thread_;
 	int consoleWidth_ = 80;
-	bool hasColor_ = true;
+	bool isTerminal_[2];
+	bool hasColor_[2];
+	Verbosity verbosity_;
 
 	friend class ConsoleWriter;
 };

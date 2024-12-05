@@ -12,17 +12,13 @@ namespace geodesk {
 
 Query::Query(FeatureStore* store, const Box& box, FeatureTypes types,
     const MatcherHolder* matcher, const Filter* filter) :
-    store_(store),
-    types_(types),
-    matcher_(matcher),
-    filter_(filter),
+    QueryBase(store, box, types, matcher, filter, &Query::consumeResults),
+    completedTiles_(0),
+    queuedResults_(QueryResults::EMPTY),
     pendingTiles_(0),
     currentResults_(QueryResults::EMPTY),
     currentPos_(QueryResults::EMPTY->count),
-    allTilesRequested_(false),
-    tileIndexWalker_(store->tileIndex(), store->zoomLevels(), box, filter),
-    queuedResults_(QueryResults::EMPTY),
-    completedTiles_(0)
+    allTilesRequested_(false)
 {
     /*
     // Don't add refcount to store, wrapper object is responsible for liveness
@@ -202,6 +198,11 @@ FeaturePtr Query::next()
         DataPtr pTile = currentResults_->pTile;
         return FeaturePtr(pTile + item);
     }
+}
+
+void Query::consumeResults(QueryBase* query, QueryResults* res)
+{
+    reinterpret_cast<Query*>(query)->offer(res);
 }
 
 

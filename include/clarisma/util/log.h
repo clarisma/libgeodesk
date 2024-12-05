@@ -17,7 +17,7 @@ namespace clarisma {
 #define FORCE_LOG(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
 
 #ifndef NDEBUG
-#define LOGS ConsoleWriter().timestamp() << "  "
+#define LOGS ConsoleWriter().timestamp()
 #else
 #define LOGS if(false) ConsoleWriter().timestamp()
 #endif

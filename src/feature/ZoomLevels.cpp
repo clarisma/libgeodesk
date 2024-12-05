@@ -8,10 +8,12 @@ namespace geodesk {
 
 void ZoomLevels::check() const
 {
+    /*          // TODO: re-enable ???
     if (count() > 8)
     {
         throw clarisma::ValueException("Maximum 8 zoom levels");
     }
+    */
 
     if ((levels_ & 1) == 0)
     {

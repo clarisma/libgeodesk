@@ -32,10 +32,24 @@ static char* putString(char* p, const char(&s)[N])
 }
 
 Console::Console() :
-	consoleState_(ConsoleState::NORMAL)
+	consoleState_(ConsoleState::NORMAL),
+	verbosity_(Verbosity::NORMAL)
 {
 	init();
 	theConsole_ = this;
+}
+
+void Console::init()
+{
+	initStream(0);
+	initStream(1);
+}
+
+void Console::restore()
+{
+	// perform in reverse order vs. init
+	restoreStream(1);
+	restoreStream(0);
 }
 
 void Console::start(const char* task)
@@ -45,7 +59,7 @@ void Console::start(const char* task)
 	char buf[256];
 	char* p = formatStatus(buf, 0, 0, task);
 	assert(p-buf < sizeof(buf));
-	print(buf, p-buf);
+	print(Stream::STDERR, buf, p-buf);
 	consoleState_.store(ConsoleState::PROGRESS, std::memory_order_release);
 	thread_ = std::thread(&Console::displayTimer, this);
 }
@@ -63,7 +77,8 @@ void Console::start(const char* task)
 
 void Console::log(std::string_view msg)
 {
-	ConsoleWriter out(ConsoleWriter::LOGGED);
+	ConsoleWriter out;
+	out.timestamp();
 	out.writeString(msg);
 	out.writeByte('\n');
 	/*
@@ -127,7 +142,7 @@ char* Console::formatProgress(char* p, int percentage) const
 	int v1, v2, v3;
 	d = div(percentage, 10);
 	v3 = d.rem;
-	d = div(d.quot, 10);
+	d = div(d.quot, 10);		// TODO: not needed
 	v2 = d.rem;
 	v1 = d.quot;
 	*p++ = v1 ? ('0' + v1) : ' ';
@@ -212,16 +227,20 @@ char* Console::formatStatus(char* buf, int secs, int percentage, const char* tas
 
 void Console::setProgress(int percentage)
 {
+	if(consoleState_ == ConsoleState::OFF)	[[unlikely]]
+	{
+		return;
+	}
 	int oldPercentage = currentPercentage_.load(std::memory_order_relaxed);
 	if (percentage != oldPercentage)
 	{
 		currentPercentage_.store(percentage, std::memory_order_release);
 		char buf[256];
-		char* p = putString(buf, "\033[9C");
+		char* p = putString(buf, "\033[9C");	// move cursor 9 chars to right
 		p = formatProgress(p, percentage);
 		*p++ = '\r';
 		assert(p-buf < sizeof(buf));
-		print(buf, p-buf);
+		print(Stream::STDERR, buf, p-buf);
 	}
 }
 
@@ -233,7 +252,7 @@ size_t Console::printWithStatus(char* buf, char* p,
 	int secs = std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
 	const char* end = formatStatus(p, secs, percentage, task);
 	size_t size = end - buf;
-	print(buf, size);
+	print(Stream::STDERR, buf, size);
 	return size;
 }
 
@@ -245,7 +264,7 @@ void Console::setTask(const char* task)
 	char* p = putString(buf, "\033[40C");	// skip 40 chars
 	p = formatTask(p, task);
 	assert(p-buf < sizeof(buf));
-	print(buf, p-buf);
+	print(Stream::STDERR, buf, p-buf);
 }
 
 
@@ -314,16 +333,20 @@ ConsoleWriter Console::finish(TaskResult result)
 }
 */
 
-void Console::end()
+ConsoleWriter Console::end()
 {
-	consoleState_.store(ConsoleState::NORMAL, std::memory_order_release);
-	if(thread_.joinable()) thread_.detach();
+	Console* self = get();
+	self->consoleState_.store(ConsoleState::NORMAL, std::memory_order_release);
+	if(self->thread_.joinable()) self->thread_.detach();
+		// TODO: needed?
+	return ConsoleWriter(Stream::STDERR);
 }
 
+/*
 ConsoleWriter Console::success()
 {
 	end();
-	return ConsoleWriter(ConsoleWriter::SUCCESS);
+	return ConsoleWriter().success();
 }
 
 ConsoleWriter Console::failed()
@@ -331,6 +354,7 @@ ConsoleWriter Console::failed()
 	end();
 	return ConsoleWriter(ConsoleWriter::FAILED);
 }
+*/
 
 void Console::displayTimer()
 {
@@ -342,7 +366,7 @@ void Console::displayTimer()
 		int secs = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(elapsed).count());
 		char* p = Format::timer(buf, secs, -1);
 		*p++ = '\r';
-		print(buf, p-buf);
+		print(Stream::STDERR, buf, p-buf);
 		auto nextUpdate = time_point_cast<std::chrono::seconds>(now) + std::chrono::seconds(1);
 		std::this_thread::sleep_until(nextUpdate);
 	}

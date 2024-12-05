@@ -49,8 +49,10 @@ void CliApplication::shutdown(const char* msg)
 		Console::get()->setState(Console::ConsoleState::OFF);
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		{
-			ConsoleWriter out(ConsoleWriter::CANCELLED);
+			ConsoleWriter out(Console::Stream::STDERR);
+			out.failed();
 			out << msg << "\n";
+			out.flush(true);
 		}
 		Console::get()->restore();
 	}
@@ -77,7 +79,7 @@ CliApplication::~CliApplication()
 
 void CliApplication::fail(std::string msg)
 {
-	console_.failed().writeString(msg);
+	console_.end().failed().writeString(msg);
 }
 
 } // namespace clarisma

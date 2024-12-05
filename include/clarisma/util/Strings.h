@@ -42,6 +42,19 @@ namespace Strings
     {
         return hash(str.data(), str.length());
     }
+
+    inline std::string combine(const char* s1, const char* s2)
+    {
+        size_t len1 = std::strlen(s1);
+        size_t len2 = std::strlen(s2);
+
+        std::string result;
+        result.reserve(len1 + len2);
+        result.append(s1, len1);
+        result.append(s2, len2);
+
+        return result;
+    }
 }
 
 /**
