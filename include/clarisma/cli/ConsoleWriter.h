@@ -14,7 +14,7 @@ class ConsoleWriter : public AbstractStreamWriter<ConsoleWriter>
 public:
 	using AbstractStreamWriter::operator<<;
 
-	ConsoleWriter();
+	explicit ConsoleWriter(Console::Stream stream = Console::Stream::STDOUT);
 	ConsoleWriter(const ConsoleWriter&) = delete;
 
 	~ConsoleWriter()
@@ -30,7 +30,7 @@ public:
 	void flush(bool forceDisplay = false);
 	void color(int color);
 	void normal();
-	bool hasColor() const noexcept { return console_->hasColor(); }
+	bool hasColor() const noexcept { return hasColor_; }
 
 	ConsoleWriter& operator<<(const AnsiColor& color)
 	{
@@ -44,7 +44,8 @@ private:
 	DynamicStackBuffer<1024> buf_;
 	Console* console_;
 	uint16_t indent_;
-	// TODO: flags
+	uint8_t stream_;
+	bool hasColor_;
 	int timestampSeconds_;
 };
 

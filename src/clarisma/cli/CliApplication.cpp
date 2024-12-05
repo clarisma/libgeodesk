@@ -49,7 +49,8 @@ void CliApplication::shutdown(const char* msg)
 		Console::get()->setState(Console::ConsoleState::OFF);
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		{
-			ConsoleWriter out;
+			ConsoleWriter out(Console::Stream::STDERR);
+			out.failed();
 			out << msg << "\n";
 			out.flush(true);
 		}
