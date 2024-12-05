@@ -94,8 +94,16 @@ public:
 
 	static void setVerbosity(Verbosity verbosity)
 	{
-		// TODO: Turn off output if silent?
-		get()->verbosity_ = verbosity;
+		Console* self = get();
+		self->verbosity_ = verbosity;
+		self->showProgress_ = (verbosity > Verbosity::QUIET) & self->showProgress_;
+		if(verbosity == Verbosity::SILENT) self->consoleState_ = OFF;
+	}
+
+	static FileHandle handle(Stream stream)
+	{
+		Console* self = get();
+		return self->handle_[static_cast<int>(stream)];
 	}
 
 	static void setOutputFile(FileHandle handle)
@@ -105,6 +113,11 @@ public:
 		self->handle_[0] = handle;
 		self->isTerminal_[0] = false;
 		self->hasColor_[0] = false;
+	}
+
+	bool isTerminal(Stream stream) const noexcept
+	{
+		return isTerminal_[static_cast<int>(stream)];
 	}
 
 	bool hasColor(Stream stream) const noexcept
@@ -234,6 +247,7 @@ private:
 	int consoleWidth_ = 80;
 	bool isTerminal_[2];
 	bool hasColor_[2];
+	bool showProgress_;
 	Verbosity verbosity_;
 
 	friend class ConsoleWriter;

@@ -43,8 +43,9 @@ public:
 private:
 	DynamicStackBuffer<1024> buf_;
 	Console* console_;
-	uint16_t indent_;
+	// uint16_t indent_;
 	uint8_t stream_;
+	bool isTerminal_;
 	bool hasColor_;
 	int timestampSeconds_;
 };

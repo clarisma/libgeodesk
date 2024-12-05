@@ -45,14 +45,14 @@ void CliApplication::shutdown(const char* msg)
 		//  may be in the process of being destroyed
 		//  Safer: remove the handler once CliApplication
 		//  destructor has been called
-		Console::get()->end();
+		Console::end();
 		Console::get()->setState(Console::ConsoleState::OFF);
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		{
 			ConsoleWriter out(Console::Stream::STDERR);
 			out.failed();
 			out << msg << "\n";
-			out.flush(true);
+			out.flush(Console::verbosity() != Console::Verbosity::SILENT);
 		}
 		Console::get()->restore();
 	}

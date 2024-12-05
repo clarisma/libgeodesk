@@ -8,8 +8,9 @@ namespace clarisma {
 
 ConsoleWriter::ConsoleWriter(Console::Stream stream) :
 	console_(Console::get()),
-	indent_(0),
+	// indent_(0),
 	stream_(static_cast<uint8_t>(stream)),
+	isTerminal_(console_->isTerminal(stream)),
 	hasColor_(console_->hasColor(stream)),
 	timestampSeconds_(-1)
 {
@@ -62,7 +63,7 @@ void ConsoleWriter::flush(bool forceDisplay)
 ConsoleWriter& ConsoleWriter::timestamp()
 {
 	ensureCapacityUnsafe(64);
-	putStringUnsafe("\033[2K");	// clear current line
+	if(isTerminal_) putStringUnsafe("\033[2K");	// clear current line
 	auto elapsed = std::chrono::steady_clock::now() - console_->startTime();
 	int ms = static_cast<int>(
 		std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
@@ -82,14 +83,14 @@ ConsoleWriter& ConsoleWriter::timestamp()
 		writeConstString("  ");
 	}
 	timestampSeconds_ = s;
-	indent_ = 14;
+	// indent_ = 14;
 	return *this;
 }
 
 ConsoleWriter& ConsoleWriter::success()
 {
 	ensureCapacityUnsafe(64);
-	putStringUnsafe("\033[2K");	// clear current line
+	if(isTerminal_) putStringUnsafe("\033[2K");	// clear current line
 	if(hasColor()) putStringUnsafe("\033[97;48;5;28m");
 		// Or use 64 for apple green
 	auto elapsed = std::chrono::steady_clock::now() - console_->startTime();
@@ -109,7 +110,7 @@ ConsoleWriter& ConsoleWriter::success()
 ConsoleWriter& ConsoleWriter::failed()
 {
 	ensureCapacityUnsafe(64);
-	putStringUnsafe("\r\033[2K");	// clear current line
+	if(isTerminal_) putStringUnsafe("\r\033[2K");	// clear current line
 	if(hasColor())
 	{
 		putStringUnsafe("\033[38;5;9m ─────── \033[0m");
@@ -124,7 +125,7 @@ ConsoleWriter& ConsoleWriter::failed()
 ConsoleWriter& ConsoleWriter::arrow()
 {
 	ensureCapacityUnsafe(64);
-	putStringUnsafe("\033[2K");	// clear current line
+	if(isTerminal_) putStringUnsafe("\033[2K");	// clear current line
 	if(hasColor())
 	{
 		putStringUnsafe("\033[38;5;148m ──────▶ \033[0m");

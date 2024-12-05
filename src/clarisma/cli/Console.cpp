@@ -33,6 +33,7 @@ static char* putString(char* p, const char(&s)[N])
 
 Console::Console() :
 	consoleState_(ConsoleState::NORMAL),
+	showProgress_(true),
 	verbosity_(Verbosity::NORMAL)
 {
 	init();
@@ -43,6 +44,7 @@ void Console::init()
 {
 	initStream(0);
 	initStream(1);
+	showProgress_ = isTerminal_[1];
 }
 
 void Console::restore()
@@ -56,12 +58,15 @@ void Console::start(const char* task)
 {
 	startTime_ = std::chrono::steady_clock::now();
 	currentPercentage_.store(0, std::memory_order_release);
-	char buf[256];
-	char* p = formatStatus(buf, 0, 0, task);
-	assert(p-buf < sizeof(buf));
-	print(Stream::STDERR, buf, p-buf);
-	consoleState_.store(ConsoleState::PROGRESS, std::memory_order_release);
-	thread_ = std::thread(&Console::displayTimer, this);
+	if(showProgress_)
+	{
+		char buf[256];
+		char* p = formatStatus(buf, 0, 0, task);
+		assert(p-buf < sizeof(buf));
+		print(Stream::STDERR, buf, p-buf);
+		consoleState_.store(ConsoleState::PROGRESS, std::memory_order_release);
+		thread_ = std::thread(&Console::displayTimer, this);
+	}
 }
 
 // TODO: This suffers from a (benign) race condition where the output
@@ -81,40 +86,8 @@ void Console::log(std::string_view msg)
 	out.timestamp();
 	out.writeString(msg);
 	out.writeByte('\n');
-	/*
-	auto elapsed = std::chrono::steady_clock::now() - startTime_;
-	char buf[1024];
-	int ms = static_cast<int>(
-		std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
-	div_t d;
-	d = div(ms, 1000);
-	int s = d.quot;
-	ms = d.rem;
-
-	char* p = putString(buf, "\u001b[38;5;242m");
-	p = Format::timer(p, s, ms);
-	p = putString(p, "\u001b[0m");
-	size_t maxTextLen = consoleWidth_ - 15;
-	memset(p, ' ', maxTextLen + 2);
-	p += 2;
-	size_t actualTextLen = std::min(msg.length(), maxTextLen);
-	memcpy(p, msg.data(), actualTextLen);
-	p += maxTextLen;
-	*p++ = '\n';
-	int percentage = currentPercentage_.load(std::memory_order_acquire);
-	const char* task = currentTask_.load(std::memory_order_acquire);
-	size_t bytesPrinted = printWithStatus(buf, p, elapsed, percentage, task);
-	assert(bytesPrinted < sizeof(buf));
-	*/
 }
 
-/*
-ConsoleWriter Console::log()
-{
-	ConsoleWriter out(ConsoleWriter::LOGGED);
-	return out;
-}
-*/
 
 const char* Console::BLOCK_CHARS_UTF8 = (const char*)
 	u8"\U00002588"	// full block
@@ -134,10 +107,11 @@ const char* Console::BLOCK_CHARS_UTF8 = (const char*)
 ///		left vertical bar)
 char* Console::formatProgress(char* p, int percentage) const
 {
+	bool hasColor = hasColor_[1];
 	// Progress percentage
 
-	// if(hasColor_) p = putString(p, "\033[33m");
-	if(hasColor_) p = putString(p, "\033[38;5;172m");	// 70
+	// if(hasColor) p = putString(p, "\033[33m");
+	if(hasColor) p = putString(p, "\033[38;5;172m");	// 70
 	div_t d;
 	int v1, v2, v3;
 	d = div(percentage, 10);
@@ -153,8 +127,8 @@ char* Console::formatProgress(char* p, int percentage) const
 	// Progress bar
 
 	*p++ = ' ';
-	// if(hasColor_) p = putString(p, "\033[33;100m");
-	if(hasColor_) p = putString(p, "\033[38;5;172;48;5;236m");
+	// if(hasColor) p = putString(p, "\033[33;100m");
+	if(hasColor) p = putString(p, "\033[38;5;172;48;5;236m");
 		// 28 is slightly more saturated
 	int fullBlocks = percentage / 4;
 	char* pEnd = p + fullBlocks * 3;
@@ -184,7 +158,7 @@ char* Console::formatProgress(char* p, int percentage) const
 	{
 		*p++ = ' ';
 	}
-	if(hasColor_)
+	if(hasColor)
 	{
 		p = putString(p, "\033[0m ");
 	}
@@ -227,7 +201,7 @@ char* Console::formatStatus(char* buf, int secs, int percentage, const char* tas
 
 void Console::setProgress(int percentage)
 {
-	if(consoleState_ == ConsoleState::OFF)	[[unlikely]]
+	if(consoleState_ < ConsoleState::PROGRESS)	[[unlikely]]
 	{
 		return;
 	}
@@ -259,6 +233,10 @@ size_t Console::printWithStatus(char* buf, char* p,
 
 void Console::setTask(const char* task)
 {
+	if(consoleState_ < ConsoleState::PROGRESS)	[[unlikely]]
+	{
+		return;
+	}
 	currentTask_.store(task, std::memory_order_release);
 	char buf[256];
 	char* p = putString(buf, "\033[40C");	// skip 40 chars
@@ -289,50 +267,6 @@ void Console::debug(const char* format, ...)
 }
 
 
-/*
-ConsoleWriter Console::finish(TaskResult result)
-{
-	ConsoleWriter out;
-
-	consoleState_.store(ConsoleState::NORMAL, std::memory_order_release);
-	if(thread_.joinable()) thread_.detach();
-
-	char buf[1024];
-	char* p = buf;
-
-	switch(result)
-	{
-	case TaskResult::NONE:
-		// TODO
-		break;
-	case TaskResult::SUCCESS:
-	{
-		if(hasColor_) p = putString(buf, "\033[97;48;5;64m");
-		auto elapsed = std::chrono::steady_clock::now() - startTime_;
-		int secs = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(elapsed).count());
-		p = Format::timer(p, secs, -1);
-		break;
-	}
-	case TaskResult::FAILED:
-		if(hasColor_) p = putString(buf, "\033[38;5;15m\033[48;5;160m");
-		p = putString(buf, " FAILED ");
-		break;
-	case TaskResult::CANCELLED:
-		if(hasColor_) p = putString(buf, "\033[38;5;9m");
-		p = putString(buf, " ────── ");
-		break;
-	}
-	if(hasColor_) p = putString(p, "\033[0m");
-	p = putString(p, "  ");
-	size_t maxMsgChars = consoleWidth_ - 10;
-	size_t msgLen = std::min(maxMsgChars, msg.size());
-	memcpy(p, msg.data(), msgLen);
-	p = putString(p + msgLen, "\033[K\n");	// clear rest of line and newline
-	assert(p-buf < sizeof(buf));
-	print(buf, p-buf);
-}
-*/
-
 ConsoleWriter Console::end()
 {
 	Console* self = get();
@@ -342,19 +276,6 @@ ConsoleWriter Console::end()
 	return ConsoleWriter(Stream::STDERR);
 }
 
-/*
-ConsoleWriter Console::success()
-{
-	end();
-	return ConsoleWriter().success();
-}
-
-ConsoleWriter Console::failed()
-{
-	end();
-	return ConsoleWriter(ConsoleWriter::FAILED);
-}
-*/
 
 void Console::displayTimer()
 {
