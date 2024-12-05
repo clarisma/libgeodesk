@@ -15,6 +15,7 @@ public:
     /// @brief Returns the extension of the given filename (as pointer to ".ext"),
     /// or an empty string if the filename does not have an extension.
     ///
+    /// TODO: Fix, assumes null-terminated string!
     static const char* extension(const char* path, size_t len);
     static const char* extension(const char* path)
     {
