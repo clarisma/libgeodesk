@@ -103,8 +103,7 @@ bool ConnectedFilter::acceptNode(NodePtr node) const
 
 bool ConnectedFilter::acceptAreaRelation(FeatureStore* store, RelationPtr relation) const
 {
-	RecursionGuard guard(relation);
-	return acceptMembers(store, relation, guard);
+	return acceptMembers(store, relation, nullptr);
 }
 
 

@@ -63,7 +63,7 @@ bool IntersectsPolygonFilter::acceptAreaRelation(FeatureStore* store, RelationPt
 {
 	// TODO: check ways only
 	RecursionGuard guard(relation);
-	if (acceptMembers(store, relation, guard)) return true;
+	if (acceptMembers(store, relation, nullptr)) return true;
 	
 	// If candidate does not lie inside test (multi)polygon, and none
 	// of their boundaries cross, check if the candidate contains any
@@ -106,8 +106,7 @@ bool IntersectsLinealFilter::acceptNode(NodePtr node) const
 bool IntersectsLinealFilter::acceptAreaRelation(FeatureStore* store, RelationPtr relation) const
 {
 	// TODO: check ways only
-	RecursionGuard guard(relation);
-	if (acceptMembers(store, relation, guard)) return true;
+	if (acceptMembers(store, relation, nullptr)) return true;
 	
 	const StoredRelation storedRel{ store, relation };
 	return index_.findChains(relation.bounds(), 
