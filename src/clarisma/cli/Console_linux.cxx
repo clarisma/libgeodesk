@@ -10,11 +10,36 @@
 
 namespace clarisma {
 
-void Console::init()
+void Console::initStream(int streamNo)
 {
+    if(stdinInitialized_)
+    {
+        struct termios newConsoleMode;
+        // Get the current terminal settings
+        tcgetattr(STDIN_FILENO, &prevConsoleMode_);
+        newConsoleMode = prevConsoleMode_;
+
+        // Disable canonical mode (buffered input) and echoing
+        newConsoleMode.c_lflag &= ~(ICANON | ECHO);
+
+        // Set the new terminal settings
+        tcsetattr(STDIN_FILENO, TCSANOW, &newConsoleMode);
+        stdinInitialized_ = true;
+    }
+
+    FileHandle handle = (streamNo==0) ? STDOUT_FILENO : STDERR_FILENO;
+    handle_[streamNo] = handle;
+    isTerminal_[streamNo] = isatty(handle);
+    if(!isTerminal_[streamNo])
+    {
+        hasColor_[streamNo] = false;
+        return; // No further init
+    }
+    hasColor_[streamNo] = true;
+
     // Get console width
     struct winsize w;
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) 
+    if (ioctl(handle, TIOCGWINSZ, &w) == 0)
     {
         if(w.ws_col != 0) consoleWidth_ = w.ws_col;
     }
@@ -24,33 +49,30 @@ void Console::init()
     // settings should be managed by the terminal emulator settings.
 
     // Hide the cursor via ANSI control code
-    std::cout << "\033[?25l" << std::flush;
-
-    struct termios newConsoleMode;
-    // Get the current terminal settings
-    tcgetattr(STDIN_FILENO, &prevConsoleMode_);
-    newConsoleMode = prevConsoleMode_;
-
-    // Disable canonical mode (buffered input) and echoing
-    newConsoleMode.c_lflag &= ~(ICANON | ECHO);
-
-    // Set the new terminal settings
-    tcsetattr(STDIN_FILENO, TCSANOW, &newConsoleMode);
+    // std::cout << "\033[?25l" << std::flush;
+    write(handle, "\033[?25l", 6);
 }
 
-void Console::restore()
+void Console::restoreStream(int streamNo)
 {
-    // Restore the old terminal settings
-    tcsetattr(STDIN_FILENO, TCSANOW, &prevConsoleMode_);
+    if(stdinInitialized_)
+    {
+        tcsetattr(STDIN_FILENO, TCSANOW, &prevConsoleMode_);
+        stdinInitialized_ = false;
+    }
+
+    if(!isTerminal_[streamNo]) return;
 
     // Re-enable the cursor via ANSI control code
-    std::cout << "\033[?25h" << std::flush;
+    // std::cout << "\033[?25h" << std::flush;
+    write(handle, "\033[?25h", 6);
 }
 
-void Console::print(const char* s, size_t len)
+void Console::print(Stream stream, const char* s, size_t len)
 {
+    int streamNo = static_cast<int>(stream);
     // Directly write to STDOUT_FILENO
-    write(STDOUT_FILENO, s, len);
+    write(handle_[streamNo], s, len);
 }
 
 char Console::readKeyPress()

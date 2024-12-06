@@ -37,6 +37,7 @@ void ConsoleWriter::flush(bool forceDisplay)
 		if(console_->consoleState_ == Console::ConsoleState::PROGRESS)
 		{
 			ensureCapacityUnsafe(256);
+			if(peekLastChar() != '\n') *p_++ = '\n';
 			if(timestampSeconds_ < 0)
 			{
 				auto elapsed = std::chrono::steady_clock::now() - console_->startTime();
@@ -52,12 +53,21 @@ void ConsoleWriter::flush(bool forceDisplay)
 			{
 				if(!forceDisplay) return;
 			}
-			writeConstString("\033[K");	// clear remainder of line
-			// TODO: needed? Why not clear start of line?
+			if(peekLastChar() != '\n') writeByte('\n');
 		}
 	}
 	console_->print(static_cast<Console::Stream>(stream_), data(), length());
 	clear();
+}
+
+ConsoleWriter& ConsoleWriter::clear()
+{
+	if(isTerminal_)
+	{
+		ensureCapacityUnsafe(8);
+		putStringUnsafe("\033[2K");	// clear current line
+	}
+	return *this;
 }
 
 ConsoleWriter& ConsoleWriter::timestamp()

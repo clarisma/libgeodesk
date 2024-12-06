@@ -85,7 +85,7 @@ public:
     ChunkChain(const ChunkChain&) = delete;
     ChunkChain& operator=(const ChunkChain&) = delete;
 
-
+    bool isEmpty() const noexcept { return first_ == nullptr; }
     Chunk<T>* first() const { return first_; }
 
 private:

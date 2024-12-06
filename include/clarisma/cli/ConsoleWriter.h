@@ -22,6 +22,7 @@ public:
 		if(length()) flush();
 	}
 
+	ConsoleWriter& clear();
 	ConsoleWriter& timestamp();
 	ConsoleWriter& success();
 	ConsoleWriter& failed();

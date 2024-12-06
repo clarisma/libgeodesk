@@ -98,6 +98,12 @@ public:
 	}
 	*/
 
+	char peekLastChar() const noexcept
+	{
+		if(p_ == buf_->start()) return 0;
+		return *(p_ - 1);
+	}
+
 	// TODO: Only works if len will fit into a flushed/resized buffer
 	void ensureCapacityUnsafe(size_t len)
 	{

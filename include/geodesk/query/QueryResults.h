@@ -44,7 +44,7 @@ struct QueryResults : public QueryResultsHeader
 
         FeaturePtr operator*() const
         {
-            return { pTile_ + *p_ };
+            return FeaturePtr(pTile_ + *p_);
         }
 
         Iterator& operator++()

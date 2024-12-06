@@ -238,6 +238,7 @@ private:
 	DWORD prevConsoleMode_[2];
     #else
     struct termios prevConsoleMode_[2];
+	bool stdinInitialized_ = false;
 	#endif
 	std::atomic<const char*> currentTask_ = "";
 	std::chrono::time_point<std::chrono::steady_clock> startTime_;
