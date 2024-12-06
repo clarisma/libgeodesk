@@ -213,4 +213,33 @@ void File::rename(const char* from, const char* to)
     if(std::rename(from, to) != 0) IOException::checkAndThrow();
 }
 
+std::string File::path(int handle)
+{
+#if defined(__linux__)
+    // Linux implementation
+    char buf[PATH_MAX];
+    std::string fdPath = "/proc/self/fd/" + std::to_string(handle);
+    ssize_t res = readlink(fdPath.c_str(), buf, PATH_MAX - 1);
+    if (res == -1)
+    {
+        IOException::checkAndThrow();
+        return "";
+    }
+    buf[res] = '\0'; // Null-terminate the result
+    return std::string(buf);
+#elif defined(__APPLE__)
+    // macOS implementation
+    char buf[PATH_MAX];
+    if (fcntl(handle, F_GETPATH, buf) == -1)
+    {
+        IOException::checkAndThrow();
+        return "";
+    }
+    return std::string(buf);
+#else
+    #error "Unsupported platform for File::path implementation"
+#endif
+    }
+
+
 } // namespace clarisma

@@ -12,12 +12,13 @@ namespace clarisma {
 
 void Console::initStream(int streamNo)
 {
-    if(stdinInitialized_)
+    if(!stdinInitialized_)
     {
         struct termios newConsoleMode;
         // Get the current terminal settings
-        tcgetattr(STDIN_FILENO, &prevConsoleMode_);
-        newConsoleMode = prevConsoleMode_;
+        tcgetattr(STDIN_FILENO, &prevConsoleMode_[0]);
+        newConsoleMode = prevConsoleMode_[0];
+            // always use stream 0
 
         // Disable canonical mode (buffered input) and echoing
         newConsoleMode.c_lflag &= ~(ICANON | ECHO);
@@ -57,7 +58,8 @@ void Console::restoreStream(int streamNo)
 {
     if(stdinInitialized_)
     {
-        tcsetattr(STDIN_FILENO, TCSANOW, &prevConsoleMode_);
+        tcsetattr(STDIN_FILENO, TCSANOW, &prevConsoleMode_[0]);
+            // always use stream 0
         stdinInitialized_ = false;
     }
 
@@ -65,7 +67,7 @@ void Console::restoreStream(int streamNo)
 
     // Re-enable the cursor via ANSI control code
     // std::cout << "\033[?25h" << std::flush;
-    write(handle, "\033[?25h", 6);
+    write(handle_[streamNo], "\033[?25h", 6);
 }
 
 void Console::print(Stream stream, const char* s, size_t len)

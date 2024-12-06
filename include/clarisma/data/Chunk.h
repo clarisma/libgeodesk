@@ -3,6 +3,9 @@
 
 #pragma once
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <new>
 
 namespace clarisma {
