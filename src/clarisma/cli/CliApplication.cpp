@@ -13,16 +13,9 @@ BOOL WINAPI consoleHandler(DWORD signal)
 {
 	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT)
 	{
-		CliApplication* theApp = CliApplication::get();
-		if(theApp)
-		{
-			// TODO: This could still race, as the Console
-			//  may be in the process of being destroyed
-			//  Safer: remove the handler once CliApplication
-			//  destructor has been called
-			CliApplication::get()->fail("Cancelled.\n");
-			Console::get()->restore();
-		}
+		CliApplication::shutdown("Cancelled.");
+		// Unregister the handler to avoid further signals during cleanup
+		SetConsoleCtrlHandler(consoleHandler, FALSE);
 	}
 	return FALSE;
 }
@@ -31,20 +24,39 @@ BOOL WINAPI consoleHandler(DWORD signal)
 
 void signalHandler(int signal)
 {
-    CliApplication* theApp = CliApplication::get();
-    if(theApp)
-    {
-        // TODO: This could still race, as the Console
-        //  may be in the process of being destroyed
-        //  Safer: remove the handler once CliApplication
-        //  destructor has been called
-        CliApplication::get()->fail("Cancelled.\n");
-        Console::get()->restore();
-    }
+    CliApplication::shutdown("Cancelled.");
     std::exit(128 + signal);
 }
 
 #endif
+
+void terminateHandler()
+{
+	CliApplication::shutdown("Abnormal termination.");
+	std::abort();
+}
+
+void CliApplication::shutdown(const char* msg)
+{
+	CliApplication* theApp = get();
+	if(theApp)
+	{
+		// TODO: This could still race, as the Console
+		//  may be in the process of being destroyed
+		//  Safer: remove the handler once CliApplication
+		//  destructor has been called
+		Console::end();
+		Console::get()->setState(Console::ConsoleState::OFF);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		{
+			ConsoleWriter out(Console::Stream::STDERR);
+			out.failed();
+			out << msg << "\n";
+			out.flush(Console::verbosity() != Console::Verbosity::SILENT);
+		}
+		Console::get()->restore();
+	}
+}
 
 CliApplication* CliApplication::theApp_ = nullptr;
 
@@ -57,6 +69,7 @@ CliApplication::CliApplication()
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 	#endif
+	std::set_terminate(terminateHandler);
 }
 
 CliApplication::~CliApplication()
@@ -66,7 +79,7 @@ CliApplication::~CliApplication()
 
 void CliApplication::fail(std::string msg)
 {
-	console_.failed().writeString(msg);
+	console_.end().failed().writeString(msg);
 }
 
 } // namespace clarisma

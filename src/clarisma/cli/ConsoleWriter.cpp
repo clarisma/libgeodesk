@@ -6,30 +6,15 @@
 
 namespace clarisma {
 
-ConsoleWriter::ConsoleWriter(int mode) :
+ConsoleWriter::ConsoleWriter(Console::Stream stream) :
 	console_(Console::get()),
-	indent_(0),
+	// indent_(0),
+	stream_(static_cast<uint8_t>(stream)),
+	isTerminal_(console_->isTerminal(stream)),
+	hasColor_(console_->hasColor(stream)),
 	timestampSeconds_(-1)
 {
 	setBuffer(&buf_);
-	switch(mode)
-	{
-	case NONE:
-		break;
-	case SUCCESS:
-		success();
-		break;
-	case FAILED:
-		failed();
-		break;
-	case LOGGED:
-		timestamp();
-		writeConstString("  ");
-		break;
-	case PROMPT:
-		prompt();
-		break;
-	}
 }
 
 void ConsoleWriter::color(int color)
@@ -45,32 +30,50 @@ void ConsoleWriter::normal()
 }
 
 
-void ConsoleWriter::flush()
+void ConsoleWriter::flush(bool forceDisplay)
 {
-	if(console_->consoleState_ == Console::ConsoleState::PROGRESS)
+	if(console_->isTerminal_[stream_])
 	{
-		ensureCapacityUnsafe(256);
-		if(timestampSeconds_ < 0)
+		if(console_->consoleState_ == Console::ConsoleState::PROGRESS)
 		{
-			auto elapsed = std::chrono::steady_clock::now() - console_->startTime();
-			timestampSeconds_ = static_cast<int>(
-				std::chrono::duration_cast<std::chrono::seconds>(elapsed).count());
+			ensureCapacityUnsafe(256);
+			if(peekLastChar() != '\n') *p_++ = '\n';
+			if(timestampSeconds_ < 0)
+			{
+				auto elapsed = std::chrono::steady_clock::now() - console_->startTime();
+				timestampSeconds_ = static_cast<int>(
+					std::chrono::duration_cast<std::chrono::seconds>(elapsed).count());
+			}
+			p_ = console_->formatStatus(p_, timestampSeconds_,
+				console_->currentPercentage_, console_->currentTask_);
 		}
-		p_ = console_->formatStatus(p_, timestampSeconds_,
-			console_->currentPercentage_, console_->currentTask_);
+		else
+		{
+			if(console_->consoleState_ == Console::ConsoleState::OFF) [[unlikely]]
+			{
+				if(!forceDisplay) return;
+			}
+			if(peekLastChar() != '\n') writeByte('\n');
+		}
 	}
-	else
-	{
-		writeConstString("\033[K");
-	}
-	console_->print(data(), length());
+	console_->print(static_cast<Console::Stream>(stream_), data(), length());
 	clear();
+}
+
+ConsoleWriter& ConsoleWriter::clear()
+{
+	if(isTerminal_)
+	{
+		ensureCapacityUnsafe(8);
+		putStringUnsafe("\033[2K");	// clear current line
+	}
+	return *this;
 }
 
 ConsoleWriter& ConsoleWriter::timestamp()
 {
 	ensureCapacityUnsafe(64);
-	putStringUnsafe("\033[2K");	// clear current line
+	if(isTerminal_) putStringUnsafe("\033[2K");	// clear current line
 	auto elapsed = std::chrono::steady_clock::now() - console_->startTime();
 	int ms = static_cast<int>(
 		std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
@@ -79,26 +82,31 @@ ConsoleWriter& ConsoleWriter::timestamp()
 	int s = d.quot;
 	ms = d.rem;
 
-	bool color = console_->hasColor();
-	if(color) writeConstString("\033[38;5;242m");
+	if(hasColor()) writeConstString("\033[38;5;242m");
 	p_ = Format::timer(p_, s, ms);
-	if(color) writeConstString("\033[0m");
+	if(hasColor())
+	{
+		writeConstString("\033[0m  ");
+	}
+	else
+	{
+		writeConstString("  ");
+	}
 	timestampSeconds_ = s;
-	indent_ = 14;
+	// indent_ = 14;
 	return *this;
 }
 
-void ConsoleWriter::success()
+ConsoleWriter& ConsoleWriter::success()
 {
-	bool color = console_->hasColor();
 	ensureCapacityUnsafe(64);
-	putStringUnsafe("\033[2K");	// clear current line
-	if(color) putStringUnsafe("\033[97;48;5;28m");
+	if(isTerminal_) putStringUnsafe("\033[2K");	// clear current line
+	if(hasColor()) putStringUnsafe("\033[97;48;5;28m");
 		// Or use 64 for apple green
 	auto elapsed = std::chrono::steady_clock::now() - console_->startTime();
 	int secs = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(elapsed).count());
 	p_ = Format::timer(p_, secs, -1);
-	if(color)
+	if(hasColor())
 	{
 		putStringUnsafe("\033[0m ");
 	}
@@ -106,13 +114,14 @@ void ConsoleWriter::success()
 	{
 		putStringUnsafe(" ");
 	}
+	return *this;
 }
 
-void ConsoleWriter::failed()
+ConsoleWriter& ConsoleWriter::failed()
 {
 	ensureCapacityUnsafe(64);
-	putStringUnsafe("\r\033[2K");	// clear current line
-	if(console_->hasColor())
+	if(isTerminal_) putStringUnsafe("\r\033[2K");	// clear current line
+	if(hasColor())
 	{
 		putStringUnsafe("\033[38;5;9m ─────── \033[0m");
 	}
@@ -120,13 +129,14 @@ void ConsoleWriter::failed()
 	{
 		putStringUnsafe(" ------- ");
 	}
+	return *this;
 }
 
-void ConsoleWriter::prompt()
+ConsoleWriter& ConsoleWriter::arrow()
 {
 	ensureCapacityUnsafe(64);
-	putStringUnsafe("\033[2K");	// clear current line
-	if(console_->hasColor())
+	if(isTerminal_) putStringUnsafe("\033[2K");	// clear current line
+	if(hasColor())
 	{
 		putStringUnsafe("\033[38;5;148m ──────▶ \033[0m");
 	}
@@ -134,12 +144,14 @@ void ConsoleWriter::prompt()
 	{
 		putStringUnsafe(" ------> ");
 	}
+	return *this;
 }
 
+// TODO: How does this work for silent mode?
 int ConsoleWriter::prompt(bool defaultYes)
 {
 	ensureCapacityUnsafe(64);
-	if(console_->hasColor())
+	if(hasColor())
 	{
 		if(defaultYes)
 		{
@@ -183,7 +195,7 @@ int ConsoleWriter::prompt(bool defaultYes)
 			break;
 		}
 	}
-	console_->print("\r\033[2K", 5);
+	console_->print(Console::Stream::STDERR, "\r\033[2K", 5);
 	return res;
 }
 

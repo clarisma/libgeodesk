@@ -86,7 +86,7 @@ void WktWriter::writeCollectionRelationGeometry(FeatureStore* store, RelationPtr
 
 void WktWriter::writeFeature(FeatureStore* store, FeaturePtr feature)
 {
-	if (!firstFeature_) writeConstString(", ");
+	if (!firstFeature_) writeConstString(",");
 	writeFeatureGeometry(store, feature); 
 	firstFeature_ = false;
 }

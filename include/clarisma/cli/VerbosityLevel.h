@@ -5,6 +5,7 @@
 
 namespace clarisma {
 
+// TODO: remove
 enum class VerbosityLevel
 {
     SILENT,

@@ -17,6 +17,10 @@ public:
 
     explicit ValueException(const std::string& message)
         : std::runtime_error(message) {}
+
+    template <typename... Args>
+    explicit ValueException(const char* message, Args... args)
+        : std::runtime_error(Format::format(message, args...)) {}
 };
 
 

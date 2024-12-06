@@ -9,7 +9,7 @@
 
 namespace geodesk {
 
-class Query;
+class QueryBase;
 struct QueryResults;
 
 /// \cond lowlevel
@@ -44,7 +44,7 @@ struct QueryResults : public QueryResultsHeader
 
         FeaturePtr operator*() const
         {
-            return { pTile_ + *p_ };
+            return FeaturePtr(pTile_ + *p_);
         }
 
         Iterator& operator++()
@@ -81,7 +81,7 @@ struct QueryResults : public QueryResultsHeader
     uint32_t items[DEFAULT_BUCKET_SIZE];
 };
 
-using QueryResultsConsumer = void(*)(Query* query, QueryResults*);
+using QueryResultsConsumer = void(*)(QueryBase* query, QueryResults*);
 
 // \endcond
 

@@ -19,7 +19,7 @@ public:
     SpatialFilter() :
         Filter(FilterFlags::USES_BBOX, FeatureTypes::ALL),
         bounds_(Box::ofWorld()) {}
-    SpatialFilter(const Box& bounds) :
+    explicit SpatialFilter(const Box& bounds) :
         Filter(FilterFlags::USES_BBOX, FeatureTypes::ALL),
         bounds_(bounds) {}
     SpatialFilter(int flags, FeatureTypes acceptedTypes, const Box& bounds) :
@@ -34,7 +34,7 @@ protected:
     virtual bool acceptWay(WayPtr way) const { return false; }
     virtual bool acceptNode(NodePtr node) const { return false; }
     virtual bool acceptAreaRelation(FeatureStore* store, RelationPtr relation) const { return false; }
-    virtual bool acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard& guard) const;
+    virtual bool acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const;
     Box bounds_;
 };
 

@@ -11,7 +11,7 @@
 
 namespace geodesk {
 
-class Query;
+class QueryBase;
 
 /// \cond lowlevel
 ///
@@ -23,7 +23,7 @@ class Query;
 class TileQueryTask
 {
 public:
-    TileQueryTask(Query* query, uint32_t tipAndFlags, FastFilterHint fastFilterHint) :
+    TileQueryTask(QueryBase* query, uint32_t tipAndFlags, FastFilterHint fastFilterHint) :
         query_(query),
         tipAndFlags_(tipAndFlags),
         fastFilterHint_(fastFilterHint),     
@@ -45,7 +45,7 @@ private:
     void searchLeaf(DataPtr p);
     void addResult(uint32_t item);
 
-    Query* query_;
+    QueryBase* query_;
     uint32_t tipAndFlags_;
     FastFilterHint fastFilterHint_;
     DataPtr pTile_;

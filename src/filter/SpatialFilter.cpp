@@ -16,11 +16,11 @@ bool SpatialFilter::acceptFeature(FeatureStore* store, FeaturePtr feature) const
 	RelationPtr relation(feature);
 	if (relation.isArea()) return acceptAreaRelation(store, relation);
 	RecursionGuard guard(relation);
-	return acceptMembers(store, relation, guard);
+	return acceptMembers(store, relation, &guard);
 }
 
 // TODO: check member bboxes as a quick way to eliminate
-bool SpatialFilter::acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard& guard) const
+bool SpatialFilter::acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
 {
 	FastMemberIterator iter(store, relation);
 	for (;;)
@@ -44,15 +44,22 @@ bool SpatialFilter::acceptMembers(FeatureStore* store, RelationPtr relation, Rec
 		else
 		{
 			assert(memberType == 2);
-			RelationPtr childRel(member);
-			if (childRel.isPlaceholder() || !guard.checkAndAdd(childRel)) continue;
-			if (childRel.isArea())
+			if(guard)
 			{
-				memberAccepted = acceptAreaRelation(store, childRel);
+				RelationPtr childRel(member);
+				if (childRel.isPlaceholder() || !guard->checkAndAdd(childRel)) continue;
+				if (childRel.isArea())
+				{
+					memberAccepted = acceptAreaRelation(store, childRel);
+				}
+				else
+				{
+					memberAccepted = acceptMembers(store, childRel, guard);
+				}
 			}
 			else
 			{
-				memberAccepted = acceptMembers(store, childRel, guard);
+				memberAccepted = false;
 			}
 		}
 		if (flags_ & FilterFlags::MUST_ACCEPT_ALL_MEMBERS)

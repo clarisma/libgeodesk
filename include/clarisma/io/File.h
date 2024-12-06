@@ -112,6 +112,8 @@ public:
     static bool exists(const char* fileName);
     static void remove(const char* fileName);
     static void rename(const char* from, const char* to);
+    static std::string path(FileHandle handle);
+    std::string path() const { return path(fileHandle_); }
 
     /**
      * Returns the extension of the given filename (as pointer to ".ext"),

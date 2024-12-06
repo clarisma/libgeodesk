@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <geodesk/query/QueryBase.h>
 #include <condition_variable>
 #include <geodesk/query/QueryResults.h>
 #include <geodesk/query/TileIndexWalker.h>
@@ -51,38 +50,37 @@ class Filter;
 // are already present
 
 
-class Query : public QueryBase
+class QueryBase
 {
 public:
-    Query(FeatureStore* store, const Box& box, FeatureTypes types, 
-        const MatcherHolder* matcher, const Filter* filter); 
-    ~Query();
+    QueryBase(FeatureStore* store, const Box& box, FeatureTypes types,
+        const MatcherHolder* matcher, const Filter* filter,
+        QueryResultsConsumer consumer) :
+        store_(store),
+        types_(types),
+        matcher_(matcher),
+        filter_(filter),
+        consumer_(consumer),
+        tileIndexWalker_(store->tileIndex(), store->zoomLevels(), box, filter)
+    {
+    }
 
-    void offer(QueryResults* results);
-    void cancel();
+    const Box& bounds() const { return tileIndexWalker_.bounds(); }
+    FeatureTypes types() const { return types_; }
+    const MatcherHolder* matcher() const { return matcher_; }
+    const Filter* filter() const { return filter_; }
+    FeatureStore* store() const { return store_; }
+    QueryResultsConsumer consumer() const { return consumer_; };
 
-    FeaturePtr next();
+protected:
+    FeatureStore* store_;
+    FeatureTypes types_;
+    const MatcherHolder* matcher_;
+    const Filter* filter_;
+    QueryResultsConsumer consumer_;
+    TileIndexWalker tileIndexWalker_;
 
-private:
-    const QueryResults* take();
-    void requestTiles();
-    static void consumeResults(QueryBase* query, QueryResults* res);
-    static void deleteResults(const QueryResults* res);
-
-    // these are used by multiple threads:
-    // TODO: padding to avoid false sharing
-    // maybe use TileIndexWalker for padding as it has lots
-    // of unused entries?
-
-    std::mutex mutex_;
-    std::condition_variable resultsReady_;  // requires mutex_
-    QueryResults* queuedResults_;           // requires mutex_
-    int32_t completedTiles_;                // requires mutex_
-
-    int32_t pendingTiles_;      // TODO: rearrange to avoid needless gaps
-    const QueryResults* currentResults_;
-    int32_t currentPos_;
-    bool allTilesRequested_;
+    // TODO: refactor to account for potential false sharing
 };
 
 

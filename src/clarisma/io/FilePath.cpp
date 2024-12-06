@@ -7,6 +7,7 @@ namespace clarisma {
 
 const char* FilePath::extension(const char* filename, size_t len)
 {
+	if(len == 0) return "";
 	const char* p = filename + len - 1;
 	while (p > filename && *p != '.' && *p != '/' && *p != '\\')
 	{

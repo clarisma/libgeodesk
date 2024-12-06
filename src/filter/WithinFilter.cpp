@@ -63,7 +63,7 @@ bool WithinPolygonFilter::acceptNode(NodePtr node) const
 }
 
 
-bool WithinPolygonFilter::acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard& guard) const
+bool WithinPolygonFilter::acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
 {
 	return locateMembers(store, relation, guard) > 0;
 		// all must lie inide or on boundary, and at least one point
@@ -71,7 +71,7 @@ bool WithinPolygonFilter::acceptMembers(FeatureStore* store, RelationPtr relatio
 }
 
 
-int WithinPolygonFilter::locateMembers(FeatureStore* store, RelationPtr relation, RecursionGuard& guard) const
+int WithinPolygonFilter::locateMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
 {
 	int where = 0;
 	FastMemberIterator iter(store, relation);
@@ -99,11 +99,14 @@ int WithinPolygonFilter::locateMembers(FeatureStore* store, RelationPtr relation
 		else
 		{
 			assert(memberType == 2);
-			RelationPtr childRel(member);
-			if (childRel.isPlaceholder() || !guard.checkAndAdd(childRel)) continue;
-			int relLocation = locateMembers(store, childRel, guard);
-			if (relLocation < 0) return -1;
-			where = std::max(where, relLocation);
+			if(guard)
+			{
+				RelationPtr childRel(member);
+				if (childRel.isPlaceholder() || !guard->checkAndAdd(childRel)) continue;
+				int relLocation = locateMembers(store, childRel, guard);
+				if (relLocation < 0) return -1;
+				where = std::max(where, relLocation);
+			}
 		}
 	}
 	return where;

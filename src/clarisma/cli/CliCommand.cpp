@@ -12,7 +12,7 @@ int CliCommand::run(char* argv[])
 	CliCommandConfigurator config(*this);
 	if(!config.configure(argv))
 	{
-		Console::get()->failed()
+		Console::end().failed()
 			<< Console::HIGHLIGHT_YELLOW << config.failedArg()
 			<< Console::DEFAULT	<< ": " << config.failureReason() << '\n';
 		return 2;		// Exit code 2 means bad arguments
