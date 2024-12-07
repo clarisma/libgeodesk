@@ -91,6 +91,18 @@ public:
     bool isEmpty() const noexcept { return first_ == nullptr; }
     Chunk<T>* first() const { return first_; }
 
+    size_t calculateTotalSize() const
+    {
+        size_t total = 0;
+        const Chunk<T>* p = first_;
+        while(p)
+        {
+            total += p->size();
+            p = p->next();
+        }
+        return total;
+    }
+
 private:
     void release()
     {
