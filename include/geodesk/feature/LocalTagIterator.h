@@ -5,6 +5,12 @@
 
 #include <geodesk/feature/AbstractTagIterator.h>
 
+namespace clarisma {
+class ShortVarString;
+}
+
+using clarisma::ShortVarString;
+
 namespace geodesk {
 
 /// \cond lowlevel
@@ -42,9 +48,10 @@ public:
         return originOfs_ + ((keyBits_ >> 1) & 0xffff'fffc);
     }
 
-    DataPtr keyString() const
+    const ShortVarString* keyString() const
     {
-        return pTile_ + keyStringHandle();
+        return reinterpret_cast<const ShortVarString*>(
+            pTile_.ptr() + keyStringHandle());
     }
 
     uint32_t value() const
@@ -60,10 +67,10 @@ public:
         return ofs_ + (pTile_ + ofs_).getIntUnaligned();
     }
 
-    DataPtr stringValueFast() const
+    const ShortVarString* localStringValue() const
     {
-        assert(hasLocalStringValue());
-        return pTile_ + stringValueHandleFast();
+        return reinterpret_cast<const ShortVarString*>(
+            pTile_.ptr() + stringValueHandleFast());
     }
 
 protected:

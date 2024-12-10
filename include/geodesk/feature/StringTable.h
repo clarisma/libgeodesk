@@ -51,6 +51,10 @@ public:
     }
     bool isValidCode(int code);
     int getCode(const char* str, size_t len) const;
+    int getCode(std::string_view s) const
+    {
+        return getCode(s.data(), s.size());
+    }
 #ifdef GEODESK_PYTHON
     int getCode(PyObject* strObj) const
     {

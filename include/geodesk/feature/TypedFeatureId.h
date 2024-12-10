@@ -25,6 +25,16 @@ public:
 		return TypedFeatureId(id << 2);
 	}
 
+	static constexpr TypedFeatureId ofWay(uint64_t id) noexcept
+	{
+		return ofTypeAndId(FeatureType::WAY, id);
+	}
+
+	static constexpr TypedFeatureId ofRelation(uint64_t id) noexcept
+	{
+		return ofTypeAndId(FeatureType::RELATION, id);
+	}
+
 	explicit operator uint64_t() const noexcept
 	{
 		return typedId_;
@@ -38,6 +48,8 @@ public:
 	uint64_t id() const noexcept { return typedId_ >> 2; }
 	FeatureType type() const noexcept { return static_cast<FeatureType>(typedId_ & 3); }
 	bool isNode() const { return type() == FeatureType::NODE; }
+	bool isWay() const { return type() == FeatureType::WAY; }
+	bool isRelation() const { return type() == FeatureType::RELATION; }
 
 	// TODO: will change in 2.0
 	uint64_t asIdBits() const noexcept

@@ -135,7 +135,8 @@ public:
     static ByteBlock readAll(const char* filename);
     static ByteBlock readAll(const std::filesystem::path& path)
     {
-        return readAll(path.string().c_str());
+        std::string pathStr = path.string();
+        return readAll(pathStr.c_str());
     }
     static std::string readString(const char* filename);
     static std::string readString(const std::filesystem::path& path)

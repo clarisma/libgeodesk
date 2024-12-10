@@ -32,6 +32,11 @@ public:
     bool hasLocalStringValue() const { return (keyBits_ & 3) == 3; }
     DataPtr ptr() const { return pTile_ + ofs_; }
 
+    TagValueType valueType() const
+    {
+        return static_cast<TagValueType>(keyBits_ & 3);
+    }
+
 protected:
     AbstractTagIterator(const uint8_t* pTile, int_fast32_t ofs) :
         pTile_(pTile),

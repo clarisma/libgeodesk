@@ -150,12 +150,12 @@ public:
 	//ConsoleWriter failed();
 
 	template <size_t N>
-	void log(const char(&msg)[N])
+	static void log(const char(&msg)[N])
 	{
 		log(std::string_view(msg, N-1));  // Subtract 1 to exclude null terminator
 	}
 
-	void log(const char* format, ...)
+	static void log(const char* format, ...)
 	{
 		va_list args;
 		va_start(args, format);
@@ -163,7 +163,7 @@ public:
 		va_end(args);
 	}
 
-	void log(const char* format, va_list args)
+	static void log(const char* format, va_list args)
 	{
 		char buf[1024];
 		Format::unsafe(buf, format, args);

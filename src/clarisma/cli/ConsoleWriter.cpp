@@ -60,7 +60,9 @@ void ConsoleWriter::flush(bool forceDisplay)
 	clear();
 }
 
-ConsoleWriter& ConsoleWriter::clear()
+// TODO: Don't confuse wih clear(), which empties the buffer of
+//  underlying the BufferWriter
+ConsoleWriter& ConsoleWriter::blank()
 {
 	if(isTerminal_)
 	{
@@ -147,7 +149,7 @@ ConsoleWriter& ConsoleWriter::arrow()
 	return *this;
 }
 
-// TODO: How does this work for silent mode?
+// TODO: How does this work for silent mode, or if stderr is redirected?
 int ConsoleWriter::prompt(bool defaultYes)
 {
 	ensureCapacityUnsafe(64);
@@ -173,7 +175,9 @@ int ConsoleWriter::prompt(bool defaultYes)
 			putStringUnsafe(" [y/N]");
 		}
 	}
-	flush();
+	console_->print(static_cast<Console::Stream>(stream_), data(), length());
+	clear();
+
 	int res = defaultYes;
 	for(;;)
 	{

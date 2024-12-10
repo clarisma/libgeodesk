@@ -19,10 +19,12 @@ public:
 
 	~ConsoleWriter()
 	{
+		// printf("\n\n%p\nLength = %lld\n\n", this, length());
 		if(length()) flush();
+		// printf("\n\nFlushed CW\n\n");
 	}
 
-	ConsoleWriter& clear();
+	ConsoleWriter& blank();
 	ConsoleWriter& timestamp();
 	ConsoleWriter& success();
 	ConsoleWriter& failed();
