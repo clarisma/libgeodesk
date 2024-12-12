@@ -112,14 +112,18 @@ public:
         return Ptr();
     }
 
-protected:
-    Derived* self() noexcept { return static_cast<Derived*>(this); }
     bool isForeign() const { return member_ & MemberFlags::FOREIGN; }
     bool isInDifferentTile() const
     {
         assert(isForeign());
         return member_ & (1 << (2 + ExtraFlags));
     }
+
+    Tip tip() const { return currentTip_; }
+    Tex tex() const { return currentTex_; }
+
+protected:
+    Derived* self() noexcept { return static_cast<Derived*>(this); }
 
     bool readAndAcceptRole()    // CRTP override
     {

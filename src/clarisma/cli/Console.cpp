@@ -206,7 +206,7 @@ void Console::setProgress(int percentage)
 		return;
 	}
 	int oldPercentage = currentPercentage_.load(std::memory_order_relaxed);
-	if (percentage != oldPercentage)
+	if (percentage > oldPercentage)
 	{
 		currentPercentage_.store(percentage, std::memory_order_release);
 		char buf[256];

@@ -31,6 +31,20 @@ public:
 		uint32_t rawCount = clarisma::readVarint32(p);
 		return rawCount + isArea();
 	}
+
+	/// @brief Based on the given pointer to the way's encoded
+	/// coordinates and the raw (stored) node count, returns
+	/// a pointer to the encoded waynode IDs.
+	///
+	/// Important: The GOL must have been built with optional
+	/// waynode ID storage enabled, or the returned pointer
+	/// will be invalid.
+	///
+	static const uint8_t* wayNodeIDs(const uint8_t* pCoords, int rawNodeCount) noexcept
+	{
+		clarisma::skipVarints(pCoords, rawNodeCount * 2);
+		return pCoords;
+	}
 };
 
 // \endcond

@@ -13,8 +13,8 @@ namespace geodesk {
 ///
 struct ForeignFeatureRef
 {
-	ForeignFeatureRef(Tip tip_, Tex tex_) : tip(tip_), tex(tex_) {}
-	ForeignFeatureRef() : tip(0), tex(0) {}
+	constexpr ForeignFeatureRef(Tip tip_, Tex tex_) : tip(tip_), tex(tex_) {}
+	constexpr ForeignFeatureRef() : tip(0), tex(0) {}
 
 	bool isNull() const { return tip.isNull(); }
 
