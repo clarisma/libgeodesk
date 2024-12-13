@@ -52,7 +52,7 @@ public:
         return tip_ == 0;
     }
 
-    operator uint32_t() const
+    constexpr operator uint32_t() const
     {
         return tip_;
     }

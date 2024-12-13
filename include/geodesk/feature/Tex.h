@@ -56,8 +56,8 @@ class Tex
 public:
     constexpr Tex() : tex_(0) {}
     constexpr Tex(int32_t tex) : tex_(tex) {}
-    
-    operator int32_t () const
+
+    constexpr operator int32_t () const
     {
         return tex_;
     }
