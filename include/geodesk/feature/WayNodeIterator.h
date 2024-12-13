@@ -70,10 +70,12 @@ public:
             }
         }
 
+        /*
         if(id == 1430960416)
         {
             printf("!!!");
         }
+        */
 
         return {node,xy,id,foreign};
     }

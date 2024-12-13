@@ -63,6 +63,12 @@ public:
 	bool isRelation() const	noexcept { return type() == FeatureType::RELATION; }
 	bool isRelationMember() const noexcept { return flags() & FeatureFlags::RELATION_MEMBER; }
 	bool isType(FeatureTypes types) const noexcept { return types.acceptFlags(flags()); }
+
+	bool hasNorthwestTwin() const noexcept
+	{
+		return flags() & (FeatureFlags::MULTITILE_NORTH | FeatureFlags::MULTITILE_WEST);
+	}
+
 	bool intersects(const Box& bounds) const noexcept
 	{
 		assert(!isNode());
@@ -71,6 +77,8 @@ public:
 			(p_-8).getInt() < bounds.minX() ||
 			(p_-4).getInt() < bounds.minY()));
 	}
+
+
 
 	TagTablePtr tags() const noexcept
 	{

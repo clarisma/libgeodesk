@@ -64,6 +64,12 @@ public:
 		return TagTablePtr(TaggedPtr<const uint8_t, 1>(ppTags + ppTags.getInt()));
 	}
 
+	bool isEmpty() const
+	{
+		return ptr().getUnsignedShort() == TagValues::EMPTY_TABLE_KEY
+			&& !hasLocalKeys();
+	}
+
 	uint32_t count() const;
 	TagBits getKeyValue(const char* key, size_t len,
 		const StringTable& strings) const;
