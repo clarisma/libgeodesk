@@ -24,7 +24,8 @@ public:
     void start(const uint8_t* p, int32_t prevX, int32_t prevY, bool duplicateFirst);
     void start(FeaturePtr way, int flags);
     Coordinate next();
-    Coordinate current() const { return Coordinate(x_, y_); }
+    // Coordinate current() const { return Coordinate(x_, y_); }
+        // TODO: This is bad
 
     // does not include any duplicated last coordinate
     int storedCoordinatesRemaining() const { return remaining_; }

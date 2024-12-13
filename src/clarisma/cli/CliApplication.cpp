@@ -20,6 +20,21 @@ BOOL WINAPI consoleHandler(DWORD signal)
 	return FALSE;
 }
 
+/*		// Does not work on Windows
+#ifndef NDEBUG
+
+extern "C" void _assert(const char* exp, const char* file, unsigned line)
+{
+	char buf[1024];
+	Format::unsafe(buf,	"Assertion failed: %s         in %s, line %d",
+		exp, file, line);
+	CliApplication::shutdown(buf);
+	std::abort();
+}
+
+#endif
+*/
+
 #else
 
 void signalHandler(int signal)
