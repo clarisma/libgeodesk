@@ -16,6 +16,7 @@ public:
     /// or an empty string if the filename does not have an extension.
     ///
     /// TODO: Fix, assumes null-terminated string!
+    /// TODO: return string_view
     static const char* extension(const char* path, size_t len);
     static const char* extension(const char* path)
     {

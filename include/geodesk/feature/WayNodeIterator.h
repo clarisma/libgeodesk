@@ -62,6 +62,11 @@ public:
         {
             if(nextNode_.xy() == xy)
             {
+                if(id != 0 && id != nextNode_.id())
+                {
+                    clarisma::Console::log("  Mismatch node/%lld vs node/%lld",
+                        id, nextNode_.id());
+                }
                 assert(id == 0 || id == nextNode_.id());
                 node = nextNode_;
                 foreign = nextRef_;

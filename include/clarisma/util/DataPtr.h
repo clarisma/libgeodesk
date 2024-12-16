@@ -26,6 +26,7 @@ public:
 
     uint8_t* ptr() const noexcept { return p_; }
     std::byte* bytePtr() const noexcept { return reinterpret_cast<std::byte*>(p_); }
+    char* charPtr() const noexcept { return reinterpret_cast<char*>(p_); }
 
     DataPtr& operator=(const DataPtr& other) noexcept
     {
