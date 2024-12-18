@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/alloc/Arena.h>
+#include <clarisma/cli/Console.h>
 
 namespace clarisma {
 
@@ -79,6 +80,8 @@ void Arena::allocChunk(size_t size)
 		nextSize_ += nextSize_ >> (intialSizeAndPolicy_ & 0xff);
 		// TODO: nextSize_ = nextSize(nextSize_);
 	}
+	// Console::log("Arena: Allocating %zu bytes", size);
+
 	uint8_t* newChunkRaw = new uint8_t[sizeof(Chunk) + size];
 	Chunk* newChunk = reinterpret_cast<Chunk*>(newChunkRaw);
 	newChunk->next = current_;
