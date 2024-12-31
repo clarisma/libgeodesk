@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#include <clarisma/cli/Console.h>
 #include <geodesk/feature/FeatureNodeIterator.h>
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/feature/WayCoordinateIterator.h>

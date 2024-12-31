@@ -49,6 +49,10 @@ public:
 		#endif
 	}
 
+	MemberIterator(FeatureStore* store, DataPtr pMembers) :
+		MemberIterator(store, pMembers, FeatureTypes::ALL,
+		store->borrowAllMatcher(), nullptr) {}
+
 	~MemberIterator()
 	{
 		#ifdef GEODESK_PYTHON

@@ -7,7 +7,9 @@
 #include <geodesk/feature/FeatureHeader.h>
 #include <geodesk/feature/FeatureTypes.h>
 #include <geodesk/feature/TagTablePtr.h>
+#include <geodesk/feature/TypedFeatureId.h>
 #include <geodesk/geom/Box.h>
+
 
 namespace geodesk {
 
@@ -38,9 +40,9 @@ public:
 		return (static_cast<uint64_t>(hi) << 32) | lo;
 	}
 
-	uint64_t typedId() const noexcept
+	TypedFeatureId typedId() const noexcept
 	{
-		return (id() << 2) | typeCode();
+		return TypedFeatureId::ofTypeAndId(type(), id());
 	}
 
 	FeatureHeader header() const noexcept

@@ -12,7 +12,7 @@ namespace geodesk {
 class RelationTablePtr
 {
 public:
-	RelationTablePtr(DataPtr p) : p_(p) {}
+	RelationTablePtr(DataPtr p) : p_(p) {}	// NOLINT allow implicit conversion
 	DataPtr ptr() const { return p_; }
 
 private:
