@@ -5,6 +5,8 @@
 
 #include <clarisma/util/DataPtr.h>
 
+using clarisma::DataPtr;
+
 namespace geodesk {
 
 /// \cond lowlevel

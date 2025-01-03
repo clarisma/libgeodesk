@@ -86,6 +86,11 @@ public:
         return {node,xy,id,foreign};
     }
 
+    int remaining() const
+    {
+        return coords_.coordinatesRemaining();
+    }
+
 private:
     void fetchNextNode()
     {
