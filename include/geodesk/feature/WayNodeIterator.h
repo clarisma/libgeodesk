@@ -91,6 +91,11 @@ public:
         return coords_.coordinatesRemaining();
     }
 
+    int storedRemaining() const
+    {
+        return coords_.storedCoordinatesRemaining();
+    }
+
 private:
     void fetchNextNode()
     {
