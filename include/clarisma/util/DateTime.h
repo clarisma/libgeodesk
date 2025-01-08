@@ -4,7 +4,7 @@
 #pragma once
 
 #include <chrono>
-#include <string_view>
+#include <clarisma/util/StringViewBuffer.h>
 
 // TODO: Use std::time_t instead?
 
@@ -17,6 +17,17 @@ public:
 	explicit DateTime(int64_t millisecondsSinceEpoch) : timestamp_(millisecondsSinceEpoch) {}
 	explicit DateTime(uint64_t millisecondsSinceEpoch) : timestamp_(
 		static_cast<int64_t>(millisecondsSinceEpoch)) {}
+
+	DateTime(std::string_view s, const char* format)
+	{
+		using namespace std::chrono;
+
+		StringViewBuffer buf(s);
+		std::istream in(&buf);
+		sys_time<milliseconds> tp;
+		in >> parse(format, tp);
+		timestamp_ = duration_cast<milliseconds>(tp.time_since_epoch()).count();
+	}
 
 	static DateTime now()
 	{

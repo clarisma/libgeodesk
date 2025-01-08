@@ -42,6 +42,11 @@ public:
 		return mantissa() / static_cast<int64_t>(Math::POWERS_OF_10[scale()]);
 	}
 
+	explicit operator int() const noexcept
+	{
+		return static_cast<int>(static_cast<int64_t>(*this));
+	}
+
 	operator double() const noexcept 
 	{
 		if (value_ == INVALID) return std::numeric_limits<double>::quiet_NaN();

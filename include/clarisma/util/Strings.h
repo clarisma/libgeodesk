@@ -66,6 +66,25 @@ namespace Strings
             if(ch != removeChar) *d++ = ch;
         }
     }
+
+    inline std::string_view trim(std::string_view sv)
+    {
+        // Find the first non-whitespace character
+        size_t start = 0;
+        while (start < sv.size() && sv[start] <= 32)
+        {
+            ++start;
+        }
+
+        size_t end = sv.size();
+        while (end > start && sv[end - 1] <= 32)
+        {
+            --end;
+        }
+
+        // Create a substring with the trimmed content
+        return sv.substr(start, end - start);
+    }
 }
 
 /**

@@ -174,6 +174,20 @@ namespace Format
         return p;
     }
 
+    inline char* unsignedZeroFilled(char*start, long long d, int digits)
+	{
+	    char* end = start + digits;
+	    char* p = end;
+	    while(p >= start)
+	    {
+	        lldiv_t result = lldiv(d, 10);
+	        *(--p) = static_cast<char>('0' + result.rem);
+	        d = result.quot;
+	    }
+        *end = 0;
+	    return end;
+	}
+
     inline char* fractionalReverse(unsigned long long d, char** pEnd, int precision, bool zeroFill);
 
     inline char* doubleReverse(char** pEnd, double d, int precision=15, bool zeroFill=false);
