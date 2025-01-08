@@ -11,6 +11,8 @@ class SystemInfo
 public:
 	SystemInfo();
 
+	static size_t maxMemory();
+
 	size_t minWorkingSet;
 	size_t maxWorkingSet;
 };

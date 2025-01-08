@@ -55,6 +55,17 @@ namespace Strings
 
         return result;
     }
+
+    inline void removeChar(char* buf, char removeChar)
+    {
+        char* s = buf;
+        char* d = buf;
+        while (*s)
+        {
+            char ch = *s++;
+            if(ch != removeChar) *d++ = ch;
+        }
+    }
 }
 
 /**
