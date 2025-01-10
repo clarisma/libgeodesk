@@ -1,12 +1,14 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <clarisma/net/UrlView.h>
+#pragma once
 
 namespace clarisma {
 
-UrlView::UrlView(std::string_view url)
+enum class UrlScheme
 {
-}
+    HTTP,
+    HTTPS
+};
 
 } // namespace clarisma

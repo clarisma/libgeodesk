@@ -10,6 +10,12 @@ class LinkedStack
 {
 public:
     LinkedStack() : first_(nullptr) {}
+    LinkedStack(LinkedStack&& other) noexcept : first_(other.first_)
+    {
+        other.first_ = nullptr;
+    }
+
+    bool isEmpty() const { return first_ == nullptr; }
 
     void push(T* item)
     {
@@ -31,6 +37,14 @@ public:
         T* first = first_;
         first_ = nullptr;
         return first;
+    }
+
+    LinkedStack& operator=(LinkedStack&& other) noexcept
+    {
+        T* first = other.first_;
+        other.first_ = nullptr;
+        first_ = first;
+        return *this;
     }
 
 private:
