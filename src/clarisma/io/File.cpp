@@ -32,6 +32,7 @@ ByteBlock File::readBlock(size_t length)
     return block;
 }
 
+// TODO: use smart pointer!
 ByteBlock File::readAll(const char* filename)
 {
     File file;

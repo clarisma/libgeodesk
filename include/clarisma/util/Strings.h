@@ -85,6 +85,15 @@ namespace Strings
         // Create a substring with the trimmed content
         return sv.substr(start, end - start);
     }
+
+    inline std::string combine(std::string_view a, std::string_view b)
+    {
+        std::string s;
+        s.reserve(a.size() + b.size()); // Single allocation for combined size
+        s.append(a);
+        s.append(b);
+        return s;
+    }
 }
 
 /**

@@ -21,20 +21,16 @@ typedef int32_t ZoomLevel;
 class Tile
 {
 public:
-	Tile() : tile_(EMPTY) {}
-	explicit Tile(uint32_t v) : tile_(v) {}
-	Tile(const Tile& other) : tile_(other.tile_) {}
+	constexpr Tile() : tile_(EMPTY) {}
+	constexpr explicit Tile(uint32_t v) : tile_(v) {}
+	constexpr Tile(const Tile& other) = default;
 
 	bool isNull() const
 	{
 		return tile_ == EMPTY;
 	}
 
-	Tile& operator=(const Tile& other) 
-	{
-		tile_ = other.tile_;
-		return *this;
-	}
+	Tile& operator=(const Tile& other) = default;
 
 	explicit operator uint32_t() const
 	{

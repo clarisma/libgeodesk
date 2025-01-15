@@ -15,6 +15,10 @@ public:
         other.first_ = nullptr;
     }
 
+    // Copying is not allowed (only moving)
+    LinkedStack(const LinkedStack&) = delete;
+    LinkedStack& operator=(const LinkedStack&) = delete;
+
     bool isEmpty() const { return first_ == nullptr; }
 
     void push(T* item)
