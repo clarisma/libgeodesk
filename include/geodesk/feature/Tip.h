@@ -22,7 +22,7 @@ public:
 
     operator int32_t() const { return delta_; }
 
-    bool isWide()
+    bool isWide() const
     {
         // 15 bits signed
         return (delta_ << 17 >> 17) != delta_;

@@ -67,6 +67,8 @@ public:
     Block(const Block&) = delete;
     Block& operator=(const Block&) = delete;
 
+    // TODO: This is unintuitive, since in most cases we want the size as well,
+    //  which will now be invalid
     std::unique_ptr<T[]> take()
     {
         size_ = 0;
@@ -80,6 +82,7 @@ public:
     const T* data() const noexcept { return data_.get(); }
     T* data() noexcept { return data_.get(); }
 
+    // TODO: dupe of take()
     std::unique_ptr<T[]> takeData()
     {
         size_ = 0;

@@ -23,6 +23,12 @@ public:
 
     operator int32_t() const { return delta_; }
 
+    bool isWide(int narrowBitsAvailable) const
+    {
+        int shift = 32 - narrowBitsAvailable;
+        return ((delta_ << shift) >> shift) != delta_;
+    }
+
     // TODO: Fix sign extension!!!
     int wideFlagInNodeTable()
     {
