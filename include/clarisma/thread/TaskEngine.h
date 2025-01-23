@@ -115,6 +115,8 @@ public:
         return workContexts_;
     }
 
+    int threadCount() const { return threadCount_; }
+
 protected:
     // TODO: rename to "submitWork()"
     void postWork(WorkTask&& task)

@@ -58,6 +58,11 @@ public:
 
     struct Header : BlobStore::Header
     {
+        enum Flags
+        {
+            WAYNODE_IDS = 1
+        };
+
         uint32_t subtypeMagic;
         uint16_t subtypeVersionHigh;
         uint16_t subtypeVersionLow;
@@ -101,6 +106,7 @@ public:
     uint32_t revision() const { return header()->revision; }
     DateTime revisionTimestamp() const { return header()->revisionTimestamp; }
     uint32_t tileCount() const { return header()->tileCount; }
+    bool hasWaynodeIds() const { return header()->flags & Header::Flags::WAYNODE_IDS; }
     ZoomLevels zoomLevels() const { return zoomLevels_; }
     StringTable& strings() { return strings_; }
     const IndexedKeyMap& keysToCategories() const { return keysToCategories_; }
@@ -138,7 +144,8 @@ public:
     struct Metadata
     {
         Metadata(const clarisma::UUID& guid_, uint32_t rev) :
-            guid(guid_), revision(rev), settings(nullptr),
+            guid(guid_), flags(0), revision(rev),
+            settings(nullptr),
             tileIndex(nullptr),
             stringTable(nullptr), stringTableSize(0),
             properties(nullptr), propertiesSize(0),
@@ -147,6 +154,7 @@ public:
         }
 
         clarisma::UUID guid;
+        int flags;
         uint32_t revision;
         DateTime revisionTimestamp;
         const Settings* settings;

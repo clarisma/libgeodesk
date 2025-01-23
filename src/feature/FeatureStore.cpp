@@ -242,8 +242,7 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 	header->subtypeMagic = SUBTYPE_MAGIC;
 	header->subtypeVersionHigh = 2;
 	header->subtypeVersionLow = 0;
-	header->flags = 0;
-		// TODO: set flags (waynode-ids)
+	header->flags = metadata.flags;
 	header->guid = metadata.guid;
 	header->revision = metadata.revision;
 	header->revisionTimestamp = metadata.revisionTimestamp;

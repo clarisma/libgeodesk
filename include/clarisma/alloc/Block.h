@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <memory>
+#include <span>
 #include <utility>
 
 namespace clarisma {
@@ -94,6 +95,11 @@ public:
     {
         assert(index < size_);
         return data_[index];
+    }
+
+    operator std::span<const T>() const noexcept    // NOLINT implicit on purpose
+    {
+        return { data_.get(), size_ };
     }
 
 private:
