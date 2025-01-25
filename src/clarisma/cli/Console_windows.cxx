@@ -5,7 +5,17 @@
 // #define NOMINMAX
 #include <windows.h>
 #include <conio.h>  // For getch on Windows
-#include <corecrt_io.h>
+#ifdef _MSC_VER
+#include <corecrt_io.h> // For MSVC's _isatty
+#else
+#include <unistd.h>     // For GCC/MinGW's isatty
+#endif
+
+// Define a cross-platform alias for isatty
+#ifdef _MSC_VER
+#define isatty _isatty
+#endif
+
 #include <fcntl.h>
 
 namespace clarisma {
@@ -15,7 +25,7 @@ void Console::initStream(int streamNo)
 	HANDLE hConsole = GetStdHandle((streamNo==0) ?
 		STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
 	handle_[streamNo] = hConsole;
-	isTerminal_[streamNo] = _isatty(_fileno(streamNo == 0 ? stdout : stderr));
+	isTerminal_[streamNo] = isatty(_fileno(streamNo == 0 ? stdout : stderr));
 	if(!isTerminal_[streamNo])
 	{
 		hasColor_[streamNo] = false;

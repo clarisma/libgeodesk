@@ -16,7 +16,7 @@ namespace Threads
     void kill(std::thread& thread)
     {
         #ifdef _WIN32
-        HANDLE hThread = thread.native_handle();
+        HANDLE hThread = reinterpret_cast<HANDLE>(thread.native_handle());
         TerminateThread(hThread, 0);
         #else
         pthread_t nativeThread = thread.native_handle();

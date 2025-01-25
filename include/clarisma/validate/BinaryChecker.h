@@ -4,8 +4,11 @@
 #pragma once
 #include <clarisma/validate/Checker.h>
 #include <clarisma/validate/Validate.h>
+#include <clarisma/util/varint_safe.h>
 
 namespace clarisma {
+
+class ShortVarString;
 
 class BinaryChecker : public Checker
 {
@@ -50,7 +53,7 @@ protected:
     void fatal(const uint8_t *p, const char* msg, Args... args)
     {
         Checker::fatal(p - start_, msg, args...);
-        throw ValueException(msg, args...);
+        // throw ValueException(msg, args...);        // TODO
     }
 
     void checkTruncated()
@@ -73,7 +76,7 @@ protected:
         }
     }
 
-    uint32_t readVarint64()
+    uint64_t readVarint64()
     {
         checkTruncated();
         const uint8_t* p = p_;
