@@ -58,4 +58,17 @@ inline int64_t safeReadSignedVarint64(const uint8_t*& p, const uint8_t* end)
 	return (val >> 1) ^ -(val & 1);
 }
 
+inline void safeSkipVarints(const uint8_t*& p, int count, const uint8_t* end)
+{
+	while(count)
+	{
+		if(p >= end)
+		{
+			throw std::runtime_error("Varints extend past end of buffer");
+		}
+		uint8_t b = *p++;
+		count -= (b >> 7) ^ 1;
+	}
+}
+
 } // namespace clarisma

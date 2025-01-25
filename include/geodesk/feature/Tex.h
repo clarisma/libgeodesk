@@ -83,6 +83,10 @@ public:
     static constexpr int32_t RELATIONS_START_TEX = 0x800;
     static constexpr int32_t WAYNODES_START_TEX = 0x800;
 
+    static constexpr int32_t MEMBERS_TEX_BITS = 11;
+    static constexpr int32_t RELATIONS_TEX_BITS = 12;
+    static constexpr int32_t WAYNODES_TEX_BITS = 12;
+
 private:
     int32_t tex_;
 };
