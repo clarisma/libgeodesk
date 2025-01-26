@@ -16,7 +16,7 @@ inline uint64_t safeReadVarint64(const uint8_t*& p, const uint8_t* end)
 	int shift = 0;
 	while(p < end)
 	{
-		uint8_t b = *p++;
+		uint64_t b = *p++;
 		val |= (b & 0x7f) << shift;
 		shift += 7;
 		if ((b & 0x80) == 0) return val;
@@ -34,7 +34,7 @@ inline uint32_t safeReadVarint32(const uint8_t*& p, const uint8_t* end)
 	int shift = 0;
 	while(p < end)
 	{
-		uint8_t b = *p++;
+		uint32_t b = *p++;
 		val |= (b & 0x7f) << shift;
 		shift += 7;
 		if ((b & 0x80) == 0) return val;

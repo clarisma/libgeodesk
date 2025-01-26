@@ -99,6 +99,7 @@ protected:
         if(length >= 1 << 14)
         {
             error("Excessive string length (%d)", length);
+            return nullptr;
         }
         p_ += length;
         checkTruncated();
@@ -109,7 +110,7 @@ protected:
     {
         if(code >= maxPlusOne)
         {
-            error("%s #%d exceeds maximum (%ll)", type, code,
+            error("%s #%d exceeds maximum (%zu)", type, code,
                 static_cast<int64_t>(maxPlusOne) - 1);
             return false;
         }
