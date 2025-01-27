@@ -61,6 +61,12 @@ public:
   		formatInt(n);
   		return static_cast<S&>(*this);
   	}
+
+	S& operator<<(double d)
+  	{
+  		formatDouble(d);
+  		return static_cast<S&>(*this);
+  	}
 };
 
 class StreamWriter : public AbstractStreamWriter<StreamWriter>
