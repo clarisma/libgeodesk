@@ -78,6 +78,13 @@ public:
 	bool operator==(const TypedFeatureId&) const = default;
 	bool operator!=(const TypedFeatureId&) const = default;
 
+	bool operator<(const TypedFeatureId& other) const noexcept
+	{
+		uint64_t collateThis = typedId_ | ((typedId_ & 3) << 62);
+		uint64_t collateOther = other.typedId_ | ((other.typedId_ & 3) << 62);
+		return collateThis < collateOther;
+	}
+
 private:
 	uint64_t typedId_;
 };
