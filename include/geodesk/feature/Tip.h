@@ -18,9 +18,10 @@ class TipDelta
 {
 public:
     constexpr TipDelta() : delta_(0) {}
-    constexpr TipDelta(int32_t delta) : delta_(delta) {}
+    constexpr TipDelta(int32_t delta) :     // NOLINT implicit conversion
+        delta_(delta) {}
 
-    operator int32_t() const { return delta_; }
+    operator int32_t() const { return delta_; }     // NOLINT implicit conversion
 
     bool isWide() const
     {
