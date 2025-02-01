@@ -113,6 +113,15 @@ public:
 		return p;
 	}
 
+	template <typename T, typename... Args>
+	T* createVariableLength(size_t itemCount, Args&&... args)
+	{
+		size_t size = T::size(itemCount);
+		T* p = reinterpret_cast<T*>(alloc(size, alignof(T)));
+		new(p)T(std::forward<Args>(args)...);
+		return p;
+	}
+
 	template <typename T>
 	T* allocArray(size_t count)
 	{

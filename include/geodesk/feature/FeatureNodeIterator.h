@@ -10,7 +10,7 @@ namespace geodesk {
 
 /// \cond lowlevel
 ///
-class FeatureNodeIterator : public RelatedIterator<FeatureNodeIterator,NodePtr,0,-2>
+class   FeatureNodeIterator : public RelatedIterator<FeatureNodeIterator,NodePtr,0,-2>
 {
 public:
     FeatureNodeIterator(FeatureStore* store, DataPtr pBody,
@@ -20,27 +20,19 @@ public:
     {
         member_ = (flags & FeatureFlags::WAYNODE) ? 0 : MemberFlags::LAST;
     }
+
+    FeatureNodeIterator(FeatureStore* store, WayPtr way,
+        const MatcherHolder* matcher, const Filter* filter = nullptr) :
+        FeatureNodeIterator(store, way.bodyptr(), way.flags(), matcher, filter)
+    {
+    }
+
+    FeatureNodeIterator(FeatureStore* store, WayPtr way) :
+        FeatureNodeIterator(store, way, store->borrowAllMatcher())
+    {
+    }
 };
 
-/*
-class FeatureNodeIterator
-{
-public:
-    explicit FeatureNodeIterator(FeatureStore* store);
-    FeatureStore* store() const { return store_; }
-    void start(DataPtr pBody, int flags, const MatcherHolder* matcher, const Filter* filter);
-    NodePtr next();
-
-private:
-    FeatureStore* store_;
-    const MatcherHolder* matcher_;
-    const Filter* filter_;
-    Tip currentTip_;
-    int32_t currentNode_;
-    DataPtr p_;
-    DataPtr pForeignTile_;
-};
-*/
 
 // \endcond
 } // namespace geodesk

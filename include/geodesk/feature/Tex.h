@@ -62,6 +62,9 @@ class Tex
 public:
     constexpr Tex() : tex_(0) {}
     constexpr Tex(int32_t tex) : tex_(tex) {}
+    constexpr Tex(uint32_t tex) : tex_(static_cast<int32_t>(tex)) {}
+
+    // TODO: Should we make conversions explicit?
 
     constexpr operator int32_t () const
     {
