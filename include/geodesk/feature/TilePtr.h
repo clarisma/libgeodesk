@@ -6,6 +6,7 @@
 #include <clarisma/store/BlobPtr.h>
 #include <geodesk/feature/TileConstants.h>
 
+using clarisma::DataPtr;
 using namespace TileConstants;
 
 class TilePtr : public clarisma::BlobPtr
