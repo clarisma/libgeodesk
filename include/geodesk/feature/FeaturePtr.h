@@ -66,6 +66,8 @@ public:
 	bool isRelationMember() const noexcept { return flags() & FeatureFlags::RELATION_MEMBER; }
 	bool isType(FeatureTypes types) const noexcept { return types.acceptFlags(flags()); }
 
+	// TODO: In v2, these bits are re-used for node flags
+	//  colocated_node / exception_node
 	bool hasNorthwestTwin() const noexcept
 	{
 		return flags() & (FeatureFlags::MULTITILE_NORTH | FeatureFlags::MULTITILE_WEST);

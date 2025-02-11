@@ -31,7 +31,10 @@ void FileBuffer::flush(char* p)
 {
     assert(p >= buf_);
     assert(p <= end_);
+	assert(file_);
+	//LOGS << "FileBuffer: Writing " << (p-buf_) << " bytes";
 	size_t written = fwrite(buf_, 1, p - buf_, file_);
+	//LOGS << "  FileBuffer: Wrote " << written << " bytes";
 	// TODO: check number of bytes written (error handling)
 	p_ = buf_;
 }

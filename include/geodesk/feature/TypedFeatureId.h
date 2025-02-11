@@ -90,13 +90,13 @@ private:
 };
 
 template<typename Stream>
-Stream&& operator<<(Stream&& out, TypedFeatureId tid)
+Stream& operator<<(Stream& out, TypedFeatureId tid)
 {
 	char buf[32];
 	char* p = tid.format(buf);
 	assert(p-buf < sizeof(buf));
 	out.write(buf, p-buf);
-	return std::forward<Stream>(out);
+	return static_cast<Stream&>(out);
 }
 
 } // namespace geodesk
