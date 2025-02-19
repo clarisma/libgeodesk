@@ -28,9 +28,8 @@ public:
     static const int MAX_WIDE_NUMBER = (1 << 30) - 1 + MIN_NUMBER;
     static const int MAX_NARROW_NUMBER = (1 << 16) - 1 + MIN_NUMBER;
 
-    // TODO: This value will change in v2!
-    static constexpr uint32_t EMPTY_TABLE_MARKER = 0xffff'ffff;
-    static constexpr uint16_t EMPTY_TABLE_KEY = 0x8000;
+    static constexpr uint16_t EMPTY_TABLE_KEY = 0x8001;
+    static constexpr uint32_t EMPTY_TABLE_MARKER = EMPTY_TABLE_KEY;
     static const uint32_t EMPTY_TABLE_STRUCT[2];
 
     static const double SCALE_FACTORS[];
