@@ -57,6 +57,20 @@ public:
 		return Box((p_-16).getInt(), (p_-12).getInt(), (p_-8).getInt(), (p_-4).getInt());
 	}
 
+	Coordinate bottomLeft() const noexcept
+	{
+		return Coordinate(
+			(p_ - (isNode() ? 8 : 16)).getInt(),
+			(p_ - (isNode() ? 4 : 12)).getInt());
+	}
+
+	Coordinate topRight() const noexcept
+	{
+		return Coordinate(
+			(p_ - 8).getInt(),
+			(p_ - 4).getInt());
+	}
+
 	bool isNull() const noexcept { return !p_; }
 	int  flags() const noexcept	{ return p_.getInt();	}
 	bool isArea() const	noexcept { return p_.getUnsignedInt() & FeatureFlags::AREA; }

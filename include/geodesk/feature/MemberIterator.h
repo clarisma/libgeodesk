@@ -78,6 +78,16 @@ public:
 		return currentRoleStr_;
 	}
 
+	int currentRoleCode() const
+	{
+		return currentRoleCode_;
+	}
+
+	bool hasLocalRole() const
+	{
+		return currentRoleCode_ < 0;
+	}
+
 	#ifdef GEODESK_PYTHON
 	/**
 	 * Obtains a borrowed reference to the Python string object that
