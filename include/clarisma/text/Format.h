@@ -178,7 +178,7 @@ namespace Format
 	{
 	    char* end = start + digits;
 	    char* p = end;
-	    while(p >= start)
+	    while(p > start)
 	    {
 	        lldiv_t result = lldiv(d, 10);
 	        *(--p) = static_cast<char>('0' + result.rem);

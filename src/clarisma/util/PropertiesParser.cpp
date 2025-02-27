@@ -17,7 +17,8 @@ bool PropertiesParser::next(std::string_view &key, std::string_view &value)
         }
         std::string_view line(p_, pNext);
         p_ = pNext;
-        if(*p_ == '#') continue;        // skip comment
+        if(line.empty() || line[0] == '#') continue;
+            // skip empty line or comment
         size_t pos = line.find('=');
         if(pos == std::string_view::npos) continue;    // skip line without =
         key = Strings::trim(line.substr(0, pos));

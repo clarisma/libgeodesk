@@ -19,6 +19,12 @@ public:
             matcher, filter)
     {
     }
+
+    ParentRelationIterator(FeatureStore* store, DataPtr pRelTable) :
+        RelatedIterator(store, pRelTable, Tex::RELATIONS_START_TEX,
+            store->borrowAllMatcher(), nullptr)
+    {
+    }
 };
 
 // \endcond

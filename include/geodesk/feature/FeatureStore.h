@@ -143,8 +143,8 @@ public:
 
     struct Metadata
     {
-        Metadata(const clarisma::UUID& guid_, uint32_t rev) :
-            guid(guid_), flags(0), revision(rev),
+        Metadata(const clarisma::UUID& guid_) :
+            guid(guid_), flags(0), revision(0),
             settings(nullptr),
             tileIndex(nullptr),
             stringTable(nullptr), stringTableSize(0),

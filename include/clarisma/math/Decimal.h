@@ -47,6 +47,11 @@ public:
 		return static_cast<int>(static_cast<int64_t>(*this));
 	}
 
+	explicit operator uint32_t() const noexcept
+	{
+		return static_cast<uint32_t>(static_cast<int64_t>(*this));
+	}
+
 	operator double() const noexcept 
 	{
 		if (value_ == INVALID) return std::numeric_limits<double>::quiet_NaN();

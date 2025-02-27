@@ -22,7 +22,13 @@ public:
     explicit IOException(const char* message, Args... args)
         : std::runtime_error(Format::format(message, args...)) {}
 
-    // static void getError(char* buf);
+    explicit IOException(int errorCode) :
+        IOException(getMessage(errorCode)) {}
+
+    explicit IOException(unsigned long errorCode) :
+        IOException(getMessage(static_cast<int>(errorCode))) {}
+
+    static std::string getMessage(int errorCode);
 
     /**
      * On Linux, this function must only be called if the caller

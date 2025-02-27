@@ -15,20 +15,25 @@ void IOException::getError(char* buf)
 }
 */
 
+
+std::string IOException::getMessage(int errorCode)
+{
+    LPSTR buffer = nullptr;
+    size_t size = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&buffer, 0, NULL);
+    std::string message(buffer, size);
+    LocalFree(buffer);
+    return message;
+}
+
 void IOException::checkAndThrow()
 {
 	DWORD errorCode = GetLastError();
 	if (errorCode == 0) return;
-
-    LPSTR buffer = nullptr;
-    size_t size = FormatMessageA(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | 
-        FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errorCode, 
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
-        (LPSTR)&buffer, 0, NULL);
-    std::string message(buffer, size);
-    LocalFree(buffer);
-    throw IOException(message);
+    throw IOException(static_cast<int>(errorCode));
 }
 
 #elif defined(__linux__) || defined(__APPLE__) 

@@ -11,6 +11,8 @@
 
 namespace clarisma {
 
+// TODO: make a BlockingQueue base class
+
 template <typename Context, typename Task>
 class TaskQueue
 {
