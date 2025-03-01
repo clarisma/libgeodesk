@@ -194,6 +194,13 @@ namespace Format
 
     inline char* integerNice(char* p, int64_t d);
 
+    // char* wholeOrSingleDigitPrecision(char * p, double d);
+
+    /// Formats a file size, with units (e.g. "8.1 GB")
+    /// A single fractional digit is printed only for values < 10
+    ///
+    char* fileSizeNice(char* p, uint64_t d);
+
     //char* formatDouble(char* buf, double d, int precision, bool zeroFill);
     //char* formatFractionalReverse(unsigned long long d, char** pEnd, int precision, bool zeroFill);
 

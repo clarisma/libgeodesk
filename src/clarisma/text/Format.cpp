@@ -157,4 +157,45 @@ char* timeAgo(char* buf, int64_t secs)
     return p + 4;
 }
 
+
+static const double FILE_SIZE_INTERVALS[] =
+{
+    1,
+    1024.0,                  // KB
+    1024.0 * 1024,           // MB
+    1024.0 * 1024 * 1024,    // GB
+    1024.0 * 1024 * 1024 * 1024,       // TB
+    1024.0 * 1024 * 1024 * 1024 * 1024, // PB
+    1024.0 * 1024 * 1024 * 1024 * 1024 * 1024 // EB
+};
+
+static const char FILE_SIZE_UNITS[] = "\0KMGTPE";
+
+// TODO: pre-rounding 12500000 bytes should be 12 MB
+
+char* fileSizeNice(char* p, uint64_t size)
+{
+    double d = static_cast<double>(size);
+    int i=1;
+    for (; i<7; i++)
+    {
+        if (d < FILE_SIZE_INTERVALS[i]) break;
+    }
+    d /= FILE_SIZE_INTERVALS[i-1];
+    double rounded = std::floor(d * 10.0 + 0.5) / 10.0;
+    double whole = std::floor(rounded);
+    p = integer(p, static_cast<int64_t>(whole));
+    if (d < 10.0 && rounded != whole)
+    {
+        *p++ = '.';
+        *p++ = '0' + static_cast<char>((rounded - whole) * 10.0);
+    }
+    *p++ = ' ';
+    char unit = FILE_SIZE_UNITS[i-1];
+    if (unit) *p++ = unit;
+    *p++ = 'B';
+    *p = '\0';
+    return p;
+}
+
 } // namespace clarisma
