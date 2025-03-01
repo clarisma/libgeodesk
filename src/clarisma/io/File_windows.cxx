@@ -274,4 +274,15 @@ std::string File::path(FileHandle handle)
     return std::string(buf, res);
 }
 
+uint64_t File::allocatedSize() const
+{
+    FILE_STANDARD_INFO fileInfo;
+    if (!GetFileInformationByHandleEx(fileHandle_, FileStandardInfo,
+        &fileInfo, sizeof(fileInfo)))
+    {
+        IOException::checkAndThrow();
+    }
+    return fileInfo.AllocationSize.QuadPart;
+}
+
 } // namespace clarisma

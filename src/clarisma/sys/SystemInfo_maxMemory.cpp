@@ -59,6 +59,7 @@ size_t SystemInfo::maxMemory()
 #else
 
 // Unknown platform
+// TODO
 
 namespace clarisma {
 

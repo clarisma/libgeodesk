@@ -183,7 +183,16 @@ char* fileSizeNice(char* p, uint64_t size)
     }
     d /= FILE_SIZE_INTERVALS[i-1];
     double rounded = std::floor(d * 10.0 + 0.5) / 10.0;
-    double whole = std::floor(rounded);
+    double whole;
+    if (rounded >= 10.0)
+    {
+        whole = std::floor(rounded + 0.5);
+    }
+    else
+    {
+        whole = std::floor(rounded);
+    }
+
     p = integer(p, static_cast<int64_t>(whole));
     if (d < 10.0 && rounded != whole)
     {

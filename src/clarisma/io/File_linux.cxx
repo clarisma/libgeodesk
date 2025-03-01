@@ -239,7 +239,21 @@ std::string File::path(int handle)
 #else
     #error "Unsupported platform for File::path implementation"
 #endif
+}
+
+uint64_t File::allocatedSize() const
+{
+    struct stat fileStat;
+    if (fstat(fileHandle_, &fileStat) != 0)
+    {
+        IOException::checkAndThrow();
     }
+    return fileStat.st_blocks * 512; // Convert blocks to bytes
+
+    // Linux/macOS, st_blocks in struct stat always reports blocks
+    // in 512-byte units, even if the actual filesystem block size is larger
+    // TODO: verify if true
+}
 
 
 } // namespace clarisma

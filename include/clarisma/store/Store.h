@@ -47,6 +47,10 @@ public:
 	void close();
 
 	const std::string& fileName() const { return fileName_; }
+	uint64_t allocatedSize() const
+	{
+		return File::allocatedSize();
+	}
 
 	bool isBlank() const;
 

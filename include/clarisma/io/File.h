@@ -85,6 +85,7 @@ public:
     void setSize(uint64_t newSize);
     void expand(uint64_t newSize);
     void truncate(uint64_t newSize);
+    uint64_t allocatedSize() const;
 
     void seek(uint64_t posAbsolute);
     size_t read(void* buf, size_t length);
