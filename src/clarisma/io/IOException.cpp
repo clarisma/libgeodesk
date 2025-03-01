@@ -29,6 +29,20 @@ std::string IOException::getMessage(int errorCode)
     return message;
 }
 
+std::string IOException::getMessage(const char* moduleName, int errorCode)
+{
+    HMODULE hModule = LoadLibraryA(moduleName);
+    LPSTR buffer = nullptr;
+    size_t size = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_HMODULE |
+        FORMAT_MESSAGE_IGNORE_INSERTS, hModule, errorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&buffer, 0, NULL);
+    std::string message(buffer, size);
+    LocalFree(buffer);
+    return message;
+}
+
 void IOException::checkAndThrow()
 {
 	DWORD errorCode = GetLastError();

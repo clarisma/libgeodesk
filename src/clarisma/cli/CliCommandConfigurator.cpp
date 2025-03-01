@@ -121,9 +121,16 @@ bool CliCommandConfigurator::configure(char* argv[])
         else
         {
             // Positional parameter
-            if (!command_.setParam(paramCount++, pArg))
+            try
             {
-                failed(pArg, "Invalid parameter");
+                if (!command_.setParam(paramCount++, pArg))
+                {
+                    failed(pArg, "Invalid parameter");
+                }
+            }
+            catch (const std::exception& ex)
+            {
+                failed(pArg, ex.what());
             }
         }
     }

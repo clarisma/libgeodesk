@@ -66,8 +66,10 @@ public:
 	void clear()
 	{
 		// TODO: If we could make sure that the oldest chunk in the chain
-		// is <initialSize> (i.e. not a whale, which may be smaller), we
-		// could keep the oldest chunk instead of freeing all chunks
+		//  is <initialSize> (i.e. not a whale, which may be smaller), we
+		//  could keep the oldest chunk instead of freeing all chunks
+		//  But "clear" typically means "release all memory"
+		//  (but not necessarily -- vector retains its data?)
 
 		Chunk* chunk = current_;
 		while (chunk)

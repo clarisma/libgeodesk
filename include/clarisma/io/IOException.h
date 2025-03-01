@@ -29,6 +29,9 @@ public:
         IOException(getMessage(static_cast<int>(errorCode))) {}
 
     static std::string getMessage(int errorCode);
+#ifdef _WIN32
+    static std::string getMessage(const char* moduleName, int errorCode);
+#endif
 
     /**
      * On Linux, this function must only be called if the caller

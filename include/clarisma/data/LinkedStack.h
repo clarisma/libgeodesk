@@ -15,6 +15,11 @@ public:
         other.first_ = nullptr;
     }
 
+    void clear()
+    {
+        first_ = nullptr;
+    }
+
     // Copying is not allowed (only moving)
     LinkedStack(const LinkedStack&) = delete;
     LinkedStack& operator=(const LinkedStack&) = delete;
