@@ -29,6 +29,12 @@ public:
 		timestamp_ = duration_cast<milliseconds>(tp.time_since_epoch()).count();
 	}
 
+	// TODO: Should 0 really be "null" as it is a valid timestamp?
+	bool isNull() const
+	{
+		return timestamp_ == 0;
+	}
+
 	static DateTime now()
 	{
 		auto now = std::chrono::system_clock::now();

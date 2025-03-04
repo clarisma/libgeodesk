@@ -86,9 +86,14 @@ public:
         return std::string(format(buf));
     }
 
+    static const Tip ROOT;
+
 private:
     uint32_t tip_;
 };
+
+inline constexpr Tip Tip::ROOT{1};
+
 
 template<typename Stream>
 Stream& operator<<(Stream& out, const Tip& tip)

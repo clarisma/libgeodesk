@@ -56,6 +56,16 @@ namespace Strings
         return result;
     }
 
+    inline std::string combine(std::string_view s1, std::string_view s2)
+    {
+        std::string result;
+        result.reserve(s1.size() + s2.size());
+            // Single allocation for combined size
+        result.append(s1);
+        result.append(s2);
+        return result;
+    }
+
     inline void removeChar(char* buf, char removeChar)
     {
         char* s = buf;
@@ -86,14 +96,6 @@ namespace Strings
         return sv.substr(start, end - start);
     }
 
-    inline std::string combine(std::string_view a, std::string_view b)
-    {
-        std::string s;
-        s.reserve(a.size() + b.size()); // Single allocation for combined size
-        s.append(a);
-        s.append(b);
-        return s;
-    }
 }
 
 /**
