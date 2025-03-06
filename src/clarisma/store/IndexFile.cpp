@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/store/IndexFile.h>
-#include <clarisma/util/pointer.h>
+#include <limits>
 
 namespace clarisma {
 
 IndexFile::IndexFile() :
 	slotsPerSegment_(0),
-	maxEntryCount_(0),
+	maxEntryCount_(std::numeric_limits<int64_t>::max()),	// TODO
 	valueWidth_(0)
 {
 }
@@ -30,7 +30,7 @@ IndexFile::CellRef IndexFile::getCell(int64_t key)
 	CellRef ref;
 	ref.p = reinterpret_cast<uint64_t*>(
 		translate(static_cast<uint64_t>(SEGMENT_LENGTH)
-			/ sizeof(uint64_t) * segmentNo + d.quot));
+			* segmentNo + d.quot * sizeof(uint64_t)));
 	ref.bitOffset = static_cast<int>(d.rem);
 	return ref;
 }
