@@ -44,6 +44,12 @@ int64_t TagTablePtr::getKeyValue(const char* key, size_t len,
 	const StringTable& strings) const
 {
 	int code = strings.getCode(key, len);
+	return getKeyValueWithCode(key, len, code, strings);
+}
+
+int64_t TagTablePtr::getKeyValueWithCode(const char* key, size_t len, int code,
+  const StringTable& strings) const
+{
 	if (code >= 0 && code <= TagValues::MAX_COMMON_KEY)
 	{
 		return getGlobalKeyValue(code);

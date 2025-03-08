@@ -231,6 +231,14 @@ public:
         return tags.tagValue(val, store_.ptr()->strings());
     }
 
+    TagValue getTagWithCode(const std::string_view& key, int code) const noexcept
+    {
+        if(isAnonymousNode()) return {};     // empty string
+        const TagTablePtr tags = feature_.ptr.tags();
+        const TagBits val = tags.getKeyValueWithCode(key.data(), key.size(), code, store_.ptr()->strings());
+        return tags.tagValue(val, store_.ptr()->strings());
+    }
+
     [[nodiscard]] Tags tags() const noexcept
     {
         return Tags(store(), ptr());
