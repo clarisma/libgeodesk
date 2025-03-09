@@ -67,6 +67,8 @@ public:
 	uint32_t count() const;
 	TagBits getKeyValue(const char* key, size_t len,
 		const StringTable& strings) const;
+	TagBits getKeyValueWithCode(const char* key, size_t len, int code,
+		const StringTable& strings) const;
 	TagBits getKeyValue(const std::string_view& sv, const StringTable& strings) const
 	{
 		return getKeyValue(sv.data(), sv.size(), strings);
