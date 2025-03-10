@@ -273,3 +273,12 @@ protected:
 };
 
 } // namespace clarisma
+
+template<>
+struct std::hash<clarisma::DataPtr>
+{
+    std::size_t operator()(const clarisma::DataPtr &p) const noexcept
+    {
+        return hash<uintptr_t>{}(p);
+    }
+};
