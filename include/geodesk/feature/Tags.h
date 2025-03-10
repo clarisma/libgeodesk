@@ -117,15 +117,41 @@ public:
         return tags_.tagValue(val, store_->strings());
     }
 
+    /// @brief Looks up the tag value for the given key.
+    ///
+    /// @return the tag's value (or an empty string
+    ///         if no tag with this key exists)
+    TagValue operator[](Key key) const noexcept
+    {
+        const TagBits val = tags_.getKeyValue(key);
+        return tags_.tagValue(val, store_->strings());
+    }
+
     /// @brief Checks if this set of tags contains
     /// a tag with the given key.
     ///
-    [[nodiscard]] bool hasTag(std::string_view k) const noexcept;
+    [[nodiscard]] bool hasTag(std::string_view k) const noexcept
+    {
+        return tags_.getKeyValue(k, store_->strings()) != 0;
+    }
+
+    /// @brief Checks if this set of tags contains
+    /// a tag with the given key.
+    ///
+    [[nodiscard]] bool hasTag(Key key) const noexcept
+    {
+        return tags_.getKeyValue(key) != 0;
+    }
 
     /// @brief Checks if this set of tags contains
     /// a tag with the given key and value.
     ///
     [[nodiscard]] bool hasTag(std::string_view k, std::string_view v) const noexcept;
+
+    /// @brief Checks if this set of tags contains
+    /// a tag with the given key and value.
+    ///
+    [[nodiscard]] bool hasTag(Key k, std::string_view v) const noexcept;
 
     /// @brief Creates a map of keys to values. Tags are sorted
     /// in alphabetical order of their keys.

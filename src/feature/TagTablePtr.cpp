@@ -40,15 +40,25 @@ int64_t TagTablePtr::getKeyValue(PyObject* key, const StringTable& strings) cons
 
 #endif
 
-int64_t TagTablePtr::getKeyValue(const char* key, size_t len,
+TagBits TagTablePtr::getKeyValue(const char* key, size_t len,
 	const StringTable& strings) const
 {
 	int code = strings.getCode(key, len);
-	if (code >= 0 && code <= TagValues::MAX_COMMON_KEY)
+	if (code >= 0 && code <= TagValues::MAX_COMMON_KEY)	[[likely]]
 	{
 		return getGlobalKeyValue(code);
 	}
 	return getLocalKeyValue(key, len);
+}
+
+TagBits TagTablePtr::getKeyValue(Key key) const
+{
+	if (key.code() >= 0)	[[likely]]
+	{
+		assert(key.code() <= TagValues::MAX_COMMON_KEY);
+		return getGlobalKeyValue(key.code());
+	}
+	return getLocalKeyValue(key.data(), key.size());
 }
 
 TagBits TagTablePtr::getLocalKeyValue(const char* key, size_t len) const
@@ -75,7 +85,7 @@ TagBits TagTablePtr::getLocalKeyValue(const char* key, size_t len) const
 	}
 }
 
-int64_t TagTablePtr::getGlobalKeyValue(int key) const
+TagBits TagTablePtr::getGlobalKeyValue(int key) const
 {
 	uint16_t keyBits = key << 2;
 	DataPtr pTable = ptr();

@@ -8,6 +8,7 @@
 #include <Python.h>
 #endif
 #include <geodesk/export.h>
+#include <geodesk/feature/Key.h>
 #include <geodesk/feature/StringTable.h>
 #include <geodesk/feature/TagValue.h>
 #include <clarisma/compile/unreachable.h>
@@ -71,6 +72,7 @@ public:
 	{
 		return getKeyValue(sv.data(), sv.size(), strings);
 	}
+	TagBits getKeyValue(Key key) const;
 	TagBits getGlobalKeyValue(int keyCode) const;
 	TagBits getLocalKeyValue(const char* key, size_t len) const;
 	bool hasLocalKeys() const
