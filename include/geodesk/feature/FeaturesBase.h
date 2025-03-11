@@ -186,7 +186,7 @@ public:
     /// `distance` meters of `xy`.
     ///
     /// @param distance the maximum distance (in meters)
-    /// @param xy thew center of the search radius
+    /// @param xy the center of the search radius
     ///
     [[nodiscard]] FeaturesBase maxMetersFrom(double distance, Coordinate xy) const
     {

@@ -109,6 +109,9 @@ public:
 
     /// @brief Looks up the tag value for the given key.
     ///
+    /// *Note*: To efficiently look up the same tag for multiple
+    ///  features in the same GOL, consider using a Key.
+    ///
     /// @return the tag's value (or an empty string
     ///         if no tag with this key exists)
     TagValue operator[](std::string_view key) const noexcept
@@ -129,6 +132,9 @@ public:
 
     /// @brief Checks if this set of tags contains
     /// a tag with the given key.
+    ///
+    /// *Note*: To efficiently check the same tag for multiple
+    ///  features in the same GOL, consider using a Key.
     ///
     [[nodiscard]] bool hasTag(std::string_view k) const noexcept
     {

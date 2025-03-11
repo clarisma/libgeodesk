@@ -75,8 +75,9 @@ public:
 
     Key key(std::string_view k) const
     {
+        int code = strings_.getCode(k.data(), k.size());
         return Key(k.data(), static_cast<uint32_t>(k.size()),
-            strings_.getCode(k.data(), k.size()));
+            code > TagValues::MAX_COMMON_KEY ? -1 : code);
     }
 
     #ifdef GEODESK_PYTHON
