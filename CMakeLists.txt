@@ -60,6 +60,7 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
 
 # Create the library
 add_library(geodesk ${SOURCE_FILES})
+target_compile_features(geodesk INTERFACE cxx_std_20)
 set_target_properties(geodesk PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set(INCLUDES include src ${boost_crc_SOURCE_DIR}/include)
 if(GEODESK_WITH_GEOS)
@@ -124,7 +125,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
         DESTINATION include 
         FILES_MATCHING PATTERN "*.h")
 
-if(NOT GEODESK_PYTHON)
+if(NOT GEODESK_PYTHON AND NOT BUILD_SHARED_LIBS)
     # Define a simple test target (optional)
     enable_testing()
     file(GLOB_RECURSE TEST_SOURCE_FILES "test/*.cpp")

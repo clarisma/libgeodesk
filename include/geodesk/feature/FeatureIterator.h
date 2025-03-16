@@ -34,6 +34,11 @@ public:
     {
         return !currentFeature().isNull();
     }
+
+    bool operator==(std::nullptr_t) const
+    {
+        return currentFeature().isNull();
+    }
 };
 
 // \endcond

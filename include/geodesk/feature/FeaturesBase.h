@@ -187,7 +187,7 @@ public:
     /// `distance` meters of `xy`.
     ///
     /// @param distance the maximum distance (in meters)
-    /// @param xy thew center of the search radius
+    /// @param xy the center of the search radius
     ///
     [[nodiscard]] FeaturesBase maxMetersFrom(double distance, Coordinate xy) const
     {
@@ -233,6 +233,17 @@ public:
     {
         return FeaturesBase(view_.withFilter(
             new PredicateFilter<Predicate>(predicate)));
+    }
+
+    /// @brief Obtains a Key for the given string, which can be
+    /// used for fast tag-value lookups.
+    ///
+    /// **Important:** The resulting Key can only be used for
+    /// features that are stored in the same GOL.
+    ///
+    [[nodiscard]] Key key(std::string_view k) const
+    {
+        return store()->key(k);
     }
 
     /// @brief Returns a pointer to the FeatureStore

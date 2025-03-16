@@ -125,9 +125,18 @@ public:
 
     /// @brief Obtains the tag value for the given key.
     ///
+    /// *Note*: To efficiently look up the same tag for multiple
+    ///  features in the same GOL, consider using a Key.
+    ///
     /// @return the tag's value (or an empty string
     ///         if the feature doesn't have a tag with this key)
     TagValue operator[](std::string_view key) const noexcept;
+
+    /// @brief Obtains the tag value for the given key.
+    ///
+    /// @return the tag's value (or an empty string
+    ///         if the feature doesn't have a tag with this key)
+    TagValue operator[](Key key) const noexcept;
 
     /// @brief A collection of the Feature's tags.
     ///
@@ -137,10 +146,19 @@ public:
     ///
     bool hasTag(std::string_view k) const noexcept;
 
+    /// @brief Checks if this Feature has a tag with the given key
+    ///
+    bool hasTag(Key k) const noexcept;
+
     /// @brief Checks if this Feature has a tag with the
     /// given key and value.
     ///
     bool hasTag(std::string_view k, std::string_view v) const noexcept;
+
+    /// @brief Checks if this Feature has a tag with the
+    /// given key and value.
+    ///
+    bool hasTag(Key k, std::string_view v) const noexcept;
 
     /// @}
     /// @name Geometry

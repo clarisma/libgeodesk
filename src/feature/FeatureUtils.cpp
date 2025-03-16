@@ -57,7 +57,7 @@ bool FeatureUtils::isEmpty(const View& view)
 {
     if(view.view() == View::EMPTY) return true;
     FeatureIterator<Feature> iter(view);
-    return iter != nullptr;
+    return iter == nullptr;
 }
 
 char* FeatureUtils::format(char* buf, const char* type, int64_t id)

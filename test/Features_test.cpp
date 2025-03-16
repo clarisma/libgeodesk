@@ -12,7 +12,7 @@ using namespace geodesk;
 
 TEST_CASE("Features")
 {
-	Features world(R"(c:\geodesk\tests\wxx.gol)");
+	Features world(R"(c:\geodesk\tests\w.gol)");
 	Feature france = world("a[boundary=administrative][admin_level=2][name=France]").one();
 	Feature paris = world("a[boundary=administrative][admin_level=8][name=Paris]")(france).one(); // first().value();
 	std::cout << "Population of Paris: " << paris["population"] << std::endl;
@@ -33,7 +33,7 @@ TEST_CASE("Features")
 
 TEST_CASE("Features2")
 {
-	Features world(R"(c:\geodesk\tests\wxx.gol)");
+	Features world(R"(c:\geodesk\tests\w.gol)");
 	Feature usa = world("a[boundary=administrative][admin_level=2][name='United States']").one();
 	Features buildings = world("a[building]");
 	Features usaBuildings = buildings(usa);
@@ -91,6 +91,13 @@ TEST_CASE("Type safety of Features")
 	{
 		REQUIRE_THROWS_AS(asNode(f), std::runtime_error);
 	}
+}
+
+TEST_CASE("Empty Features")
+{
+	Features world(R"(c:\geodesk\tests\monaco.gol)");
+	Features set = world("na[xyz:nonsense_tag]");
+	REQUIRE(!set);
 }
 
 

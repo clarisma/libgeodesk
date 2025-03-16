@@ -6,7 +6,6 @@
 
 using namespace clarisma;
 
-/*
 TEST_CASE("Math::parseDouble")
 {
   	double d;
@@ -41,4 +40,3 @@ TEST_CASE("Math::parseDouble")
 
 
 }
-*/

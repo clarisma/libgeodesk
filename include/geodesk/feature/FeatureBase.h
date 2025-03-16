@@ -231,6 +231,36 @@ public:
         return tags.tagValue(val, store_.ptr()->strings());
     }
 
+    /// @brief Obtains the tag value for the given key.
+    ///
+    /// @return the tag's value (or an empty string
+    ///         if the feature doesn't have a tag with this key)
+    TagValue operator[](Key key) const noexcept
+    {
+        if(isAnonymousNode()) return {};     // empty string
+        const TagTablePtr tags = feature_.ptr.tags();
+        const TagBits val = tags.getKeyValue(key);
+        return tags.tagValue(val, store_.ptr()->strings());
+    }
+
+    /// @brief Checks if this set of tags contains
+    /// a tag with the given key.
+    ///
+    [[nodiscard]] bool hasTag(std::string_view k) const noexcept
+    {
+        if(isAnonymousNode()) return false;
+        return feature_.ptr.tags().getKeyValue(k, store()->strings()) != 0;
+    }
+
+    /// @brief Checks if this set of tags contains
+    /// a tag with the given key.
+    ///
+    [[nodiscard]] bool hasTag(Key key) const noexcept
+    {
+        if(isAnonymousNode()) return false;
+        return feature_.ptr.tags().getKeyValue(key) != 0;
+    }
+
     [[nodiscard]] Tags tags() const noexcept
     {
         return Tags(store(), ptr());

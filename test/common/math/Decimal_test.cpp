@@ -7,10 +7,8 @@
 
 using namespace clarisma;
 
-/*
 TEST_CASE("Decimal")
 {
 	Decimal d("3.5 t");
 	REQUIRE(std::isnan(static_cast<double>(d)));
 }
-*/

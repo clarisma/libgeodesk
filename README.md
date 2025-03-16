@@ -37,7 +37,8 @@ If your project uses **CMake**, add this to your `CMakeLists.txt`:
 ```cmake
 include(FetchContent)
 FetchContent_Declare(geodesk GIT_REPOSITORY 
-    https://github.com/clarisma/libgeodesk.git)
+    https://github.com/clarisma/libgeodesk.git
+    GIT_TAG main)
 FetchContent_MakeAvailable(geodesk)
 
 target_link_libraries(my_program geodesk)
@@ -89,7 +90,7 @@ int main(int argc, char* argv[])
 
     // Iterate through the pubs that are contained 
     // in the area of Zurich and print their names
-    for (Feature pub: pubs.within(zurich)
+    for (Feature pub: pubs.within(zurich))
     {
         std::cout << pub["name"] << std::endl;
     }

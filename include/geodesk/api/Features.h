@@ -390,6 +390,18 @@ public:
     Features filter(Predicate predicate) const;
 
     /// @}
+    /// @name Metadata
+    /// @{
+
+    /// @brief Obtains a Key for the given string, which can be
+    /// used for faster tag-value lookups.
+    ///
+    /// **Important:** The resulting Key can only be used for
+    /// features that are stored in the same GOL.
+    ///
+    Key key(std::string_view k) const;
+
+    /// @}
     /// @name Access to the Low-Level API
     /// @{
 
