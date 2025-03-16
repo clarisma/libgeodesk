@@ -45,13 +45,13 @@ public:
     {
         BlobStore::open(fileName, 0);   // TODO: open mode
     }
-    
+
     void addref()  { ++refcount_;  }
     void release() { if (--refcount_ == 0) delete this;  }
     size_t refcount() const { return refcount_; }
 
     DataPtr tileIndex() const
-    { 
+    {
         return getPointer(TILE_INDEX_PTR_OFS);
     }
 
@@ -62,10 +62,10 @@ public:
     const MatcherHolder* getMatcher(const char* query);
 
     const MatcherHolder* borrowAllMatcher() const { return &allMatcher_; }
-    const MatcherHolder* getAllMatcher() 
-    { 
+    const MatcherHolder* getAllMatcher()
+    {
         allMatcher_.addref();
-        return &allMatcher_; 
+        return &allMatcher_;
     }
     bool isAllMatcher(const MatcherHolder* matcher) const
     {
@@ -90,7 +90,7 @@ protected:
     }
 
 private:
-	static const uint32_t SubtypeMagic = 0x1CE50D6E;
+  static const uint32_t SubtypeMagic = 0x1CE50D6E;
 
     static const uint32_t ZOOM_LEVELS_OFS = 40;
     static const uint32_t TILE_INDEX_PTR_OFS = 44;
@@ -103,15 +103,15 @@ private:
 
     static std::unordered_map<std::string, FeatureStore*>& getOpenStores();
     static std::mutex& getOpenStoresMutex();
-    
-    size_t refcount_;
+
+    std::atomic_size_t refcount_;
     StringTable strings_;
     IndexedKeyMap keysToCategories_;
     MatcherCompiler matchers_;
     MatcherHolder allMatcher_;
     #ifdef GEODESK_PYTHON
     PyObject* emptyTags_;
-    PyFeatures* emptyFeatures_;       
+    PyFeatures* emptyFeatures_;
         // TODO: Need to keep this here due to #46, because a feature set
         // needs a valid reference to a FeatureStore (even if empty)
         // Not ideal, should have global singleton instead of per-store,

@@ -24,7 +24,7 @@ typedef const Matcher* (*RoleMatcherMethod)(const RoleMatcher*, FeaturePtr);
 // a RoleMatcher and their associated resources (pointers to other MatcherHolder
 // objects, Regex patterns, string constants, numeric constants)
 // Resources are placed ahead of the MatcherHolder, so we need to take care when
-// deallocating, because the pointer may not point to the actual start of the 
+// deallocating, because the pointer may not point to the actual start of the
 // heap object.
 //
 // <resources>              (variable length)
@@ -50,7 +50,7 @@ public:
     }
 
     FeatureStore* store() const { return store_; }
-    
+
 private:
     MatcherMethod function_;
     FeatureStore* store_;           // not refcounted
@@ -86,9 +86,9 @@ public:
     MatcherHolder(FeatureTypes types, uint32_t keyMask, uint32_t keyMin);
 
     static const MatcherHolder* createMatchAll(FeatureTypes types);
-    static const MatcherHolder* createMatchKey(FeatureTypes types, 
+    static const MatcherHolder* createMatchKey(FeatureTypes types,
         uint32_t indexBits, int keyCode, int codeNo);
-    static const MatcherHolder* createMatchKeyValue(FeatureTypes types, 
+    static const MatcherHolder* createMatchKeyValue(FeatureTypes types,
         uint32_t indexBits, int keyCode, int valueCode);
 
     /**
@@ -118,7 +118,7 @@ private:
     static bool matchAllMethod(const Matcher*, FeaturePtr);
     static uint8_t* alloc(size_t size) { return new uint8_t[size]; };
 
-    mutable uint32_t refcount_;
+    mutable std::atomic_uint_fast32_t refcount_;
     FeatureTypes acceptedTypes_;
     uint32_t resourcesLength_;
     uint32_t referencedMatcherHoldersCount_;

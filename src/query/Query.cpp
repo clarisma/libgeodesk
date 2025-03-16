@@ -28,7 +28,7 @@ Query::Query(FeatureStore* store, const Box& box, FeatureTypes types,
     // Don't add refcount to store, wrapper object is responsible for liveness
     // of all resources
     store->addref();        // TODO: should we add a refcount to the store here?
-                            // maybe it makes more sense for PyQuery to hold a ref 
+                            // maybe it makes more sense for PyQuery to hold a ref
                             // to its PyFeatures; this way, store, matcher and filter
                             // are guaranteed to be kept alive for duration of the
                             // query's lifetime
@@ -104,7 +104,7 @@ const QueryResults* Query::take()
 
     // Turn the circular list into a simple list ending with EMPTY
     QueryResults* first = res->next;
-    res->next = QueryResults::EMPTY;
+    if(res != QueryResults::EMPTY) res->next = QueryResults::EMPTY;
     return first;
 }
 
@@ -118,7 +118,7 @@ void Query::requestTiles()
             allTilesRequested_ = true;
             break;
         }
-        TileQueryTask task(this, 
+        TileQueryTask task(this,
             (tileIndexWalker_.currentTip() << 8) |
              tileIndexWalker_.northwestFlags());
         // boost::asio::post(store_->executor(), task);
@@ -152,7 +152,7 @@ void Query::requestTiles()
         pendingTiles_++;
         submitCount--;
     }
-    
+
 }
 
 FeaturePtr Query::next()
