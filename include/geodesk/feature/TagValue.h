@@ -240,6 +240,8 @@ public:
         return static_cast<int>(*this) >= val;
     }
 
+    int charCount() const;
+
 private:
     int type() const { return taggedNumberValue_ & 3; }
     uint_fast32_t rawNumberValue() const

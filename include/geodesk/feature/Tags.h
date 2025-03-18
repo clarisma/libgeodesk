@@ -8,6 +8,7 @@
 #include <vector>
 #include <geodesk/feature/forward.h>
 #include <geodesk/feature/FeaturePtr.h>
+#include <geodesk/feature/FeatureStore.h>
 #include <geodesk/feature/TagIterator.h>
 #include <geodesk/feature/Tag.h>
 

@@ -59,6 +59,7 @@ void Console::start(const char* task)
 	// assert(consoleState_ == ConsoleState::NORMAL);
 	startTime_ = std::chrono::steady_clock::now();
 	currentPercentage_.store(0, std::memory_order_release);
+	currentTask_.store(task, std::memory_order_release);
 	if(showProgress_)
 	{
 		char buf[256];

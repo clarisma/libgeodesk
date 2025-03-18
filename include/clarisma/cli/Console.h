@@ -38,6 +38,7 @@ class ConsoleWriter;
 class AnsiColor
 {
 public:
+	explicit constexpr AnsiColor() : data_("") {}
 	explicit constexpr AnsiColor(const char *s) : data_(s) {}
 	constexpr AnsiColor(const AnsiColor& other) = default;
 	[[nodiscard]] constexpr const char* data() const { return data_; }

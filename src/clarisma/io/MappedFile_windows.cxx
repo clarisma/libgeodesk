@@ -18,6 +18,7 @@ void* MappedFile::map(uint64_t offset, uint64_t length, int mode)
     uint64_t maxSize = offset + length;
     HANDLE mappingHandle = CreateFileMappingA(fileHandle_, NULL, protect, 
         static_cast<DWORD>(maxSize >> 32), static_cast<DWORD>(maxSize), NULL);
+    // TODO: Use SEC_RESERVE ?
     if (!mappingHandle)
     {
         // Error creating file mapping
