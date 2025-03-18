@@ -9,10 +9,20 @@
 
 using namespace geodesk;
 
-
-TEST_CASE("Features")
+struct GolFixture
 {
-	Features world(R"(c:\geodesk\tests\w.gol)");
+	GolFixture() :
+		world(R"(c:\geodesk\tests\w.gol)"),
+		monaco(R"(c:\geodesk\tests\monaco.gol)")
+	{
+	}
+
+	Features world;
+	Features monaco;
+};
+
+TEST_CASE_METHOD(GolFixture, "Features")
+{
 	Feature france = world("a[boundary=administrative][admin_level=2][name=France]").one();
 	Feature paris = world("a[boundary=administrative][admin_level=8][name=Paris]")(france).one(); // first().value();
 	std::cout << "Population of Paris: " << paris["population"] << std::endl;
@@ -31,9 +41,8 @@ TEST_CASE("Features")
 	}
 }
 
-TEST_CASE("Features2")
+TEST_CASE_METHOD(GolFixture, "Features2")
 {
-	Features world(R"(c:\geodesk\tests\w.gol)");
 	Feature usa = world("a[boundary=administrative][admin_level=2][name='United States']").one();
 	Features buildings = world("a[building]");
 	Features usaBuildings = buildings(usa);
@@ -44,7 +53,7 @@ TEST_CASE("Features2")
 }
 
 
-TEST_CASE("Features 3")
+TEST_CASE_METHOD(GolFixture, "Features 3")
 {
 	Features france(R"(c:\geodesk\tests\frxx.gol)");
 	Feature paris = france("a[boundary=administrative][admin_level=8][name=Paris]").one();
@@ -83,21 +92,33 @@ static Node asNode(Feature f)
 	return f;
 }
 
-TEST_CASE("Type safety of Features")
+TEST_CASE_METHOD(GolFixture, "Type safety of Features")
 {
-	Features world(R"(c:\geodesk\tests\mcxx.gol)");
-	Ways ways = world;
+	Ways ways = monaco;
 	for(Feature f: ways)
 	{
 		REQUIRE_THROWS_AS(asNode(f), std::runtime_error);
 	}
 }
 
-TEST_CASE("Empty Features")
+TEST_CASE_METHOD(GolFixture, "Empty Features")
 {
-	Features world(R"(c:\geodesk\tests\monaco.gol)");
-	Features set = world("na[xyz:nonsense_tag]");
+	Features set = monaco("na[xyz:nonsense_tag]");
 	REQUIRE(!set);
+}
+
+TEST_CASE_METHOD(GolFixture, "Lookup with empty Key")
+{
+	Key empty;
+	TagValue v = monaco.first().value()[empty];
+	REQUIRE(v == "");
+}
+
+TEST_CASE_METHOD(GolFixture, "Lookup with Key")
+{
+	Key highway = monaco.key("highway");
+	TagValue v = monaco("w[highway]").first().value()[highway];
+	REQUIRE(v != "");
 }
 
 

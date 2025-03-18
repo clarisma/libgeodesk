@@ -37,6 +37,7 @@ int main()
     timer.stop("Opening GOL");
 
     Tile tile = Tile::fromColumnRowZoom(544,355,10);
+    Key xxx;
     Box bounds = tile.bounds();
     Key name = world.key("name");
     Key highway = world.key("highway");

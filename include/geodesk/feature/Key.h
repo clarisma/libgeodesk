@@ -41,6 +41,13 @@ namespace geodesk {
 class /* GEODESK_API */ Key
 {
 public:
+    /// Creates a null Key.
+    ///
+    /// Any lookup with a null Key returns an empty TagValue.
+    /// Calling hasTag() with a null Key always returns `false`.
+    /// 
+    Key() : code_(0), size_(0), data_(nullptr) {}
+
     /// @fn operator std::string_view() const noexcept
     /// @brief The key as a `std::string_view` (implicit conversion)
     ///
@@ -49,7 +56,7 @@ public:
 
     /// @brief The character data of the key string
     ///
-    /// **Note:** The string is *not* guaranteed to 0-trminated.
+    /// **Note:** The string is *not* guaranteed to 0-terminated.
     ///
     const char* data() const noexcept { return data_; }
 

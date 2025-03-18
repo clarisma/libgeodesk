@@ -280,7 +280,7 @@ public:
         {
             return isAnonymousNode() ? Box(anonymousNode_.xy) : NodePtr(feature_.ptr).bounds();
         }
-        return WayPtr(feature_.ptr).bounds();   // TODO: make Feature2DPtr
+        return feature_.ptr.bounds();   // TODO: make Feature2DPtr
     }
 
     /// @brief Returns the Mercator-projected x/y coordinate of a Node,
