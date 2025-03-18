@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/validate/FileSizeParser.h>
+#include <cmath>
 
 namespace clarisma {
 
@@ -9,7 +10,7 @@ uint64_t FileSizeParser::parse()
 {
     skipWhitespace();
     double num = number();
-    if (isnan(num)) error("Expected number");
+    if (std::isnan(num)) error("Expected number");
     skipWhitespace();
     char ch = *pNext_;
     if (ch != 0)

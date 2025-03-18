@@ -1,8 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <clarisma\util\PropertiesParser.h>
-#include <clarisma\util\Strings.h>
+#include <clarisma/util/PropertiesParser.h>
+#include <clarisma/util/Strings.h>
 
 namespace clarisma {
 

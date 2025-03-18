@@ -4,6 +4,7 @@
 #pragma once
 
 #include <chrono>
+#include <istream>
 #include <clarisma/util/StringViewBuffer.h>
 
 // TODO: Use std::time_t instead?

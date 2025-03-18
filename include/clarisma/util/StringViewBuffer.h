@@ -10,7 +10,7 @@ namespace clarisma {
 class StringViewBuffer : public std::streambuf
 {
 public:
-    StringViewBuffer(std::string_view sv)
+    explicit StringViewBuffer(std::string_view sv)
     {
         char *p = const_cast<char *>(sv.data());
         // Set the get area of the buffer: [p, p + size)
