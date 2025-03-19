@@ -86,13 +86,6 @@ public:
 		return taggedPtr_.flags();
 	}
 
-	bool isEmpty() const noexcept
-	{
-		return ptr().getUnsignedIntUnaligned() == TagValues::EMPTY_TABLE_MARKER &&
-			!hasLocalKeys();
-	}
-
-
 	#ifdef GEODESK_PYTHON
 	TagBits getKeyValue(PyObject* key, const StringTable& strings) const;
 	PyObject* valueAsString(TagBits value, StringTable& strings) const;
