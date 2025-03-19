@@ -131,6 +131,13 @@ public:
         return tags_.tagValue(val, store_->strings());
     }
 
+    /// @brief `true` if this set of tags is empty.
+    ///
+    [[nodiscard]] bool isEmpty() const noexcept
+    {
+        return tags_.isEmpty();
+    }
+
     /// @brief Checks if this set of tags contains
     /// a tag with the given key.
     ///

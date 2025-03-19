@@ -29,6 +29,7 @@ namespace geodesk {
 ///
 /// @see Tag, Tags
 ///
+// TODO: Clarify default value of double()
 class GEODESK_API TagValue
 {
 public:
@@ -103,6 +104,7 @@ public:
         case 1:     // global string
         case 3:     // local string (fall through)
             return stringValue_.size() != 0 && stringValue_ != "no";
+            // TODO: Use fixed constant in v2
         case 0:     // narrow number
             return TagValues::intFromNarrowNumber(rawNumberValue()) != 0;
         case 2:     // wide number
