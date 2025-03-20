@@ -96,6 +96,24 @@ public:
         return static_cast<int>(static_cast<double>(*this));
     }
 
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    operator clarisma::Decimal() const noexcept
+    {
+        switch (type())
+        {
+        case 1:     // global string
+        case 3:     // local string (fall through)
+            return clarisma::Decimal(stringValue_);
+        case 0:     // narrow number
+            return clarisma::Decimal(TagValues::intFromNarrowNumber(
+                rawNumberValue()), 0);
+        case 2:     // wide number
+            return TagValues::decimalFromWideNumber(rawNumberValue());
+        default:
+            UNREACHABLE_CASE
+        }
+    }
+
     // NOLINTNEXTLINE implicit conversion
     operator bool() const noexcept
     {
@@ -242,10 +260,27 @@ public:
         return static_cast<int>(*this) >= val;
     }
 
-    int charCount() const;
+    /// @brief Counts the number of UTF-8 characters (*not* bytes)
+    /// that this TagValue represents. Numeric values are
+    /// assumed to be formatted in their canonical representation.
+    ///
+    int charCount() const noexcept;
+
+    /// `true` if the value's native storage format is numeric.
+    ///
+    bool isStoredNumeric() const noexcept
+    {
+        return (static_cast<int>(taggedNumberValue_) & 1) == 0;
+    }
+
+    /// @brief The tag value as a string, if its native storage format
+    /// is string. If the value is stored as a number, returns an
+    /// empty string.
+    ///
+    StringValue storedString() const noexcept { return stringValue_; }
 
 private:
-    int type() const { return taggedNumberValue_ & 3; }
+    int type() const { return static_cast<int>(taggedNumberValue_) & 3; }
     uint_fast32_t rawNumberValue() const
     {
         return static_cast<uint_fast32_t>(taggedNumberValue_ >> 2);

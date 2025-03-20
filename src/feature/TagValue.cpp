@@ -12,7 +12,7 @@ bool TagValue::operator==(const TagValue& other) const noexcept
     return false;
 }
 
-int TagValue::charCount() const
+int TagValue::charCount() const noexcept
 {
     switch (type())
     {

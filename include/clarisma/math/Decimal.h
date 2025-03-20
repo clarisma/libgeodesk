@@ -52,7 +52,7 @@ public:
 		return static_cast<uint32_t>(static_cast<int64_t>(*this));
 	}
 
-	operator double() const noexcept 
+	operator double() const noexcept
 	{
 		if (value_ == INVALID) return std::numeric_limits<double>::quiet_NaN();
 		double m = static_cast<double>(mantissa());
