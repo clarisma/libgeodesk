@@ -46,6 +46,7 @@ void ConsoleWriter::flush(bool forceDisplay)
 			}
 			p_ = console_->formatStatus(p_, timestampSeconds_,
 				console_->currentPercentage_, console_->currentTask_);
+			timestampSeconds_ = -1;
 		}
 		else
 		{
