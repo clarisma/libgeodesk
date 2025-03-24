@@ -104,6 +104,7 @@ public:
         case 1:     // global string
         case 3:     // local string (fall through)
             return clarisma::Decimal(stringValue_);
+            // TODO: wrong, Decimal() does not ignore non-numeric trailing chars
         case 0:     // narrow number
             return clarisma::Decimal(TagValues::intFromNarrowNumber(
                 rawNumberValue()), 0);
