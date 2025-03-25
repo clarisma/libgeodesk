@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <catch2/catch_test_macros.hpp>
+#include <cmath>
 #include "clarisma/math/Math.h"
 
 using namespace clarisma;
@@ -31,21 +32,21 @@ TEST_CASE("Math::parseDouble")
 
 	success = Math::parseDouble("", &d);
 	REQUIRE(!success);
-	REQUIRE(isnan(d));
+	REQUIRE(std::isnan(d));
 
 	success = Math::parseDouble("not_a_number", &d);
 	REQUIRE(!success);
-	REQUIRE(isnan(d));
+	REQUIRE(std::isnan(d));
 
 	success = Math::parseDouble("-monkey", &d);
 	REQUIRE(!success);
-	REQUIRE(isnan(d));
+	REQUIRE(std::isnan(d));
 
 	success = Math::parseDouble("..1", &d);
 	REQUIRE(!success);
-	REQUIRE(isnan(d));
+	REQUIRE(std::isnan(d));
 
 	success = Math::parseDouble("--20", &d);
 	REQUIRE(!success);
-	REQUIRE(isnan(d));
+	REQUIRE(std::isnan(d));
 }

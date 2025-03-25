@@ -9,6 +9,14 @@
 
 namespace clarisma {
 
+// TODO: Fix strict parsing!
+
+///
+/// A string containing a Decimal in canonical form:
+/// - does not start with superfluous zeroes
+/// - does not end with a dot
+/// - does not end with non-numeric characters
+/// - does not represent negative zero
 class Decimal
 {
 public:
@@ -78,38 +86,11 @@ public:
 	}
 
 
-	char* format(char* buf) const noexcept
-	{
-		if (value_ == INVALID)
-		{
-			memcpy(buf, "invalid", 8);
-			return buf + 7;
-		}
-
-		char temp[32];
-		char* end = temp + sizeof(temp);
-		char* start = Format::integerReverse(mantissa(), end);
-		size_t len = end - start;
-		int scale = this->scale();
-		if (scale == 0)
-		{
-			memcpy(buf, start, len);
-		}
-		else
-		{
-			size_t wholePartLen = len - scale;
-			memcpy(buf, start, wholePartLen);
-			buf[wholePartLen] = '.';
-			memcpy(buf + wholePartLen + 1, start + wholePartLen, len - wholePartLen);
-			len++;
-		}
-		buf[len] = 0;
-		return buf + len;
-	}
+	char* format(char* buf) const noexcept;
 
 	bool operator==(int val) const noexcept
 	{
-		return scale() == 0 && mantissa() == val;
+		return static_cast<int64_t>(*this) == val;
 	}
 
 	bool operator!=(int val) const noexcept
@@ -118,62 +99,7 @@ public:
 	}
 
 private:
-	static int64_t parse(std::string_view s, bool strict)
-	{
-		int64_t value = 0;
-		int scale = 0;
-		bool seenDigit = false;
-		bool seenNonZeroDigit = false;
-		bool seenDot = false;
-		bool negative = false;
-		const char* p = s.data();
-		const char* end = s.data() + s.size();
-		
-		while(p < end)
-		{
-			char ch = *p++;
-			// if (ch == 0) break;
-			if (ch == '-')
-			{
-				if (p != s) return INVALID;
-				negative = true;
-				continue;
-			}
-			if (ch == '0')
-			{
-				if (*p == 0) return 0;
-				if (strict && seenDigit && !seenNonZeroDigit) return INVALID;
-				value *= 10;
-				seenDigit = true;
-				if (seenDot) scale++;
-				continue;
-			}
-			if (ch == '.')
-			{
-				if (seenDot) return INVALID;
-				if (strict && !seenDigit) return INVALID;
-				seenDot = true;
-				continue;
-			}
-			if (ch < '0' || ch > '9') return INVALID;
-			seenDigit = true;
-			seenNonZeroDigit = true;
-			value = value * 10 + (ch - '0');
-			if ((value & 0xf800'0000'0000'0000ULL) != 0) return INVALID;
-			if (seenDot) scale++;
-		}
-		if (value == 0)
-		{
-			if (seenDot && !seenDigit) return INVALID;
-			if (strict)
-			{
-				if (negative || scale == 0) return INVALID;
-			}
-		}
-		if (strict && seenDot && scale == 0) return INVALID;
-		if (scale > 15) return INVALID;
-		return ((negative ? -value : value) << 4) | scale;
-	}
+	static int64_t parse(std::string_view s, bool strict);
 
 	static constexpr int64_t INVALID = INT64_MIN;
 
