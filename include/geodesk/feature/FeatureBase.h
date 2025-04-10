@@ -263,6 +263,10 @@ public:
 
     [[nodiscard]] Tags tags() const noexcept
     {
+        if(isAnonymousNode()) [[unlikely]]
+        {
+            return Tags(store());
+        }
         return Tags(store(), ptr());
     }
 

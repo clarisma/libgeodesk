@@ -121,5 +121,23 @@ TEST_CASE_METHOD(GolFixture, "Lookup with Key")
 	REQUIRE(v != "");
 }
 
+TEST_CASE_METHOD(GolFixture, "Iterate tags of anonymous nodes")
+{
+	int untaggedNodeCount = 0;
+	int highwayNodeCount = 0;
+	for (Way street : monaco("w[highway]"))
+	{
+		for (Node node : street.nodes())
+		{
+			if (node.tags().isEmpty()) untaggedNodeCount++;
+			for (Tag tag : node.tags())
+			{
+				if (tag.key() == "highway") highwayNodeCount++;
+			}
+		}
+	}
+	std::cout << untaggedNodeCount << " untagged nodes, "
+		<< highwayNodeCount << " highway nodes.";
+}
 
 // TODO: Test if parent relation iterator respect types
