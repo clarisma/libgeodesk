@@ -5,9 +5,9 @@
 #include <clarisma/util/Strings.h>
 #include <geodesk/feature/StringTable.h>
 
-using namespace clarisma;
-
 namespace geodesk {
+
+using namespace clarisma;
 
 KeySchema::KeySchema(StringTable* strings, std::string_view keys) :
     strings_(strings)
@@ -84,3 +84,4 @@ int KeySchema::columnOfGlobal(int key) const
 }
 
 } // namespace geodesk
+

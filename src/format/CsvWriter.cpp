@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef false
+
 #include <geodesk/format/CsvWriter.h>
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/feature/GlobalTagIterator.h>
@@ -135,3 +137,5 @@ void CsvWriter::writeFooter()
 
 
 } // namespace geodesk
+
+#endif

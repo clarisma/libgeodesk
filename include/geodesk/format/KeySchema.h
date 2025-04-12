@@ -1,7 +1,10 @@
 // Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+
+
 #pragma once
+#include <cstdint>
 #include <string_view>
 #include <vector>
 #include <clarisma/data/HashMap.h>
@@ -41,3 +44,4 @@ private:
 };
 
 } // namespace geodesk
+
