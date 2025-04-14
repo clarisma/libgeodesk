@@ -3,6 +3,7 @@
 
 #pragma once
 #include <cstdio>
+#include <string_view>
 #include <clarisma/alloc/Block.h>
 
 namespace clarisma {
@@ -21,8 +22,55 @@ public:
 	size_t capacity() const { return end_ - buf_; }
 	bool isEmpty() const { return p_ == buf_; }
 
+	size_t capacityRemaining() const
+	{
+		return end_ - p_;
+	}
+
 	virtual void filled(char *p) = 0;
 	virtual void flush(char* p) = 0;
+
+	void write(const void* data, size_t len)
+	{
+		const char* b = reinterpret_cast<const char*>(data);
+		for (;;)
+		{
+			size_t remainingCapacity = capacityRemaining();
+			if (len < remainingCapacity)
+			{
+				std::memcpy(p_, b, len);
+				p_ += len;
+				return;
+			}
+			std::memcpy(p_, b, remainingCapacity);
+			p_ += remainingCapacity;
+			filled(p_);
+			b += remainingCapacity;
+			len -= remainingCapacity;
+		}
+	}
+
+	void write(std::string_view s)
+	{
+		write(s.data(), s.size());
+	}
+
+	void writeByte(int ch)
+	{
+		*p_++ = ch;
+		if (p_ == end_) filled(p_);
+	}
+
+	Buffer& operator<<(std::string_view s)
+	{
+		write(s);
+		return *this;
+	}
+
+	operator std::string_view() const
+	{
+		return std::string_view(buf_, length());
+	}
 
 protected:
 	char* buf_;

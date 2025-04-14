@@ -132,7 +132,7 @@ namespace Format
     }
 
     /**
-     * Formats an unsigned integr value, placing digits from end to start.
+     * Formats an unsigned integer value, placing digits from end to start.
      * 
      * @param d    unsigned integer value
      * @param end  pointer to the character that follows the last digit 
