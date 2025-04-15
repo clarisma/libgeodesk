@@ -42,15 +42,17 @@ FeatureIteratorBase::FeatureIteratorBase(const View& view) :
             view.types(), view.matcher(), view.filter());
         break;
     case View::PARENTS:
-        initParentWaysIterator(view);   // sets type_
-            // A query to find both ways and relations of a node
-            // always starts with ways, then switches to relations
-        break;
-    case View::PARENT_WAYS:
-        initParentWaysIterator(view);   // sets type_
-        break;
-    case View::PARENT_RELATIONS:
-        initParentRelationsIterator(view);  // sets type_
+        if (view.types() & FeatureTypes::WAYS)
+        {
+            initParentWaysIterator(view);   // sets type_
+            type_ = (view.types() & FeatureTypes::RELATIONS)?
+                PARENTS_ALL : PARENTS_WAYS;
+        }
+        else
+        {
+            assert(view.types() & FeatureTypes::RELATIONS);
+            initParentRelationsIterator(view);  // sets type_
+        }
         break;
     }
     fetchNext();

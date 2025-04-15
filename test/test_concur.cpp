@@ -149,6 +149,27 @@ GEODESK_TEST(member_iter_count)
     return count;
 }
 
+GEODESK_TEST(nonsense_parent_count)
+{
+    int64_t count = 0;
+    for (auto child : world)
+    {
+        count += child.parents().nodes().count();
+    }
+    return count;
+}
+
+GEODESK_TEST(nonsense_parents_of_count)
+{
+    auto nodes = world.nodes();
+    int64_t count = 0;
+    for (auto child : world)
+    {
+        count += nodes.parentsOf(child).count();
+    }
+    return count;
+}
+
 GEODESK_TEST(parent_count)
 {
     int64_t count = 0;

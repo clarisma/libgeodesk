@@ -58,9 +58,7 @@ public:
         WORLD,
         WAY_NODES,
         MEMBERS,
-        PARENTS,
-        PARENT_WAYS,
-        PARENT_RELATIONS,
+        PARENTS
     };
 
     explicit View(FeatureStore* store) :
@@ -239,7 +237,7 @@ public:
         matcher_->addref();
         store_->addref();
         if(filter_) filter_->addref();
-        return { PARENT_WAYS, flags_, types,
+        return { PARENTS, flags_, types,
             store_, anonNode, matcher_, filter_ };
     }
 
@@ -267,27 +265,11 @@ public:
         FeatureTypes types = types_ & parentTypes;
         if(types == 0) return empty();
 
-        int viewType = (types & FeatureTypes::RELATIONS)?
-            ((types & FeatureTypes::WAYS) ? PARENTS : PARENT_RELATIONS) :
-                PARENT_WAYS;
-
         // TODO: transform bbox into filter
         matcher_->addref();
         store_->addref();
         if(filter_) filter_->addref();
-        return { viewType, flags_, types, store_, feature, matcher_, filter_ };
-    }
-
-    static View parentRelationsOf(FeatureStore* store, FeaturePtr ptr, const char* query = nullptr)
-    {
-        return related(PARENT_RELATIONS, FeatureTypes::RELATIONS,
-            store, ptr, query);
-    }
-
-    static View parentWaysOf(FeatureStore* store, NodePtr node, const char* query = nullptr)
-    {
-        return related(PARENT_WAYS, FeatureTypes::WAYS & FeatureTypes::WAYNODE_FLAGGED,
-            store, node, query);
+        return { PARENTS, flags_, types, store_, feature, matcher_, filter_ };
     }
 
     static View parentWaysOf(FeatureStore* store, Coordinate anonNode, const char* query = nullptr)
@@ -308,15 +290,17 @@ public:
         // important! cannot be waynode flagged, because that would
         // only return ways that have at least one feature node
         // For parents of anonymous nodes, we must query *all* ways
-        return { PARENT_WAYS, flags, FeatureTypes::WAYS,
+        return { PARENTS, flags, FeatureTypes::WAYS,
             store, anonNode, matcher, nullptr };
     }
 
-    static View parentsOf(FeatureStore* store, NodePtr node, const char* query = nullptr)
+    static View parentsOf(FeatureStore* store, FeaturePtr feature, int types, const char* query = nullptr)
     {
-        return related(PARENTS,
-            (FeatureTypes::WAYS & FeatureTypes::WAYNODE_FLAGGED) |
-            FeatureTypes::RELATIONS, store, node, query);
+        assert((types & ((FeatureTypes::WAYS & FeatureTypes::WAYNODE_FLAGGED) |
+            FeatureTypes::RELATIONS)) == types);
+            // accepted types must not be anything other than
+            // ways (only with feature nodes) and relations
+        return related(PARENTS, types, store, feature, query);
     }
 
     uint32_t view() const noexcept { return view_; }
@@ -503,10 +487,12 @@ public:
             related, matcher_, filter_);
     }
 
+    /*
     View parentRelationsOf(FeaturePtr related) const
     {
         return ofRelated(PARENT_RELATIONS, related);
     }
+    */
 
     View membersOfRelation(FeaturePtr related) const
     {
