@@ -49,6 +49,41 @@ Features FeatureBase<T>::members(const char* query) const
     return Features::empty(store());
 }
 
+template<typename T>
+Features FeatureBase<T>::parents() const
+{
+    return parents(nullptr);
+}
+
+template<typename T>
+Features FeatureBase<T>::parents(const char* query) const
+{
+    FeatureTypes types = 0;
+    if(isNode())
+    {
+        // only nodes can have both ways and relations as parents
+        if (isAnonymousNode())
+        {
+            // anon nodes only have parent ways, and must have at least one
+            return Features(View::parentWaysOf(store(),
+                anonymousNode_.xy, query));
+        }
+
+        // feature node is part of at least one way
+        types = (feature_.ptr.flags() & FeatureFlags::WAYNODE) ?
+            (FeatureTypes::WAYS & FeatureTypes::WAYNODE_FLAGGED) : 0;
+
+        // fall through, feature node does not belong to a way,
+        // but may be a relation member
+    }
+    types |= feature_.ptr.isRelationMember() ? FeatureTypes::RELATIONS : 0;
+    if (types)
+    {
+        return Features(View::parentsOf(store(), ptr(), types, query));
+    }
+    return Features::empty(store());
+}
+
 } // namespace geodesk
 
 // \endcond

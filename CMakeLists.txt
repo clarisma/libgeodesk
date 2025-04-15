@@ -21,6 +21,7 @@ set(BUILD_SHARED_LIBS OFF)
 option(GEODESK_PYTHON "Build GeoDesk with Python support" OFF)
 option(GEODESK_PYTHON_WHEELS "Enable Support for Python Wheels" OFF)
 option(GEODESK_EXAMPLES "Build example applications" ON)
+option(GEODESK_MULTITHREADED "Allow multiple threads to use the same GOL" OFF)
 
 # Option to choose between static or shared library
 # Only set the option if BUILD_SHARED_LIBS is not already defined

@@ -11,6 +11,8 @@
 #include <geodesk/filter/WayNodeFilter.h>
 #include <geodesk/query/Query.h>
 
+#include "ParentRelationIterator.h"
+
 namespace geodesk {
 
 /// \cond
@@ -27,6 +29,14 @@ protected:
 
 private:
 	void initNodeIterator(const View& view);
+	void initParentWaysIterator(const View& view);
+	void destroyParentWaysIterator();
+	void initParentRelationsIterator(FeatureStore* store, FeaturePtr member,
+		const MatcherHolder* matcher, const Filter* filter);
+	void initParentRelationsIterator(const View& view);
+	void switchToParentRelationsIterator();
+	bool fetchNextParentWay();
+	void fetchNextParentRelation();
 
 	uint_fast8_t type_;
     Feature current_;
@@ -40,6 +50,19 @@ private:
 			FeatureNodeIterator featureNodes;
 			NodePtr nextFeatureNode;
 		} nodes;
+		struct
+		{
+			union
+			{
+				Query parentWayQuery;
+				ParentRelationIterator parentRelations;
+			};
+			union
+			{
+				FeatureNodeFilter featureNodeFilter;
+				WayNodeFilter wayNodeFilter;
+			};
+		} parents;
 
 	    // Default constructor
 	    Storage() {}
@@ -47,16 +70,6 @@ private:
 	    ~Storage() {}
 	}
 	storage_;
-
-	union ParentWaysFilters
-	{
-		FeatureNodeFilter featureNodes;
-		WayNodeFilter anonNodes;
-
-		ParentWaysFilters() {}
-		~ParentWaysFilters() {}
-	}
-	filter_;
 };
 
 

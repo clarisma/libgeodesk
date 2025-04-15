@@ -29,6 +29,9 @@ Query::Query(FeatureStore* store, const Box& box, FeatureTypes types,
                             // are guaranteed to be kept alive for duration of the
                             // query's lifetime
     */
+    tileIndexWalker_.next();
+        // move the TIW to the root tile (This is not needed in v2,
+        // since next() is called *after* each tile, not before)
     requestTiles();
 }
 
@@ -38,13 +41,13 @@ Query::Query(FeatureStore* store, const Box& box, FeatureTypes types,
 //  more efficient
 Query::~Query()
 {
-    LOG("Destroying Query...");
+    // LOG("Destroying Query...");
     while(pendingTiles_)
     {
         deleteResults(take());
     }
     deleteResults(currentResults_);
-    LOG("Destroyed Query.");
+    // LOG("Destroyed Query.");
 }
 
 
@@ -106,22 +109,6 @@ const QueryResults* Query::take()
 
 void Query::requestTiles()
 {
-    /*
-    while (pendingTiles_ < MAX_PENDING_TILES)
-    {
-        if (!tileIndexWalker_.next())
-        {
-            allTilesRequested_ = true;
-            break;
-        }
-        TileQueryTask task(this, 
-            (tileIndexWalker_.currentTip() << 8) |
-             tileIndexWalker_.northwestFlags());
-        // boost::asio::post(store_->executor(), task);
-        store_->executor().post(task);
-        pendingTiles_++;
-    }
-    */
 
     // Fill the queue with requests. If the queue is full, submit 1 request
     // (blocking until a spot frees up).
@@ -132,6 +119,7 @@ void Query::requestTiles()
     // submit at least one task, even if it means blocking, so next() will
     // work properly
 
+    /*
     int submitCount = std::max(store_->executor().minimumRemainingCapacity(), 1);
     while (submitCount > 0)
     {
@@ -151,6 +139,46 @@ void Query::requestTiles()
         }
         if (!tileIndexWalker_.next())
         {
+            allTilesRequested_ = true;
+            break;
+        }
+    }
+    */
+
+    bool postedAny = false;
+    for (;;)
+    {
+        TileQueryTask task(this,
+            (tileIndexWalker_.currentTip() << 8) |
+            tileIndexWalker_.northwestFlags(),
+            FastFilterHint(tileIndexWalker_.turboFlags(), tileIndexWalker_.currentTile()));
+
+        // LOG("Trying to submit %06X...", tileIndexWalker_.currentTip());
+
+        if (!store_->executor().tryPost(task))
+        {
+            // If the queue is full and we haven't been able to
+            // post at least one task, we'll run the task on the main
+            // thread; otherwise, we'll end up waiting for a tile
+            // that will never arrive = deadlock
+
+            if (postedAny)  [[likely]]
+            {
+                break;
+            }
+            pendingTiles_++;
+            // LOG("Running %06X on main thread...", tileIndexWalker_.currentTip());
+            task();
+        }
+        else
+        {
+            pendingTiles_++;
+            // LOG("  Submitted %06X", tileIndexWalker_.currentTip());
+        }
+        postedAny = true;
+        if (!tileIndexWalker_.next())
+        {
+            // LOG("All tiles submitted.");
             allTilesRequested_ = true;
             break;
         }

@@ -53,6 +53,7 @@ public:
 		return Relations(view_.withQuery(query, FeatureTypes::RELATIONS));
 	}
 
+	/*
 	template<typename P>
 	Nodes nodesOf(FeatureBase<P>) const;
 
@@ -65,7 +66,7 @@ public:
 		}
 		return FeaturesBase(empty());
 	}
-
+	*/
 };
 
 } // namespace geodesk

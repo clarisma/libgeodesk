@@ -94,9 +94,24 @@ public:
         BlobStore::open(fileName, openMode);
     }
 
+#ifdef GEODESK_MULTITHREADED
+    void addref()
+    {
+        refcount_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void release()
+    {
+        if (refcount_.fetch_sub(1, std::memory_order_acq_rel) == 1)
+        {
+            delete this;
+        }
+    }
+#else
     void addref()  { ++refcount_;  }
     void release() { if (--refcount_ == 0) delete this;  }
     size_t refcount() const { return refcount_; }
+#endif
 
     DataPtr tileIndex() const noexcept
     { 
@@ -223,8 +238,13 @@ private:
 
     static std::unordered_map<std::string, FeatureStore*>& getOpenStores();
     static std::mutex& getOpenStoresMutex();
-    
-    size_t refcount_;
+
+#ifdef GEODESK_MULTITHREADED
+    std::atomic_size_t refcount_;
+#else
+    std::size_t refcount_;
+#endif
+
     StringTable strings_;
     IndexedKeyMap keysToCategories_;
     MatcherCompiler matchers_;

@@ -23,8 +23,10 @@ public:
 	template<typename P>
 	Relations parentsOf(FeatureBase<P> feature) const
 	{
-		if(!feature.belongsToRelation()) return Relations(empty());
-		return Relations(view_.parentRelationsOf(feature.ptr()));
+		// if(!feature.belongsToRelation()) return Relations(empty());
+		return Relations(view_.parentsOf(feature.ptr()));
+		// TODO: may be able to optimize, this parent view can only
+		//  contain relations
 	}
 
 	template<typename P>

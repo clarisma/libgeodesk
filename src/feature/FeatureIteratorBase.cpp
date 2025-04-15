@@ -12,7 +12,10 @@ enum IterType
     WORLD,
     WAYNODES_ALL,
     WAYNODES_FEATURES,
-    RELATION_MEMBERS
+    RELATION_MEMBERS,
+    PARENTS_ALL,
+    PARENTS_WAYS,
+    PARENTS_RELATIONS
 };
 
 
@@ -37,6 +40,19 @@ FeatureIteratorBase::FeatureIteratorBase(const View& view) :
         new (&storage_.members) MemberIterator(view.store(),
             RelationPtr(view.relatedFeature()).bodyptr(),
             view.types(), view.matcher(), view.filter());
+        break;
+    case View::PARENTS:
+        if (view.types() & FeatureTypes::WAYS)
+        {
+            initParentWaysIterator(view);   // sets type_
+            type_ = (view.types() & FeatureTypes::RELATIONS)?
+                PARENTS_ALL : PARENTS_WAYS;
+        }
+        else
+        {
+            assert(view.types() & FeatureTypes::RELATIONS);
+            initParentRelationsIterator(view);  // sets type_
+        }
         break;
     }
     fetchNext();
@@ -67,6 +83,51 @@ void FeatureIteratorBase::initNodeIterator(const View& view)
     }
 }
 
+void FeatureIteratorBase::initParentWaysIterator(const View& view)
+{
+    type_ = PARENTS_WAYS;
+    NodePtr node(view.relatedFeature());
+    Coordinate xy;
+    Filter* filter;
+    if (!node.isNull())
+    {
+        xy = node.xy();
+        new(&storage_.parents.featureNodeFilter) FeatureNodeFilter(node, view.filter());
+        filter = &storage_.parents.featureNodeFilter;
+    }
+    else
+    {
+        xy = view.relatedAnonymousNode();
+        new(&storage_.parents.wayNodeFilter) WayNodeFilter(xy, view.filter());
+        filter = &storage_.parents.wayNodeFilter;
+    }
+    new (&storage_.parents.parentWayQuery) Query(
+        view.store(), Box(xy),
+        view.types() & FeatureTypes::WAYS, view.matcher(), filter);
+}
+
+void FeatureIteratorBase::initParentRelationsIterator(FeatureStore* store, FeaturePtr member,
+    const MatcherHolder* matcher, const Filter* filter)
+{
+    type_ = PARENTS_RELATIONS;
+    new(&storage_.parents.parentRelations) ParentRelationIterator(
+        store, member.relationTableFast(), matcher, filter);
+}
+
+
+void FeatureIteratorBase::initParentRelationsIterator(const View& view)
+{
+    initParentRelationsIterator(view.store(), view.relatedFeature(),
+        view.matcher(), view.filter());
+}
+
+void FeatureIteratorBase::destroyParentWaysIterator()
+{
+    storage_.parents.parentWayQuery.~Query();
+       // no need to destroy FeatureNodeFilter/WayNodeFilter,
+        // since they do not require any cleanup
+}
+
 FeatureIteratorBase::~FeatureIteratorBase()
 {
     switch (type_)
@@ -85,9 +146,54 @@ FeatureIteratorBase::~FeatureIteratorBase()
     case RELATION_MEMBERS:
         storage_.members.~MemberIterator();
         break;
+    case PARENTS_ALL:   // fallthrough
+    case PARENTS_WAYS:
+        destroyParentWaysIterator();
+            // A PARENTS_ALL query starts with ways, then switches to
+            // PARENT_RELATIONS once all ways have been iterated
+        break;
+    case PARENTS_RELATIONS:
+        storage_.parents.parentRelations.~ParentRelationIterator();
+        break;
     }
 }
 
+bool FeatureIteratorBase::fetchNextParentWay()
+{
+    FeaturePtr next = storage_.parents.parentWayQuery.next();
+    if(next.isNull())
+    {
+        current_.setNull();
+        return false;
+    }
+    assert(next.isWay());
+    current_.setTypedFeature(next);
+    return true;
+}
+
+void FeatureIteratorBase::fetchNextParentRelation()
+{
+    RelationPtr next = storage_.parents.parentRelations.next();
+    if(next.isNull())
+    {
+        current_.setNull();
+    }
+    else
+    {
+        current_.setTypedFeature(next);
+    }
+}
+
+void FeatureIteratorBase::switchToParentRelationsIterator()
+{
+    assert(type_ == PARENTS_ALL);
+    FeatureStore* store = storage_.parents.parentWayQuery.store();
+    NodePtr node = storage_.parents.featureNodeFilter.node();
+    const MatcherHolder* matcher = storage_.parents.parentWayQuery.matcher();
+    const Filter* filter = storage_.parents.featureNodeFilter.secondaryFilter();
+    destroyParentWaysIterator();
+    initParentRelationsIterator(store, node, matcher, filter);
+}
 
 void FeatureIteratorBase::fetchNext()
 {
@@ -161,6 +267,26 @@ void FeatureIteratorBase::fetchNext()
             current_.setTypedFeature(next);
             current_.setRole(storage_.members.currentRoleStr());
         }
+        return;
+    }
+    case PARENTS_ALL:
+    {
+        if (!fetchNextParentWay())
+        {
+            switchToParentRelationsIterator();
+            assert(type_ == PARENTS_RELATIONS);
+            fetchNextParentRelation();
+        }
+        return;
+    }
+    case PARENTS_WAYS:
+    {
+        fetchNextParentWay();
+        return;
+    }
+    case PARENTS_RELATIONS:
+    {
+        fetchNextParentRelation();
         return;
     }
     }
