@@ -8,6 +8,9 @@
 
 namespace geodesk {
 
+// Important: Ensure that this class does not require cleanup,
+// see FeatureIteratorBase::~FeatureIteratorBase()
+
 class FeatureNodeFilter : public Filter
 {
 public:
@@ -19,6 +22,9 @@ public:
         secondaryFilter_(filter)
     {
     }
+
+    NodePtr node() const { return node_; }
+    const Filter* secondaryFilter() const { return secondaryFilter_; }
 
     bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
 

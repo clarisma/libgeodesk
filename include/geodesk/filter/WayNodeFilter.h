@@ -7,6 +7,9 @@
 
 namespace geodesk {
 
+// Important: Ensure that this class does not require cleanup,
+// see FeatureIteratorBase::~FeatureIteratorBase()
+
 class WayNodeFilter : public Filter
 {
 public:

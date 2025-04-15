@@ -225,6 +225,16 @@ public:
         return {empty()};
     }
 
+    template<typename P>
+    [[nodiscard]] FeaturesBase parentsOf(FeatureBase<P> feature) const
+    {
+        if (feature.isAnonymousNode())
+        {
+            return {view_.parentWaysOf(feature.xy())};
+        }
+        return {view_.parentsOf(feature.ptr())};
+    }
+
     /// @}
 
     template <typename Predicate>
