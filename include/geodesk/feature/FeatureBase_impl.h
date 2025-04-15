@@ -73,10 +73,10 @@ Features FeatureBase<T>::parents(const char* query) const
             if(feature_.ptr.isRelationMember())
             {
                 // both ways and relations
-                return Features(View::parentsOf(store(), ptr(), query));
+                return Features(View::parentsOf(store(), NodePtr(ptr()), query));
             }
             // only ways
-            return Features(View::parentWaysOf(store(), ptr(), query));
+            return Features(View::parentWaysOf(store(), NodePtr(ptr()), query));
         }
         // fall through, feature node does not belong to a way,
         // but may be a relation member

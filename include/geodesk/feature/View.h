@@ -26,8 +26,11 @@ class GEODESK_API View
         bounds;                 // If used, USES_BOUNDS flag must be set 
                                 // If it contains a value other than Box::ofWorld(),
                                 // ACTIVE_BOUNDS must be set
-        const uint8_t* relatedFeature;  // If used, USES_BOUNDS flag must be clear
-        int32_t relatedNodeX, relatedNodeY;
+        struct
+        {
+            const uint8_t* relatedFeature;  // If used, USES_BOUNDS flag must be clear
+            int32_t relatedNodeX, relatedNodeY;
+        };
     };
 
     enum Flags

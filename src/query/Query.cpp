@@ -45,13 +45,13 @@ Query::Query(FeatureStore* store, const Box& box, FeatureTypes types,
 //  more efficient
 Query::~Query()
 {
-    LOG("Destroying Query...");
+    // LOG("Destroying Query...");
     while(pendingTiles_)
     {
         deleteResults(take());
     }
     deleteResults(currentResults_);
-    LOG("Destroyed Query.");
+    // LOG("Destroyed Query.");
 }
 
 

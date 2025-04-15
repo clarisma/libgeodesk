@@ -39,7 +39,7 @@ struct test_name##_registrar                                     \
 } test_name##_registrar_instance;                                \
 int64_t test_name##_impl()
 
-static Features world(R"(c:\geodesk\tests\bavaria.gol)");
+static Features world(R"(c:\geodesk\tests\monaco.gol)");
 
 Feature findLargestCountry()
 {
@@ -145,6 +145,81 @@ GEODESK_TEST(member_iter_count)
     for (auto parent: world)
     {
         for(auto child: parent.members()) count++;
+    }
+    return count;
+}
+
+GEODESK_TEST(parent_count)
+{
+    int64_t count = 0;
+    for (auto child : world)
+    {
+        count += child.parents().count();
+    }
+    return count;
+}
+
+GEODESK_TEST(parent_iter_count)
+{
+    int64_t count = 0;
+    for (auto child : world)
+    {
+        for (auto parent : child.parents())
+        {
+            count += 1;
+        }
+    }
+    return count;
+}
+
+GEODESK_TEST(parents_of_count)
+{
+    int64_t count = 0;
+    for (auto child : world)
+    {
+        count += world.parentsOf(child).count();
+    }
+    return count;
+}
+
+GEODESK_TEST(parent_relations_count)
+{
+    int64_t count = 0;
+    for (auto child : world)
+    {
+        count += child.parents().relations().count();
+    }
+    return count;
+}
+
+GEODESK_TEST(parent_relations_of_count)
+{
+    Features relations = world.relations();
+    int64_t count = 0;
+    for (auto child : world)
+    {
+        count += relations.parentsOf(child).count();
+    }
+    return count;
+}
+
+GEODESK_TEST(parent_ways_count)
+{
+    int64_t count = 0;
+    for (auto child : world)
+    {
+        count += child.parents().ways().count();
+    }
+    return count;
+}
+
+GEODESK_TEST(parent_ways_of_count)
+{
+    auto ways = world.ways();
+    int64_t count = 0;
+    for (auto child : world)
+    {
+        count += ways.parentsOf(child).count();
     }
     return count;
 }
@@ -265,6 +340,31 @@ GEODESK_TEST(waynode_iter_count)
     return count;
 }
 
+GEODESK_TEST(waynode_parents_count)
+{
+    int64_t count = 0;
+    for (auto way : world.ways())
+    {
+        for (auto node : way.nodes())
+        {
+            count += node.parents().count();
+        }
+    }
+    return count;
+}
+
+GEODESK_TEST(waynode_parent_ways_count)
+{
+    int64_t count = 0;
+    for (auto way : world.ways())
+    {
+        for (auto node : way.nodes())
+        {
+            count += node.parents().ways().count();
+        }
+    }
+    return count;
+}
 
 GEODESK_TEST(xy_hash)
 {

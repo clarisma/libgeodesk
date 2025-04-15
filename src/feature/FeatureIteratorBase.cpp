@@ -101,7 +101,7 @@ void FeatureIteratorBase::initParentWaysIterator(const View& view)
     }
     new (&storage_.parents.parentWayQuery) Query(
         view.store(), Box(xy),
-        view.types(), view.matcher(), filter);
+        view.types() & FeatureTypes::WAYS, view.matcher(), filter);
 }
 
 void FeatureIteratorBase::initParentRelationsIterator(FeatureStore* store, FeaturePtr member,

@@ -20,8 +20,10 @@ public:
 	Ways(const FeaturesBase<Way>& other) : FeaturesBase(other.view_) {}
 	Ways(const FeaturesBase<Relation>& other) : FeaturesBase(empty()) {}
 
+	/*
 	template<typename P>
 	Ways parentsOf(FeatureBase<P> feature) const;
+	*/
 };
 
 /// \endcond
