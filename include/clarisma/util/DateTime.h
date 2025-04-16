@@ -4,6 +4,7 @@
 #pragma once
 
 #include <chrono>
+#include <iomanip>
 #include <istream>
 #include <clarisma/util/StringViewBuffer.h>
 
