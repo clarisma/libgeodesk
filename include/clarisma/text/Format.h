@@ -188,6 +188,8 @@ namespace Format
 	    return end;
 	}
 
+    inline char* formatDouble(char* buf, double d, int precision=15, bool zeroFill=false);
+
     inline char* fractionalReverse(unsigned long long d, char** pEnd, int precision, bool zeroFill);
 
     inline char* doubleReverse(char** pEnd, double d, int precision=15, bool zeroFill=false);

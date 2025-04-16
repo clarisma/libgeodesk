@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/io/File.h>
+#include <limits.h> // for PATH_MAX
 #include <stdexcept>
 #include <sys/mman.h>
 #include <sys/stat.h>

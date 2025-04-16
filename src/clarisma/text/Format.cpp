@@ -207,4 +207,53 @@ char* fileSizeNice(char* p, uint64_t size)
     return p;
 }
 
+// 0-terminates
+inline char* formatFractional(char* buf, unsigned long long d, int precision, bool zeroFill)
+{
+    char* start = buf + 1;
+    char* end = start + precision;
+    char* p = end;
+    while(p > start)
+    {
+        lldiv_t result = lldiv(d, 10);
+        if (p == end && result.rem == 0 && !zeroFill)
+        {
+            end--;		// skip trailing zeroes
+            p--;
+        }
+        else
+        {
+            *(--p) = static_cast<char>('0' + result.rem);
+        }
+        d = result.quot;
+    }
+    buf[0] = '.';
+    end -= (start == end);
+    *end = '\0';
+    return end;
+}
+
+
+inline char* formatDouble(char* out, double d, int precision, bool zeroFill)
+{
+    assert(precision >= 0 && precision <= 15);
+    char buf[64];
+    double multiplier = Math::POWERS_OF_10[precision];
+    long long roundedScaled = static_cast<long long>(round(d * multiplier));
+    long long intPart = static_cast<long long>(roundedScaled / multiplier);
+    unsigned long long fracPart = static_cast<unsigned long long>(
+        abs(roundedScaled - intPart * multiplier));
+
+    // Format the whole portion
+    char* end = buf + sizeof(buf);
+    char *start = integerReverse(intPart, end);
+    auto wholePartLen = end - start;
+    memcpy(out, start, wholePartLen);
+    start = out + wholePartLen;
+
+    // Format the fractional portion
+    return formatFractional(start, fracPart, precision, zeroFill);
+}
+
+
 } // namespace clarisma
