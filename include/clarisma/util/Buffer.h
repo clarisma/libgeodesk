@@ -3,6 +3,7 @@
 
 #pragma once
 #include <cstdio>
+#include <cstring>
 #include <string_view>
 #include <clarisma/alloc/Block.h>
 
