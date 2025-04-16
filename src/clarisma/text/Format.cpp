@@ -1,6 +1,5 @@
-//
-// Created by marti on 9/29/2024.
-//
+// Copyright (c) 2025 Clarisma / GeoDesk contributors
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <cmath>
 #include <clarisma/math/Math.h>
@@ -234,7 +233,7 @@ inline char* formatFractional(char* buf, unsigned long long d, int precision, bo
 }
 
 
-inline char* formatDouble(char* out, double d, int precision, bool zeroFill)
+char* formatDouble(char* out, double d, int precision, bool zeroFill)
 {
     assert(precision >= 0 && precision <= 15);
     char buf[64];
@@ -256,4 +255,4 @@ inline char* formatDouble(char* out, double d, int precision, bool zeroFill)
 }
 
 
-} // namespace clarisma
+} // namespace clarisma::Format

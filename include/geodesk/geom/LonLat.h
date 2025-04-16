@@ -17,9 +17,11 @@ public:
 		lon(Mercator::lonFromX(c.x)),
 		lat(Mercator::latFromY(c.y)) {}
 
-	void format(char* buf) const
+	char* format(char* buf, int prec = 7) const
 	{
-		clarisma::Format::unsafe(buf, "%.7f,%.7f", lon, lat);
+        char* p = clarisma::Format::formatDouble(buf, lon, prec);
+        *p++ = ',';
+		return clarisma::Format::formatDouble(buf, lat, prec);
 	}
 
 	std::string toString() const

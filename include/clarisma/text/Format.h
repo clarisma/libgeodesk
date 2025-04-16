@@ -188,7 +188,7 @@ namespace Format
 	    return end;
 	}
 
-    inline char* formatDouble(char* buf, double d, int precision=15, bool zeroFill=false);
+    char* formatDouble(char* buf, double d, int precision=15, bool zeroFill=false);
 
     inline char* fractionalReverse(unsigned long long d, char** pEnd, int precision, bool zeroFill);
 
@@ -232,6 +232,29 @@ namespace Format
     }
 
     char* timeAgo(char* buf, int64_t secs);
+}
+
+class FormattedLong
+{
+public:
+    FormattedLong(const int64_t value) : value_(value) {}   // NOLINT implicit
+
+    char* format(char* buf) const noexcept
+    {
+        return Format::integerNice(buf, value_);
+    }
+
+private:
+    int64_t value_;
+};
+
+template<typename Stream>
+Stream& operator<<(Stream& out, const FormattedLong v)
+{
+    char buf[32];
+    char* p = v.format(buf);
+    out.write(buf, p-buf);
+    return out;
 }
 
 

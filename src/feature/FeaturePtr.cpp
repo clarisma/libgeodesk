@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/feature/FeaturePtr.h>
+#include <geodesk/feature/FeatureUtils.h>
 
 namespace geodesk {
 
@@ -17,8 +18,8 @@ const char* FeaturePtr::typeName() const
 
 std::string FeaturePtr::toString() const
 {
-	char buf[50];
-	clarisma::Format::unsafe(buf, "%s/%llu", typeName(), id());
+	char buf[64];
+	FeatureUtils::format(buf, typeName(), id());
 	return std::string(buf);
 }
 

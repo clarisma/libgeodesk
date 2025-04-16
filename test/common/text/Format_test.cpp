@@ -32,4 +32,7 @@ TEST_CASE("Format::formatDouble")
 
 	formatDouble(buf, -18.9999, 0, false);
 	REQUIRE(std::string(buf) == "-19");
+
+	formatDouble(buf, -0.30000, 0, true);
+	REQUIRE(std::string(buf) == "0");
 }
