@@ -26,7 +26,8 @@ public:
 		StringViewBuffer buf(s);
 		std::istream in(&buf);
 		sys_time<milliseconds> tp;
-		in >> parse(format, tp);
+		// in >> parse(format, tp);
+		from_stream(in, format, tp);
 		timestamp_ = duration_cast<milliseconds>(tp.time_since_epoch()).count();
 	}
 
