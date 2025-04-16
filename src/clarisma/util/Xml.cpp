@@ -134,14 +134,10 @@ void Xml::writeEscaped(BufferWriter& out, std::string_view s)
                 hexBuf[0] = '&';
                 hexBuf[1] = '#';
                 hexBuf[2] = 'x';
-
-                auto result =
-                    std::to_chars(hexBuf + 3, hexBuf + 7, uc, 16);
-                *result.ptr++ = ';';
-
+                Format::hex(hexBuf + 3, uc, 2); // 2 hex digits for one byte (00–ff)
+                hexBuf[5] = ';';
                 replacement = hexBuf;
-                replacementLen =
-                    static_cast<size_t>(result.ptr - hexBuf);
+                replacementLen = 6; // "&" + "#" + "x" + 2 hex digits + ";"
             }
             break;
         }
