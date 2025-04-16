@@ -19,6 +19,7 @@ public:
 	explicit DateTime(uint64_t millisecondsSinceEpoch) : timestamp_(
 		static_cast<int64_t>(millisecondsSinceEpoch)) {}
 
+	/*
 	DateTime(std::string_view s, const char* format)
 	{
 		using namespace std::chrono;
@@ -26,9 +27,32 @@ public:
 		StringViewBuffer buf(s);
 		std::istream in(&buf);
 		sys_time<milliseconds> tp;
-		// in >> parse(format, tp);
-		from_stream(in, format, tp);
+		in >> parse(format, tp);
+		// from_stream(in, format, tp);
 		timestamp_ = duration_cast<milliseconds>(tp.time_since_epoch()).count();
+	}
+	*/
+
+	// workaroudn for older compilers
+
+	DateTime(std::string_view s, const char* format)
+	{
+		std::tm tm = {};
+		StringViewBuffer buf(s);
+		std::istream in(&buf);
+		in >> std::get_time(&tm, format);
+		if (in.fail())
+		{
+			throw std::runtime_error("Invalid date/time format");
+		}
+
+		std::time_t time = std::mktime(&tm);
+		if (time == -1)
+		{
+			throw std::runtime_error("Failed to convert time");
+		}
+
+		timestamp_ = static_cast<int64_t>(time) * 1000; // seconds to ms
 	}
 
 	// TODO: Should 0 really be "null" as it is a valid timestamp?
