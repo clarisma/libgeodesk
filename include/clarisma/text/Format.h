@@ -194,7 +194,7 @@ namespace Format
 
     inline char* doubleReverse(char** pEnd, double d, int precision=15, bool zeroFill=false);
 
-    inline char* integerNice(char* p, int64_t d);
+    char* integerNice(char* p, int64_t d);
 
     // char* wholeOrSingleDigitPrecision(char * p, double d);
 
@@ -237,7 +237,7 @@ namespace Format
 class FormattedLong
 {
 public:
-    FormattedLong(const int64_t value) : value_(value) {}   // NOLINT implicit
+    explicit FormattedLong(const int64_t value) : value_(value) {}
 
     char* format(char* buf) const noexcept
     {

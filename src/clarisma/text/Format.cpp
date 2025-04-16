@@ -47,7 +47,7 @@ static char* formatFractionalReverse(unsigned long long d, char** pEnd, int prec
 }
 */
 
-inline char* integerNice(char* p, int64_t d)
+char* integerNice(char* p, int64_t d)
 {
     char buf[32];
     char* end = buf + sizeof(buf);
