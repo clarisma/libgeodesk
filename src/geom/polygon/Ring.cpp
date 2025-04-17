@@ -1,7 +1,7 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "Ring.h"
+#include <geodesk/geom/polygon/Ring.h>
 #include <geodesk/geom/polygon/PointInPolygon.h>
 #include "Segment.h"
 

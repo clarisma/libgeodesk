@@ -4,7 +4,7 @@
 #include <geodesk/format/CoordinateFormat.h>
 #include <clarisma/text/Format.h>
 #include <geodesk/geom/polygon/Polygonizer.h>
-#include "geom/polygon/Ring.h"
+#include <geodesk/geom/polygon/Ring.h>
 #include "geom/polygon/RingCoordinateIterator.h"
 #include <geodesk/geom/Mercator.h>
 #include <geodesk/geom/geos/GeosCoordinateIterator.h>
@@ -14,7 +14,7 @@ namespace geodesk {
 using namespace clarisma;
 using namespace clarisma::Format;
 
-void CoordinateFormat::write(Buffer& out, Coordinate c, char leadChar)
+void CoordinateFormat::write(Buffer& out, Coordinate c, char leadChar) const
 {
     char buf[64];
     char* p = buf;
@@ -33,7 +33,7 @@ void CoordinateFormat::write(Buffer& out, Coordinate c, char leadChar)
 }
 
 
-void CoordinateFormat::writeWayCoordinates(clarisma::Buffer& out, WayPtr way, bool group)
+void CoordinateFormat::writeWayCoordinates(clarisma::Buffer& out, WayPtr way, bool group) const
 {
     WayCoordinateIterator iter(way);
     // TODO: Leaflet doesn't need duplicate end coordinate for polygons
@@ -54,7 +54,7 @@ void CoordinateFormat::writeWayCoordinates(clarisma::Buffer& out, WayPtr way, bo
 
 
 void CoordinateFormat::writePolygonizedCoordinates(
-    clarisma::Buffer& out, const Polygonizer& polygonizer)
+    clarisma::Buffer& out, const Polygonizer& polygonizer) const
 {
     const Polygonizer::Ring* first = polygonizer.outerRings();
     assert (first);

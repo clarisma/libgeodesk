@@ -29,10 +29,10 @@ public:
 		precision_ = precision;
 	}
 
-	void write(clarisma::Buffer& out, Coordinate c, char leadChar = 0);
+	void write(clarisma::Buffer& out, Coordinate c, char leadChar = 0) const;
 	
 	template<typename Iter>
-	void write(clarisma::Buffer& out, Iter& iter)
+	void write(clarisma::Buffer& out, Iter& iter) const
 	{
 		char separatorChar = 0;
 		out.writeByte(coordGroupStartChar_);
@@ -45,10 +45,10 @@ public:
 		out.writeByte(coordGroupEndChar_);
 	}
 
-	void writeWayCoordinates(clarisma::Buffer& buf, WayPtr way, bool group);
-	void writePolygonizedCoordinates(clarisma::Buffer& out, const Polygonizer& polygonizer);
+	void writeWayCoordinates(clarisma::Buffer& buf, WayPtr way, bool group) const;
+	void writePolygonizedCoordinates(clarisma::Buffer& out, const Polygonizer& polygonizer) const;
 
-private:
+protected:
 	uint8_t precision_ = 7;
 	bool latitudeFirst_ = false;
 	char coordValueSeparatorChar_ = ',';

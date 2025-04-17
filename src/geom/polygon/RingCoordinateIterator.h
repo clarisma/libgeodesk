@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Ring.h"
+#include <geodesk/geom/polygon/Ring.h>
 #include "Segment.h"
 
 namespace geodesk {

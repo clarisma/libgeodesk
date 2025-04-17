@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/geom/polygon/Polygonizer.h>
-#include "Ring.h"
+#include <geodesk/geom/polygon/Ring.h>
 #include "RingBuilder.h"
 #include "RingAssigner.h"
 #include "RingMerger.h"
