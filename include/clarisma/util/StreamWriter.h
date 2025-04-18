@@ -7,6 +7,8 @@
 
 namespace clarisma {
 
+// TODO: deprecate
+
 template<typename S>
 class AbstractStreamWriter : public BufferWriter
 {

@@ -91,7 +91,7 @@ inline char* fractionalReverse(unsigned long long d, char** pEnd, int precision,
     return p;
 }
 
-inline char* doubleReverse(char** pEnd, double d, int precision, bool zeroFill)
+char* doubleReverse(char** pEnd, double d, int precision, bool zeroFill)
 {
     assert(precision >= 0 && precision <= 15);
     char* end = *pEnd;

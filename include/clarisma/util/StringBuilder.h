@@ -8,6 +8,7 @@
 
 namespace clarisma {
 
+// TODO: deprecate, or derive directly from DynamicStackBuffer
 class StringBuilder : public AbstractStreamWriter<StringBuilder>
 {
 public:

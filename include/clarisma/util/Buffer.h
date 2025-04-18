@@ -6,6 +6,7 @@
 #include <cstring>
 #include <string_view>
 #include <clarisma/alloc/Block.h>
+#include <clarisma/text/Format.h>
 
 namespace clarisma {
 
@@ -13,7 +14,7 @@ class Buffer
 {
 public:
 	Buffer() : buf_(nullptr) {}
-	virtual ~Buffer() {}
+	virtual ~Buffer() {} // TODO: make noexcept
 
 	const char* data() const { return buf_; }
 	char* pos() const { return p_; }
@@ -65,6 +66,39 @@ public:
 	Buffer& operator<<(std::string_view s)
 	{
 		write(s);
+		return *this;
+	}
+
+	Buffer& operator<<(char ch)
+	{
+		writeByte(ch);
+		return *this;
+	}
+
+	Buffer& operator<<(int64_t n)
+	{
+		char buf[32];
+		char* end = buf + sizeof(buf);
+		char* start = Format::integerReverse(n, end);
+		write(start, end - start);
+		return *this;
+	}
+
+	Buffer& operator<<(uint64_t n)
+	{
+		char buf[32];
+		char* end = buf + sizeof(buf);
+		char* start = Format::unsignedIntegerReverse(n, end);
+		write(start, end - start);
+		return *this;
+	}
+
+	Buffer& operator<<(double d)
+	{
+		char buf[64];
+		char* end = buf + sizeof(buf);
+		char* start = Format::doubleReverse(&end, d);
+		write(start, end - start);
 		return *this;
 	}
 
@@ -137,6 +171,7 @@ protected:
 };
 */
 
+// TODO: replace with FileBuffer2
 class FileBuffer : public Buffer
 {
 public:

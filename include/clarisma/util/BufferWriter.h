@@ -21,6 +21,8 @@ namespace clarisma {
 
 // TODO: should destructor auto-flush?
 
+// TODO: Deprecate in favor of Buffer
+
 class BufferWriter
 {
 public:

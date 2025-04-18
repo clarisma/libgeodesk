@@ -4,6 +4,8 @@
 #pragma once
 #include <clarisma/text/Format.h>
 
+// TODO: move to text
+
 namespace clarisma {
 
 class FileSize 

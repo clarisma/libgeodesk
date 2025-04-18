@@ -21,6 +21,7 @@ public:
     /// @return pointer to the terminating null char
   	static char* unescapeInplace(char* s);
 
+	// TODO: change to Buffer
 	static void writeEscaped(BufferWriter& out, std::string_view s);
 };
 

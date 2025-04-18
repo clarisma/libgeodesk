@@ -7,6 +7,7 @@
 
 namespace clarisma {
 
+// TODO: move to Unicode?
 class TextMetrics 
 {
 public:

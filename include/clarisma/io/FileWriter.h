@@ -8,6 +8,7 @@
 
 namespace clarisma {
 
+// TODO: deprecate
 class FileWriter : public AbstractStreamWriter<FileWriter>
 {
 public:

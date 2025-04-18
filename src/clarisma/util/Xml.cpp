@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/util/Xml.h>
-#include <random>
 #include <clarisma/text/Format.h>
 #include <clarisma/util/BufferWriter.h>
 

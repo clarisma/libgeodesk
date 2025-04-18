@@ -7,6 +7,7 @@
 
 namespace clarisma {
 
+// TODO: deprecate
 class PbfDecoder
 {
 public:

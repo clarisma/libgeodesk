@@ -192,7 +192,7 @@ namespace Format
 
     inline char* fractionalReverse(unsigned long long d, char** pEnd, int precision, bool zeroFill);
 
-    inline char* doubleReverse(char** pEnd, double d, int precision=15, bool zeroFill=false);
+    char* doubleReverse(char** pEnd, double d, int precision=15, bool zeroFill=false);
 
     char* integerNice(char* p, int64_t d);
 
