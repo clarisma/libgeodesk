@@ -253,6 +253,7 @@ private:
 	Verbosity verbosity_;
 
 	friend class ConsoleWriter;
+	friend class ConsoleBuffer;
 };
 
 } // namespace clarisma

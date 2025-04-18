@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string_view>
+#include <type_traits>
 #include <clarisma/alloc/Block.h>
 #include <clarisma/text/Format.h>
 
@@ -63,9 +64,16 @@ public:
 		if (p_ == end_) filled(p_);
 	}
 
+	/*
 	Buffer& operator<<(std::string_view s)
 	{
 		write(s);
+		return *this;
+	}
+
+	Buffer& operator<<(const char* s)
+	{
+		write(s, strlen(s));
 		return *this;
 	}
 
@@ -101,13 +109,39 @@ public:
 		write(start, end - start);
 		return *this;
 	}
+	*/
 
 	operator std::string_view() const
 	{
 		return std::string_view(buf_, length());
 	}
 
+	void clear()
+	{
+		p_ = buf_;
+	}
+
 protected:
+	// TODO: Only works if len will fit into a flushed/resized buffer
+	void ensureCapacityUnsafe(size_t len)
+	{
+		if (capacityRemaining() < len) filled(p_);
+		assert(capacityRemaining() >= len);
+	}
+
+	void putStringUnsafe(const char* s, size_t len)
+	{
+		assert(capacityRemaining() >= len);
+		memcpy(p_, s, len);
+		p_ += len;
+	}
+
+	template <size_t N>
+	void putStringUnsafe(const char(&s)[N])
+	{
+		putStringUnsafe(s, N-1);	// Subtract 1 to exclude null terminator
+	}
+
 	char* buf_;
 	char* p_;
 	char* end_;
@@ -184,5 +218,66 @@ public:
 private:
 	FILE* file_;
 };
+
+template<typename T>
+concept BufferLike = std::is_base_of_v<Buffer, T>;
+
+template<BufferLike B>
+B& operator<<(B& buf, std::string_view s)
+{
+	buf.write(s);
+	return buf;
+}
+
+template<BufferLike B>
+B& operator<<(B& buf, const char* s)
+{
+	buf.write(s, std::strlen(s));
+	return buf;
+}
+
+template<BufferLike B>
+B& operator<<(B& buf, char ch)
+{
+	buf.writeByte(ch);
+	return buf;
+}
+
+template<BufferLike B>
+B& operator<<(B& buf, int64_t n)
+{
+	char tmp[32];
+	char* end = tmp + sizeof(tmp);
+	char* start = Format::integerReverse(n, end);
+	buf.write(start, end - start);
+	return buf;
+}
+
+template<BufferLike B>
+B& operator<<(B& buf, int n)
+{
+	buf << static_cast<int64_t>(n);
+	return buf;
+}
+
+template<BufferLike B>
+B& operator<<(B& buf, uint64_t n)
+{
+	char tmp[32];
+	char* end = tmp + sizeof(tmp);
+	char* start = Format::unsignedIntegerReverse(n, end);
+	buf.write(start, end - start);
+	return buf;
+}
+
+template<BufferLike B>
+B& operator<<(B& buf, double d)
+{
+	char tmp[64];
+	char* end = tmp + sizeof(tmp);
+	char* start = Format::doubleReverse(&end, d);
+	buf.write(start, end - start);
+	return buf;
+}
 
 } // namespace clarisma
