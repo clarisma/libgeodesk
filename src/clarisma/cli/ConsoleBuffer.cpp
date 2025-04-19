@@ -16,6 +16,10 @@ ConsoleBuffer::ConsoleBuffer(Console::Stream stream) :
 	hasColor_(console_->hasColor(stream)),
 	timestampSeconds_(-1)
 {
+  	if(!isTerminal_)
+  	{
+		buf_ = new char[64 * 1024];
+  	}
 }
 
 void ConsoleBuffer::color(int color)
@@ -30,14 +34,13 @@ void ConsoleBuffer::normal()
 
 void ConsoleBuffer::ensureNewlineUnsafe()
 {
-  	assert(console_->isTerminal_[stream_]);
+  	assert(isTerminal_);
 	if(p_ > buf_ && *(p_-1) != '\n') *p_++ = '\n';
 }
 
 void ConsoleBuffer::flush(bool forceDisplay)
 {
-    // TODO: why not use isTerminal_??
-	if(console_->isTerminal_[stream_])
+    if(isTerminal_)
 	{
 		if(console_->consoleState_ == Console::ConsoleState::PROGRESS)
 		{
@@ -64,6 +67,32 @@ void ConsoleBuffer::flush(bool forceDisplay)
 	}
 	console_->print(static_cast<Console::Stream>(stream_), data(), length());
 	clear();
+}
+
+void ConsoleBuffer::filled(char* p)
+{
+	if(isTerminal_)
+	{
+		DynamicStackBuffer::filled(p);
+	}
+	else
+	{
+		console_->print(static_cast<Console::Stream>(stream_), data(), length());
+		clear();
+	}
+}
+
+void ConsoleBuffer::flush(char* p)
+{
+	if(isTerminal_)
+	{
+		DynamicStackBuffer::flush(p);
+	}
+	else
+	{
+		console_->print(static_cast<Console::Stream>(stream_), data(), length());
+		clear();
+	}
 }
 
 // TODO: Don't confuse wih clear(), which empties the buffer of

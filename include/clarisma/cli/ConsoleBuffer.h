@@ -40,6 +40,9 @@ public:
 
 	int prompt(bool defaultYes);
 
+	void filled(char* p) override;
+	void flush(char* p) override;
+
 private:
   	void ensureNewlineUnsafe();
 

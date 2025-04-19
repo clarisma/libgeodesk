@@ -96,7 +96,7 @@ int64_t Decimal::parse(std::string_view s, bool strict)
 
 char* Decimal::format(char* buf) const noexcept
 {
-    if (value_ == INVALID)
+    if (value_ == INVALID)  [[unlikely]]
     {
         memcpy(buf, "invalid", 8);
         return buf + 7;
@@ -114,10 +114,21 @@ char* Decimal::format(char* buf) const noexcept
     else
     {
         size_t wholePartLen = len - scale;
-        memcpy(buf, start, wholePartLen);
-        buf[wholePartLen] = '.';
-        memcpy(buf + wholePartLen + 1, start + wholePartLen, len - wholePartLen);
-        len++;
+        if (wholePartLen == 0)
+        {
+            // Insert leading '0' before decimal point
+            buf[0] = '0';
+            buf[1] = '.';
+            memcpy(buf + 2, start, len);
+            len += 2;
+        }
+        else
+        {
+            memcpy(buf, start, wholePartLen);
+            buf[wholePartLen] = '.';
+            memcpy(buf + wholePartLen + 1, start + wholePartLen, len - wholePartLen);
+            len++;
+        }
     }
     buf[len] = 0;
     return buf + len;

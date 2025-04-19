@@ -11,7 +11,14 @@ using namespace clarisma;
 
 TEST_CASE("Decimal")
 {
-	Decimal d("3.5 t");
+	char buf[64];
+
+	Decimal d(".5");
+	REQUIRE(d == 0.5);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.5");
+
+	d= Decimal("3.5 t");
 	REQUIRE(d == 3.5);
 
 	d = Decimal("3.5 t", true);
