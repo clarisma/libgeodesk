@@ -14,6 +14,10 @@ namespace geodesk {
 ///
 /// \cond lowlevel
 ///
+
+// TODO: broken; ambiguous sentinel if not using waynode IDs:
+//  0 could mean end or anonymous node
+
 class WayNodeIterator 
 {
 public:
@@ -25,6 +29,8 @@ public:
         ForeignFeatureRef foreign;
     };
 
+    // TODO: duplicateFirst is ambiguous
+    //  Here it means "duplicate first ndoe, but only if way is an area"
     WayNodeIterator(FeatureStore* store, WayPtr way, bool duplicateFirst, bool wayNodeIDs) :
         nodes_(store, way.bodyptr(), way.flags(), store->borrowAllMatcher(), nullptr),
         pID_(nullptr),
