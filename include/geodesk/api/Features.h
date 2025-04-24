@@ -138,10 +138,14 @@ public:
     ///
     operator bool() const;
 
-    /// @brief Returns `true` if this collection is empty.
+    /// @brief Returns `true` if this collection contains no features.
     ///
     bool operator!() const;
 
+    /// @brief Returns `true` if this collection contains no features.
+    ///
+    bool isEmpty() const;
+    
     /// @brief Checks if the specified Feature exists in this collection.
     ///
     bool contains(const Feature& feature) const;

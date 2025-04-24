@@ -115,6 +115,13 @@ public:
         return FeatureUtils::count(view_);
     }
 
+    /// @brief Returns `true` if this collection contains no features.
+    ///
+    bool isEmpty() const
+    {
+        return FeatureUtils::isEmpty(view_);
+    }
+
     /// @brief Calculates the total length (in meters) of the features
     /// in this collection.
     ///
@@ -272,12 +279,6 @@ protected:
     }
 
     FeatureIterator<T> query() const;
-
-    bool isEmpty() const
-    {
-        return FeatureUtils::isEmpty(view_);
-    }
-
 
     static View rootView(const char* golFile)
     {
