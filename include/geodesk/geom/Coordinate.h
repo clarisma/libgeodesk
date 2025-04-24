@@ -90,3 +90,4 @@ struct std::hash<geodesk::Coordinate>
 	}
 };
 
+// TODO: consider the hash function used in FixedLonLat
