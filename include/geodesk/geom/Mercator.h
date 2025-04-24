@@ -80,6 +80,14 @@ public:
     }
 
     /// @brief Converts a %Mercator X-coordinate to longitude
+    /// (in WGS-84 degrees, 100 nano-degree resolution).
+    ///
+    static int32_t lon100ndFromX(double x) noexcept
+    {
+        return clarisma::Math::roundFastToInt32(lonFromX(x) * 1e7);
+    }
+
+    /// @brief Converts a %Mercator X-coordinate to longitude
     /// (in WGS-84 degrees, rounded to 7 digits of precision).
     ///
     static double roundedLonFromX(double x) noexcept
@@ -92,6 +100,14 @@ public:
     static double latFromY(double y) noexcept
     {
         return std::atan(std::exp(y * M_PI * 2.0 / MAP_WIDTH)) * 360.0 / M_PI - 90.0;
+    }
+
+    /// @brief Converts a %Mercator Y-coordinate to latitude
+    /// (in WGS-84 degrees, 100 nano-degree resolution).
+    ///
+    static int32_t lat100ndFromY(double y) noexcept
+    {
+        return clarisma::Math::roundFastToInt32(latFromY(y) * 1e7);
     }
 
     /// @brief Converts a %Mercator Y-coordinate to latitude
