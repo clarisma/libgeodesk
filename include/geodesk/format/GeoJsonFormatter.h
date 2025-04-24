@@ -85,7 +85,34 @@ public:
 			out << "\":";
 			writeTagValue(out, iter);
         }
+		out.writeByte('}');
     }
+
+	void writeFeature(clarisma::Buffer& out, FeatureStore* store, FeaturePtr feature)
+	{
+		out << "{\"type\":\"Feature\",\"id\":\"";
+		writeDefaultId(out, feature);	// TODO: customizable ID
+		// TODO: bbox?
+		out << "\",\"geometry\":";
+		writeFeatureGeometry(out, store, feature);
+		out << ",\"properties\":";
+		writeTags(out, feature.tags(), store->strings());
+		out.writeByte('}');
+	}
+
+	// TODO: No header for GeoJSONL
+	void writeHeader(clarisma::Buffer& out, const std::string_view& generator)
+	{
+		out << "{\"type\":\"FeatureCollection\",\"generator\":\"";
+		out << generator;
+		out << "\",\"features\":[";
+	}
+
+	// TODO: No footer for GeoJSONL
+	void writeFooter(clarisma::Buffer& out)
+	{
+		out << "]}";
+	}
 };
 
 // \endcond

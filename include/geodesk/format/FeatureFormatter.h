@@ -22,20 +22,20 @@ class FeatureFormatter : public CoordinateFormat
 public:
 	FeatureFormatter(KeySchema* schema = nullptr) : schema_(schema) {}
 
-	void writeGeometry(clarisma::Buffer& out, FeatureStore* store, FeaturePtr feature) const
+	void writeFeatureGeometry(clarisma::Buffer& out, FeatureStore* store, FeaturePtr feature) const
     {
 		if (feature.isWay())
 		{
-			self().writeGeometry(out, WayPtr(feature));
+			self().writeWayGeometry(out, WayPtr(feature));
 		}
 		else if (feature.isNode())
 		{
-			self().writeGeometry(out, NodePtr(feature));
+			self().writeNodeGeometry(out, NodePtr(feature));
 		}
 		else
 		{
 			assert(feature.isRelation());
-			self().writeGeometry(out, store, RelationPtr(feature));
+			self().writeRelationGeometry(out, store, RelationPtr(feature));
 		}
     }
 
@@ -120,6 +120,12 @@ public:
 	void writeNumberTagValue(clarisma::Buffer& out, clarisma::Decimal d) const
     {
     	out << d;
+	}
+
+	void writeDefaultId(clarisma::Buffer& out, FeaturePtr feature)
+	{
+		out.writeByte("NWRS"[feature.typeCode()]);
+		out << feature.id();
 	}
 
 protected:

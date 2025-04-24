@@ -17,19 +17,19 @@ public:
         latitudeFirst_ = true;
     }
 
-    void writeGeometry(clarisma::Buffer& out, NodePtr node) const
+    void writeNodeGeometry(clarisma::Buffer& out, NodePtr node) const
     {
         out.write("L.circleMarker(");
         write(out, node.xy());
     }
 
-    void writeGeometry(clarisma::Buffer& out, WayPtr way) const
+    void writeWayGeometry(clarisma::Buffer& out, WayPtr way) const
     {
         out.write(way.isArea() ? "L.polygon(" : "L.polyline(");
         writeWayCoordinates(out, way, way.isArea());
     }
 
-    void writeAreaGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+    void writeRelationAreaGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
     {
         Polygonizer polygonizer;
         polygonizer.createRings(store, rel);
@@ -46,7 +46,7 @@ public:
         }
     }
 
-    void writeCollectionGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+    void writeCollectionRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
     {
         out.write("L.featureGroup([");
         writeMemberGeometries(out, store, rel);
