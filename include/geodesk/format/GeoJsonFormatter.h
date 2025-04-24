@@ -4,6 +4,7 @@
 #pragma once
 
 #include "FeatureFormatter.h"
+#include <clarisma/util/Json.h>
 #include <geodesk/geom/polygon/Polygonizer.h>
 #include <geodesk/geom/polygon/Ring.h>
 
@@ -15,14 +16,16 @@ namespace geodesk {
 class GeoJsonFormatter : public FeatureFormatter<GeoJsonFormatter>
 {
 public:
-	void writeGeometry(clarisma::Buffer& out, NodePtr node) const
+    using FeatureFormatter::FeatureFormatter;
+
+	void writeNodeGeometry(clarisma::Buffer& out, NodePtr node) const
   	{
 		out.write("{\"type\":\"Point\",\"coordinates\":");
   		write(out,node.xy());
 		out.writeByte('}');
   	}
 
-	void writeGeometry(clarisma::Buffer& out, WayPtr way) const
+	void writeWayGeometry(clarisma::Buffer& out, WayPtr way) const
     {
 		out.write(way.isArea() ?
 			"{\"type\":\"Polygon\",\"coordinates\":" :
@@ -31,7 +34,7 @@ public:
 		out.writeByte('}');
     }
 
-	void writeAreaGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+	void writeAreaRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
     {
 		Polygonizer polygonizer;
 		polygonizer.createRings(store, rel);
@@ -52,7 +55,7 @@ public:
 		out.writeByte('}');
     }
 
-	void writeCollectionGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+	void writeCollectionRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
     {
 		out.write("{\"type\":\"GeometryCollection\",\"geometries\":");
     	if (writeMemberGeometries(out, store, rel) == 0)
@@ -60,6 +63,28 @@ public:
 			out.write("[]");
 		}
 		out.writeByte('}');
+    }
+
+	void writeStringTagValue(clarisma::Buffer& out, const clarisma::ShortVarString* s) const
+	{
+		out.writeByte('\"');
+		clarisma::Json::writeEscaped(out, s->toStringView());
+		out.writeByte('\"');
+	}
+
+	void writeTags(clarisma::Buffer& out, TagTablePtr tags, StringTable& strings) const
+    {
+		FilteredTagWalker iter(tags, strings, schema_);
+		char separatorChar = '{';
+		while(iter.next())
+        {
+			out.writeByte(separatorChar);
+			separatorChar = ',';
+			out.writeByte('\"');
+			clarisma::Json::writeEscaped(out, iter.key()->toStringView());
+			out << "\":";
+			writeTagValue(out, iter);
+        }
     }
 };
 

@@ -7,8 +7,9 @@
 #include <clarisma/util/Buffer.h>
 #include <geodesk/feature/FastMemberIterator.h>
 #include <geodesk/feature/WayPtr.h>
-#include <geodesk/format/GeometryWriter.h>
+#include <geodesk/format/KeySchema.h>
 #include <geodesk/geom/Coordinate.h>
+#include <geodesk/format/FilteredTagWalker.h>
 
 namespace geodesk {
 
@@ -19,6 +20,8 @@ template<typename Derived>
 class FeatureFormatter : public CoordinateFormat
 {
 public:
+	FeatureFormatter(KeySchema* schema = nullptr) : schema_(schema) {}
+
 	void writeGeometry(clarisma::Buffer& out, FeatureStore* store, FeaturePtr feature) const
     {
 		if (feature.isWay())
@@ -36,35 +39,35 @@ public:
 		}
     }
 
-	void writeGeometry(clarisma::Buffer& out, NodePtr node) const {}
-	void writeGeometry(clarisma::Buffer& out, WayPtr way) const
+	void writeNodeGeometry(clarisma::Buffer& out, NodePtr node) const {}
+	void writeWayGeometry(clarisma::Buffer& out, WayPtr way) const
     {
     	if(way.isArea())
         {
-        	self().writeAreaGeometry(out, way);
+        	self().writeAreaWayGeometry(out, way);
         }
         else
         {
-        	self().writeLinealGeometry(out, way);
+        	self().writeLinealWayGeometry(out, way);
         }
     }
 
-	void writeGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+	void writeRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
 	{
 		if(rel.isArea())
 		{
-			self().writeAreaGeometry(out, store, rel);
+			self().writeAreaRelationGeometry(out, store, rel);
 		}
 		else
 		{
-			self().writeCollectionGeometry(out, store, rel);
+			self().writeCollectionRelationGeometry(out, store, rel);
 		}
 	}
 
-	void writeAreaGeometry(clarisma::Buffer& out, WayPtr way) const {}
-	void writeLinealGeometry(clarisma::Buffer& out, WayPtr way) const {}
-    void writeAreaGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const {}
-    void writeCollectionGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const {}
+	void writeAreaWayGeometry(clarisma::Buffer& out, WayPtr way) const {}
+	void writeLinealWayGeometry(clarisma::Buffer& out, WayPtr way) const {}
+    void writeAreaRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const {}
+    void writeCollectionRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const {}
 
 	uint64_t writeMemberGeometries(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
 	{
@@ -78,21 +81,45 @@ public:
 			int memberType = member.typeCode();
 			if (memberType == 1)
 			{
-				self().writeGeometry(out, WayPtr(member));
+				self().writeWayGeometry(out, WayPtr(member));
 			}
 			else if (memberType == 0)
 			{
-				self().writeGeometry(out, NodePtr(member));
+				self().writeNodeGeometry(out, NodePtr(member));
 			}
 			else
 			{
 				assert(memberType == 2);
-				self().writeGeometry(out, store, RelationPtr(member));
+				self().writeRelationGeometry(out, store, RelationPtr(member));
 			}
 			count++;
 		}
-		if (count) writeByte(coordGroupEndChar_);
+		if (count) out.writeByte(coordGroupEndChar_);
 		return count;
+	}
+
+    void writeTagValue(clarisma::Buffer& out, const TagWalker& iter) const
+    {
+		if (iter.isStringValue()) [[likely]] // string
+		{
+			if (iter.isWideValue())	[[unlikely]]
+			{
+				self().writeStringTagValue(out, iter.localStringValueFast());
+			}
+			else
+			{
+				self().writeStringTagValue(out, iter.globalStringValueFast());
+			}
+		}
+		else
+		{
+			self().writeNumberTagValue(out, iter.numberValueFast());
+		}
+	}
+
+	void writeNumberTagValue(clarisma::Buffer& out, clarisma::Decimal d) const
+    {
+    	out << d;
 	}
 
 protected:
@@ -105,6 +132,8 @@ protected:
 	{
 		return static_cast<const Derived&>(*this);
 	}
+
+    const KeySchema* schema_;
 };
 
 // \endcond

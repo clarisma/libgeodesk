@@ -193,6 +193,7 @@ private:
 	TaggedPtr<const uint8_t, 1> taggedPtr_;
 
 	friend class TagIterator;
+	friend class TagWalker;
 	friend class ::PyTagIterator;
 	friend class FeatureWriter;
 };
