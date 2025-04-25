@@ -128,6 +128,29 @@ public:
 	};
 	*/
 
+	struct BTreeNode
+	{
+		static constexpr uint32_t MAX_ENTRIES = 511;	// TODO: size based on page size
+		static constexpr uint32_t MIN_ENTRIES = (MAX_ENTRIES + 1) / 2;
+		static constexpr std::size_t MAX_HEIGHT = 8;  // plenty for a 4 KB/512-fanout tree
+
+		struct Entry
+		{
+			uint32_t key;			// size or page (cannot be 0)
+			uint32_t valueOrChild;  // leaf: payload; internal: child page ID
+		};
+
+		uint32_t count;				// number of valid entries
+		uint32_t leftmostChild;		// 0 if leaf, else page ID of subtree < entries[0].key
+		Entry    entries[MAX_ENTRIES];		// TODO: size based on page size
+	};
+
+	struct SplitResult
+	{
+		uint32_t promoteKey;      // if nonzero: key to insert into parent
+		uint32_t newPage;         // child page ID for promoteKey
+	};
+
 	class Transaction : protected Store::Transaction
 	{
 	public:
@@ -163,6 +186,13 @@ public:
 					<< store()->pageSizeShift_));
 		}
 
+		BTreeNode* getNode(PageNum page)
+		{
+			return reinterpret_cast<BTreeNode*>(
+				getBlock(static_cast<uint64_t>(page)
+					<< store()->pageSizeShift_));
+		}
+
 		void addFreeBlob(PageNum firstPage, uint32_t pages, uint32_t precedingFreePages);
 		void removeFreeBlob(Blob* freeBlock);
 		PageNum relocateFreeTable(PageNum page, int sizeInPages);
@@ -170,6 +200,13 @@ public:
 		{
 			return (page & ((0x3fff'ffff) >> store()->pageSizeShift_)) == 0;
 		}
+
+		BTreeNode::Entry* lowerBound(PageNum rootPage, uint32_t x) noexcept;
+		SplitResult insert(PageNum page, uint32_t key, uint32_t value);
+		void insert(PageNum* rootPage, uint32_t key, uint32_t value);
+		uint32_t take(PageNum* rootPage, uint32_t x, bool exact) noexcept;
+		PageNum allocNode();
+		void freeNode(PageNum page);
 
 		std::unordered_map<PageNum, uint32_t> freedBlobs_;
 	};

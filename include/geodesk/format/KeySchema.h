@@ -33,6 +33,7 @@ public:
 
     static constexpr int WILDCARD = -1;
 
+    /*
     template<typename Func>
     void forEach(TagTablePtr tags, Func&& func)
     {
@@ -84,6 +85,7 @@ public:
         func(StringValue("key1"), TagValue("value1"));
         func(StringValue("key2"), TagValue(42));
     }
+    */
 
 private:
     void addKey(std::string_view key);

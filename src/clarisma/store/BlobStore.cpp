@@ -723,4 +723,338 @@ std::map<std::string_view,std::string_view> BlobStore::properties() const
     return properties;
 }
 
+
+// =============== BTRee Functions ==================
+
+/// @brief Finds the first entry whose key is >= x in the B-tree.
+/// @param rootPage  page ID of the root node
+/// @param x         search key
+/// @return pointer to the matching Entry, or nullptr if none found
+///
+BlobStore::BTreeNode::Entry* BlobStore::Transaction::lowerBound(PageNum rootPage, uint32_t x) noexcept
+{
+    uint32_t page = rootPage;
+    while (page)
+    {
+        BTreeNode* node = getNode(page);
+
+        // Binary search in entries[0..count)
+        uint32_t lo = 0;
+        uint32_t hi = node->count;
+        while (lo < hi)
+        {
+            uint32_t mid = (lo + hi) >> 1;
+            if (node->entries[mid].key < x)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+
+        // If this is a leaf, either return the entry or nullptr
+        if (node->leftmostChild == 0)
+        {
+            return (lo < node->count) ? &node->entries[lo] : nullptr;
+        }
+
+        // Otherwise descend: lo==0 ⇒ leftmostChild; else ⇒ entries[lo-1].valueOrChild
+        page = (lo == 0) ?
+            node->leftmostChild :
+            node->entries[lo - 1].valueOrChild;
+    }
+    return nullptr;
+}
+
+BlobStore::SplitResult BlobStore::Transaction::insert(
+    PageNum page, uint32_t key, uint32_t value)
+{
+    BTreeNode* node = getNode(page);
+    SplitResult result{0, 0};
+
+    // 1) Find insertion index via lower_bound
+    uint32_t lo = 0, hi = node->count;
+    while (lo < hi)
+    {
+        uint32_t mid = (lo + hi) >> 1;
+        if (node->entries[mid].key < key)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+
+    if (node->leftmostChild == 0)
+    {
+        // --- Leaf insertion ---
+        // Shift entries [lo..count) right by one
+        if (lo < node->count)
+        {
+            std::memmove(&node->entries[lo+1], &node->entries[lo],
+                (node->count - lo) * sizeof(BTreeNode::Entry));
+        }
+        node->entries[lo].key = key;
+        node->entries[lo].valueOrChild = value;
+        node->count++;
+
+        // No split needed
+        if (node->count <= BTreeNode::MAX_ENTRIES)
+        {
+            return result;
+        }
+
+        // --- Split leaf ---
+        uint32_t mid = node->count >> 1;             // e.g. 256
+        PageNum newPage = allocNode();
+        BTreeNode* sibling = getNode(newPage);
+        // Leaf: sibling is also a leaf => leftmostChild = 0
+        sibling->leftmostChild = 0;
+
+        // Move entries [mid..count) into sibling
+        uint32_t moveCount = node->count - mid;
+        std::memcpy(&sibling->entries[0], &node->entries[mid],
+            moveCount * sizeof(BTreeNode::Entry));
+        sibling->count = moveCount;
+
+        // Shrink the original
+        node->count = mid;
+
+        // Promote the first key of the sibling
+        result.promoteKey  = sibling->entries[0].key;
+        result.newPage     = newPage;
+        return result;
+    }
+
+    // --- Internal node: descend ---
+    uint32_t childPage = (lo == 0) ?
+        node->leftmostChild : node->entries[lo-1].valueOrChild;
+
+    // Recurse
+    SplitResult childResult = insert(childPage, key, value);
+    if (!childResult.promoteKey)
+    {
+        // Nothing bubbled up
+        return result;
+    }
+
+    // Insert the promoted key/page into this node at index lo
+    // Shift entries [lo..count) right by one
+    if (lo < node->count)
+    {
+        std::memmove(&node->entries[lo+1],
+            &node->entries[lo],(node->count - lo) * sizeof(BTreeNode::Entry));
+    }
+    node->entries[lo].key = childResult.promoteKey;
+    node->entries[lo].valueOrChild = childResult.newPage;
+    node->count++;
+
+    // If fits, we're done
+    if (node->count <= BTreeNode::MAX_ENTRIES) return result;
+
+    // --- Split internal node ---
+    uint32_t mid = node->count >> 1;  // choose split point
+    uint32_t promoteKey = node->entries[mid].key;
+
+    PageNum newPage = allocNode();
+    BTreeNode* sibling = getNode(newPage);
+    // The child pointer right of promoteKey becomes sibling's leftmostChild
+    sibling->leftmostChild = node->entries[mid].valueOrChild;
+
+    // Move entries [mid+1..count) into sibling.entries[0..]
+    uint32_t moveCount = node->count - (mid + 1);
+    if (moveCount > 0)
+    {
+        std::memcpy(&sibling->entries[0], &node->entries[mid+1],
+            moveCount * sizeof(BTreeNode::Entry));
+    }
+    sibling->count = moveCount;
+
+    // Shrink original node to [0..mid)
+    node->count = mid;
+
+    result.promoteKey  = promoteKey;
+    result.newPage     = newPage;
+    return result;
+}
+
+/// @brief Insert key/value into the B-tree rooted at rootPage.
+///        If the root splits, this will allocate a new root and update rootPage.
+/// @param rootPage   in/out: page ID of the current root (updated on split)
+/// @param key        the key to insert
+/// @param value      the value (or child pointer if used in a B+ tree context)
+void BlobStore::Transaction::insert(PageNum* rootPage, uint32_t key, uint32_t value)
+{
+    SplitResult res = insert(*rootPage, key, value);
+    if (res.promoteKey)
+    {
+        // Grow tree height: create new root
+        PageNum newRootPage = allocNode();
+        BTreeNode* newRoot = getNode(newRootPage);
+        newRoot->leftmostChild = *rootPage;
+        newRoot->entries[0].key = res.promoteKey;
+        newRoot->entries[0].valueOrChild = res.newPage;
+        newRoot->count = 1;
+        *rootPage = newRootPage;
+    }
+}
+
+
+/// @brief Remove and return an entry from the B-tree.
+/// @param rootPage  in/out: page ID of the tree root
+/// @param x         search key
+/// @param exact     if true, remove only if key == x; if false, remove smallest key >= x
+/// @return the value if an entry was found, otherwise 0
+uint32_t BlobStore::Transaction::take(PageNum* rootPage, uint32_t x, bool exact) noexcept
+{
+    // Path stacks (no dynamic alloc)
+    BTreeNode* nodes[BTreeNode::MAX_HEIGHT];
+    PageNum pages[BTreeNode::MAX_HEIGHT];
+    uint32_t idxs [BTreeNode::MAX_HEIGHT];
+    std::size_t depth = 0;
+
+    // 1) Descend to find lower_bound
+    PageNum page = *rootPage;
+    while (page != 0 && depth < BTreeNode::MAX_HEIGHT)
+    {
+        BTreeNode* n = getNode(page);
+
+        // binary search for first entry.key >= x
+        uint32_t lo = 0, hi = n->count;
+        while (lo < hi)
+        {
+            uint32_t mid = (lo + hi) >> 1;
+            if (n->entries[mid].key < x)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+
+        nodes[depth] = n;
+        pages[depth] = page;
+        idxs [depth] = lo;
+        ++depth;
+
+        if (n->leftmostChild == 0) break;  // leaf reached
+
+        page = (lo == 0) ? n->leftmostChild : n->entries[lo - 1].valueOrChild;
+    }
+
+    if (depth == 0) return 0;  // empty tree = no result
+
+    BTreeNode* leaf = nodes[depth - 1];
+    uint32_t i = idxs[depth - 1];
+
+    // 2) Check if match exists
+    if (i >= leaf->count || (exact && leaf->entries[i].key != x))
+    {
+        return 0;  // nothing to remove
+    }
+
+    // 3) Capture value and remove at leaf
+    uint32_t outValue = leaf->entries[i].valueOrChild;
+    std::memmove(&leaf->entries[i], &leaf->entries[i + 1],
+        (leaf->count - i - 1) * sizeof(BTreeNode::Entry));
+    --leaf->count;
+
+    // 4) Rebalance upwards if underfull
+    for (std::size_t level = depth - 1; level > 0; --level)
+    {
+        BTreeNode* n = nodes[level];
+        uint32_t pid = pages[level];
+
+        if (n->count >= BTreeNode::MIN_ENTRIES) break;
+
+        // Identify parent and our index there
+        BTreeNode* p = nodes[level - 1];
+        uint32_t pp = pages[level - 1];
+        uint32_t pidx = idxs[level - 1];
+
+        // Sibling pages
+        uint32_t leftPage  = (pidx == 0) ? 0 : p->entries[pidx - 1].valueOrChild;
+        uint32_t rightPage = (pidx < p->count) ? p->entries[pidx].valueOrChild : 0;
+
+        BTreeNode* leftSib  = leftPage  ? getNode(leftPage)  : nullptr;
+        BTreeNode* rightSib = rightPage ? getNode(rightPage) : nullptr;
+
+        // Try borrow from left
+        if (leftSib && leftSib->count > BTreeNode::MIN_ENTRIES)
+        {
+            // shift n right
+            std::memmove(&n->entries[1], &n->entries[0],
+                n->count * sizeof(BTreeNode::Entry));
+            // pull last of leftSib
+            n->entries[0] = leftSib->entries[--leftSib->count];
+            ++n->count;
+            // update parent separator
+            p->entries[pidx - 1].key = n->entries[0].key;
+            continue;
+        }
+        // Try borrow from right
+        if (rightSib && rightSib->count > BTreeNode::MIN_ENTRIES)
+        {
+            BTreeNode::Entry e = rightSib->entries[0];
+            std::memmove(&rightSib->entries[0],
+                         &rightSib->entries[1],
+                         (rightSib->count - 1) * sizeof(BTreeNode::Entry));
+            --rightSib->count;
+
+            n->entries[n->count++] = e;
+            p->entries[pidx].key   = rightSib->entries[0].key;
+            continue;
+        }
+        // Merge
+        if (leftSib)
+        {
+            // merge n into leftSib
+            std::memcpy(&leftSib->entries[leftSib->count],
+                        &n->entries[0],
+                        n->count * sizeof(BTreeNode::Entry));
+            leftSib->count += n->count;
+
+            // remove separator at pidx-1
+            std::memmove(&p->entries[pidx - 1],
+                         &p->entries[pidx],
+                         (p->count - pidx) * sizeof(BTreeNode::Entry));
+            --p->count;
+            freeNode(pid);
+        }
+        else if (rightSib)
+        {
+            // merge rightSib into n
+            std::memcpy(&n->entries[n->count],
+                        &rightSib->entries[0],
+                        rightSib->count * sizeof(BTreeNode::Entry));
+            n->count += rightSib->count;
+
+            // remove separator at pidx
+            std::memmove(&p->entries[pidx],
+                         &p->entries[pidx + 1],
+                         (p->count - pidx - 1) * sizeof(BTreeNode::Entry));
+            --p->count;
+            freeNode(rightPage);
+        }
+    }
+
+    // 5) Collapse root if empty
+    BTreeNode* root = getNode(*rootPage);
+    if (root->leftmostChild != 0 && root->count == 0)
+    {
+        uint32_t newRoot = root->leftmostChild;
+        freeNode(*rootPage);
+        *rootPage = newRoot;
+    }
+
+    return outValue;
+}
+
+
 } // namespace clarisma
