@@ -905,10 +905,13 @@ void BlobStore::Transaction::insert(PageNum* rootPage, uint32_t key, uint32_t va
 
 
 /// @brief Remove and return an entry from the B-tree.
+///
 /// @param rootPage  in/out: page ID of the tree root
 /// @param x         search key
 /// @param exact     if true, remove only if key == x; if false, remove smallest key >= x
 /// @return the value if an entry was found, otherwise 0
+///
+/// TODO: need to retrieve key/value, not just value !!!
 uint32_t BlobStore::Transaction::take(PageNum* rootPage, uint32_t x, bool exact) noexcept
 {
     // Path stacks (no dynamic alloc)
