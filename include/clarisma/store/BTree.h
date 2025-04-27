@@ -4,6 +4,8 @@
 #pragma once
 #include <clarisma/store/BTreeData.h>
 #include <cstring>
+#include <iterator>
+#include <limits>
 
 namespace clarisma {
 
@@ -11,6 +13,10 @@ template<typename Transaction>
 class BTree : private BTreeData
 {
 public:
+    // TODO: should be based on page size
+    static constexpr size_t MAX_ENTRIES = 511;
+    static constexpr size_t MIN_ENTRIES = (MAX_ENTRIES + 1) / 2;
+    static constexpr size_t MAX_HEIGHT = 8;
 
     struct Entry
     {
@@ -25,16 +31,6 @@ public:
             uint32_t child;
         };
     };
-
-    // Entry& findLowerBound(Transaction* tx, uint32_t x) const;
-    // Entry takeLowerBound(Transaction* tx, uint32_t x);
-
-private:
-
-    // TODO: should be based on page size
-    static constexpr size_t MAX_ENTRIES = 511;
-    static constexpr size_t MIN_ENTRIES = (MAX_ENTRIES + 1) / 2;
-    static constexpr size_t MAX_HEIGHT = 8;
 
     struct Node
     {
@@ -54,7 +50,7 @@ private:
             count()++;
         }
 
-        Entry entries[MAX_ENTRIES + 1];
+       Entry entries[MAX_ENTRIES + 1];
     };
 
     struct Cursor
@@ -66,8 +62,90 @@ private:
             uint32_t pos;
         };
 
+        Entry* buildPathToLeftmost(Transaction* tx, PageNum page,
+            uint32_t depth, uint32_t height)
+        {
+            while (depth < height)
+            {
+                Node* node = BTree::getNode(tx, page);
+                levels[depth].node = node;
+                levels[depth].page = page;
+                levels[depth].pos  = 0;
+                page = node->entries[0].child;
+                depth++;
+            }
+            return &levels[height-1].node->entries[1];
+        }
+
+        Entry* advance(Transaction* tx, uint32_t height)
+        {
+            // TODO: assert not already at end
+
+            // 1) Move to next entry in current leaf if possible
+            Level& leaf = levels[height - 1];
+            if (leaf.pos + 1 <= leaf.node->count())
+            {
+                leaf.pos++;
+                return &leaf.node->entries[leaf.pos];
+            }
+
+            // 2) Ascend until we can move right, then descend leftmost
+            int depth = static_cast<int>(height) - 1;
+            while (depth >= 0)
+            {
+                Level& level = levels[depth];
+                Node* node = level.node;
+                if (level.pos + 1 < node->count())
+                {
+                    level.pos++;
+                    PageNum next = node->entries[level.pos].child;
+                    return buildPathToLeftmost(tx, next, depth + 1, height);
+                }
+                depth--;
+            }
+            // Reached end of root
+            return nullptr;
+        }
+
         Level levels[MAX_HEIGHT];
     };
+
+    class Iterator
+    {
+    public:
+        Iterator(BTree* tree, Transaction* tx) :
+            done_(tree->height == 0),
+            height_(tree->height),
+            tx_(tx)
+        {
+            if (!done_)
+            {
+                cursor_.buildPathToLeftmost(
+                    tx, tree->root, 0, tree->height);
+            }
+        }
+
+        Entry* next()
+        {
+            if (done_) return nullptr;
+            Entry* current = cursor_.advance(tx_, height_);
+            done_ = current==nullptr;
+            return current;
+        }
+
+    private:
+        bool done_;
+        uint32_t height_;
+        Transaction* tx_;
+        Cursor cursor_;
+    };
+
+    // Entry& findLowerBound(Transaction* tx, uint32_t x) const;
+    // Entry takeLowerBound(Transaction* tx, uint32_t x);
+
+    Iterator iter(Transaction* tx) { return Iterator(this, tx); }
+
+private:
 
     static Node* getNode(Transaction* tx, PageNum page)
     {
