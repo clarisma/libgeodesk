@@ -172,6 +172,8 @@ public:
 		}
 
 		std::unordered_map<PageNum, uint32_t> freedBlobs_;
+
+		friend class BlobStoreTree;
 	};
 
 	uint64_t offsetOf(PageNum page) const

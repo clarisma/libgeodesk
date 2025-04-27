@@ -6,6 +6,18 @@
 
 namespace clarisma {
 
+/*
+BlobStoreTree::Entry& BlobStoreTree::findLowerBound(Transaction* tx, uint32_t x) const
+{
+
+}
+*/
+
+BlobStoreTree::Node* BlobStoreTree::getNode(Transaction* tx, PageNum page)
+{
+    return reinterpret_cast<Node*>(tx->getBlobBlock(page));
+}
+
 /// Finds the path to the first (lowest) entry whose key is >= x
 ///
 /// @param tx       the transaction
@@ -14,7 +26,7 @@ namespace clarisma {
 ///
 /// @returns true if an entry with key >= x has been found
 ///
-bool BlobStoreTree::findLowerBound(BlobStore::Transaction* tx,
+bool BlobStoreTree::findLowerBound(Transaction* tx,
     uint32_t x, Cursor& cursor) const
 {
     Cursor::Level* level = &cursor.levels[0];
@@ -79,7 +91,7 @@ void BlobStoreTree::Node::insert(int pos, Entry entry)
     count()++;
 }
 
-void BlobStoreTree::insert(BlobStore::Transaction* tx, uint32_t key, uint32_t value)
+void BlobStoreTree::insert(Transaction* tx, uint32_t key, uint32_t value)
 {
     Cursor cursor;
     Node* node;

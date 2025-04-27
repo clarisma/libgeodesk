@@ -122,7 +122,7 @@ target_include_directories(geodesk PUBLIC
     $<INSTALL_INTERFACE:include>)
 target_include_directories(geodesk PRIVATE ${GEODESK_EXTRA_INCLUDE_DIRS} src ${boost_crc_SOURCE_DIR}/include)
 
-target_link_libraries(geodesk PRIVATE gtl)
+target_link_libraries(geodesk PUBLIC gtl)
 
 # Define where the library and public headers should be installed
 install(TARGETS geodesk
