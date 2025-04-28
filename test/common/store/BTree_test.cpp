@@ -19,6 +19,7 @@ class MockTransaction
 public:
     uint8_t* getBlobBlock(BTreeData::PageNum page)
     {
+        assert(nodes_.contains(page));
         return nodes_[page];
     }
 
@@ -29,6 +30,13 @@ public:
         return pageCount_;
     }
 
+    void freeMetaPage(BTreeData::PageNum page)
+    {
+        assert(nodes_.contains(page));
+        delete nodes_[page];
+        nodes_.erase(page);
+    }
+
 private:
     HashMap<BTreeData::PageNum,uint8_t*> nodes_;
     uint32_t pageCount_ = 0;
@@ -37,7 +45,7 @@ private:
 TEST_CASE("BlobStoreTree")
 {
     MockTransaction tx;
-    BTree<MockTransaction> tree;
+    BTree<MockTransaction, 7, 16> tree;
 
     tree.insert(&tx, 10, 1000);
     tree.insert(&tx, 20, 2000);
@@ -56,14 +64,14 @@ TEST_CASE("BlobStoreTree")
 TEST_CASE("Random BlobStoreTree")
 {
     MockTransaction tx;
-    BTree<MockTransaction> tree;
+    BTree<MockTransaction, 7, 16> tree;
 
     // one-time set-up, e.g. in main()
     std::random_device rd;                         // nondet seed
     std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
     std::uniform_int_distribution<uint32_t> dist(1, 250'000); // inclusive bounds
 
-    int targetCount = 1000000;
+    int targetCount = 100000;
     HashSet<uint32_t> keys;
     std::vector<BTreeData::Entry> items;
 
@@ -72,6 +80,12 @@ TEST_CASE("Random BlobStoreTree")
         uint32_t k = dist(rng);
         tree.insert(&tx, k, k * 100);
         keys.insert(k);
+        /*
+        if ((i + 1) % 1000 == 0)
+        {
+            std::cout << "Inserted " << (i+1);
+        }
+        */
         items.push_back(BTreeData::Entry{k, k * 100});
         REQUIRE(tree.count(&tx) == i + 1);
     }

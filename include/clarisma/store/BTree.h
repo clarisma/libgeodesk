@@ -5,19 +5,17 @@
 #include <clarisma/store/BTreeData.h>
 #include <cassert>
 #include <cstring>
-#include <iterator>
-#include <limits>
 
 namespace clarisma {
 
-template<typename Transaction>
-class BTree : private BTreeData
+template<typename Transaction, size_t MaxEntries, size_t MaxHeight>
+class BTree : BTreeData
 {
 public:
     // TODO: should be based on page size
-    static constexpr size_t MAX_ENTRIES = 511;
-    static constexpr size_t MIN_ENTRIES = (MAX_ENTRIES + 1) / 2;
-    static constexpr size_t MAX_HEIGHT = 8;
+    static constexpr size_t MAX_ENTRIES = MaxEntries;
+    static constexpr size_t MIN_ENTRIES = MAX_ENTRIES / 2;
+    static constexpr size_t MAX_HEIGHT = MaxHeight;
 
     struct Node
     {
@@ -37,7 +35,25 @@ public:
             count()++;
         }
 
-       Entry entries[MAX_ENTRIES + 1];
+        /// Remove the entry at logical position @p pos (0-based, not counting
+        /// the header).  Does *not* rebalance the tree; the caller must take
+        /// care of that if needed.
+        ///
+        /// @param pos  index of the entry to delete
+        ///
+        void remove(uint32_t pos)
+        {
+            assert(pos < count());
+
+            if (pos < count() - 1)
+            {
+                std::memmove(&entries[pos + 1], &entries[pos + 2],
+                    (count() - pos - 1) * sizeof(Entry));
+            }
+            count()--;
+        }
+
+        Entry entries[MAX_ENTRIES + 1];
     };
 
     struct Cursor
@@ -145,7 +161,10 @@ private:
         return tx->allocMetaPage();
     }
 
-    static void freeNode(Transaction* tx, PageNum page);
+    static void freeNode(Transaction* tx, PageNum page)
+    {
+        tx->freeMetaPage(page);
+    }
 
     /// Finds the path to the first (lowest) entry whose key is >= x
     ///
@@ -205,6 +224,209 @@ private:
         return lo < node->count();
     }
 
+    // ==========================================================================
+    //  Re-balancing helpers  (private: inside template<class …> class BTree)
+    // ==========================================================================
+
+    /// Small run-time check for the direction argument
+    static constexpr bool isValidDir(int8_t d) noexcept
+    {
+        return d == -1 || d == +1;
+    }
+
+    /// Borrow one key (and its adjacent child pointer) from @p sibling and
+    /// shift it into @p node.
+    ///
+    /// The caller must ***guarantee***
+    ///   `sibling->count() > MIN_ENTRIES`  *and*  `isValidDir(direction)`.
+    ///
+    /// @param parent          parent node
+    /// @param nodePos         index of @p node in the parent’s child list
+    /// @param node            under-full node that *receives* the key
+    /// @param sibling         sibling that *donates* the key
+    /// @param direction       –1 → sibling is left of node, +1 → right
+    ///
+    static void borrowFromSibling(Node* parent, uint32_t nodePos,
+        Node* node, Node* sibling, int8_t direction)
+    {
+        assert(isValidDir(direction));
+        assert(sibling->count() > MIN_ENTRIES);
+
+        const bool fromLeft  = (direction < 0);
+        const bool fromRight = !fromLeft;
+
+        // 1. Make room in @p node (only when borrowing from the left)
+        if (fromLeft)
+        {
+            std::memmove(&node->entries[2],
+                         &node->entries[1],
+                         (node->count() + 1) * sizeof(Entry));
+        }
+
+        // 2. Copy key + child from @p sibling into @p node
+        uint32_t srcPos    = fromLeft ? sibling->count()            // last entry
+                                      : 1;                          // first entry
+        uint32_t dstPos    = fromLeft ? 1                           // new first key
+                                      : node->count() + 1;          // new last key
+        node->entries[dstPos] = sibling->entries[srcPos];
+
+        // 3. Update separator key in @p parent
+        uint32_t sepKeyPos = fromLeft ? nodePos - 1 : nodePos;      // key index
+        parent->entries[sepKeyPos + 1].key =
+            fromLeft ? node->entries[1].key
+                     : sibling->entries[2].key;    // new first key of right sib.
+
+        // 4. Close the gap in @p sibling (only when borrowing from the right)
+        if (fromRight)
+        {
+            std::memmove(&sibling->entries[1],
+                         &sibling->entries[2],
+                         (sibling->count() - 1) * sizeof(Entry));
+        }
+
+        node->count()++;
+        sibling->count()--;
+    }
+
+    /// Merge @p node with its neighbouring @p sibling and delete the separator
+    /// key from @p parent.  The *receiver* (the node that keeps the combined
+    /// data) is chosen according to @p direction.
+    ///
+    /// Pre-conditions
+    ///   * `isValidDir(direction)`
+    ///   * `sibling` is exactly the child left (-1) or right (+1) of @p node
+    ///
+    /// @param tx             current transaction (needed to free the orphan page)
+    /// @param parent         parent node
+    /// @param nodePos        index of @p node in the parent’s child list
+    /// @param node           under-full node
+    /// @param sibling        adjacent sibling
+    /// @param direction      –1 → merge with left sibling (left keeps data)
+    ///                       +1 → merge with right sibling (node keeps data)
+    ///
+    void mergeWithSibling(Transaction* tx, Node* parent,
+        uint32_t nodePos, Node* node, Node* sibling, int8_t direction)
+    {
+        assert(isValidDir(direction));
+
+        const bool withLeft  = (direction < 0);
+        Node* receiver = withLeft ? sibling : node;
+        Node* donor    = withLeft ? node    : sibling;
+
+        // 1. Bring separator key down into the receiver (interior only)
+        if (!receiver->isLeaf())
+        {
+            uint32_t keyIdxParent = withLeft ? nodePos - 1 : nodePos;
+            uint32_t dstPos       = receiver->count() + 1;
+
+            receiver->entries[dstPos].key =
+                parent->entries[keyIdxParent + 1].key;
+
+            receiver->entries[dstPos].child = donor->entries[0].child;
+            receiver->count()++;
+        }
+
+        // 2. Append all donor keys to the receiver
+        std::memcpy(&receiver->entries[receiver->count() + 1],
+                    &donor->entries[1],
+                    donor->count() * sizeof(Entry));
+        receiver->count() += donor->count();
+
+        // 3. Remove separator key from parent
+        uint32_t keyIdxParent = withLeft ? nodePos - 1 : nodePos;
+        parent->remove(keyIdxParent);
+
+        // 4. Free the now-empty donor page
+        freeNode(tx, reinterpret_cast<PageNum>(donor));
+    }
+
+    /// Restore B-tree invariants after a single entry has been erased.
+    ///
+    /// Works its way up from the leaf stored in @p cursor, borrowing from or
+    /// merging with siblings until every node holds at least `MIN_ENTRIES`
+    /// keys, or until the root collapses.
+    ///
+    void rebalanceAfterErase(Transaction* tx, Cursor& cursor)
+    {
+        if (height == 0)
+        {
+            return;
+        }
+
+        // Walk from leaf (depth = height-1) toward the root (depth = 0)
+        for (int depth = static_cast<int>(height) - 1; depth > 0; --depth)
+        {
+            typename Cursor::Level& leafLvl   = cursor.levels[depth];
+            typename Cursor::Level& parentLvl = cursor.levels[depth - 1];
+
+            Node* node       = leafLvl.node;
+            Node* parent     = parentLvl.node;
+            uint32_t nodePos = parentLvl.pos;          // child index in parent
+
+            if (node->count() >= MIN_ENTRIES)
+            {
+                break;                  // All higher nodes are safe, we are done
+            }
+
+            // ----- 1.  try to borrow from left sibling -----------------------
+            if (nodePos > 0)
+            {
+                Node* left = getNode(tx, parent->entries[nodePos - 1].child);
+                if (left->count() > MIN_ENTRIES)
+                {
+                    borrowFromSibling(parent, nodePos, node, left, -1);
+                    continue;           // balance restored for this level
+                }
+            }
+
+            // ----- 2.  try to borrow from right sibling ----------------------
+            if (nodePos < parent->count())
+            {
+                Node* right = getNode(tx, parent->entries[nodePos + 1].child);
+                if (right->count() > MIN_ENTRIES)
+                {
+                    borrowFromSibling(parent, nodePos, node, right, +1);
+                    continue;
+                }
+            }
+
+            // ----- 3.  must merge – prefer left sibling when available -------
+            if (nodePos > 0)
+            {
+                Node* left = getNode(tx, parent->entries[nodePos - 1].child);
+                mergeWithSibling(tx, parent, nodePos, node, left, -1);
+
+                // After merge the cursor now points at the surviving left node
+                leafLvl.node = left;
+                parentLvl.pos = nodePos - 1;
+            }
+            else
+            {
+                Node* right = getNode(tx, parent->entries[nodePos + 1].child);
+                mergeWithSibling(tx, parent, nodePos, node, right, +1);
+                // cursor already points at the survivor (node)
+            }
+            // Loop continues – parent may now be under-full
+        }
+
+        // ---------- 4.  root shrink check ------------------------------------
+        Node* rootNode = getNode(tx, root);
+
+        if (height > 1 && rootNode->count() == 0)
+        {
+            PageNum newRoot = rootNode->entries[0].child;
+            freeNode(tx, root);
+            root = newRoot;
+            --height;
+        }
+        else if (height == 1 && rootNode->count() == 0)
+        {
+            freeNode(tx, root);
+            root   = 0;
+            height = 0;
+        }
+    }
+
 public:
     size_t count(Transaction* tx) const
     {
@@ -255,7 +477,7 @@ public:
                 newCount * sizeof(Entry));
             // entry 0 is the header
             node->count() = mid;     // trim left node
-            bool insertLeft = pLevel->pos < mid;  // TODO: check
+            bool insertLeft = pLevel->pos < (mid + isInterior);  // TODO: check
             Node* targetNode = insertLeft ? node : newNode;
             uint32_t targetPos = insertLeft ? pLevel->pos : pLevel->pos - mid - isInterior;
             targetNode->insert(targetPos, {key,value});
@@ -272,6 +494,75 @@ public:
         node->entries[0].child = oldRoot;
         node->entries[1].key = key;
         node->entries[1].child = value;
+    }
+
+    /// Remove and return the first entry whose key is **≥ x**.
+    ///
+    /// @param tx  the active transaction
+    /// @param x   lower-bound key
+    /// @returns   the removed entry, or {0,0} if nothing matched
+    ///
+    Entry takeLowerBound(Transaction* tx, uint32_t x)
+    {
+        Cursor cursor;
+        if (!findLowerBound(tx, x, cursor))
+        {
+            return {0, 0};     // nothing >= x
+        }
+
+        typename Cursor::Level& leafLevel = cursor.levels[height - 1];
+        Node* leaf = leafLevel.node;
+        uint32_t pos = leafLevel.pos;
+
+        Entry removed = leaf->entries[pos + 1];
+        leaf->remove(pos);
+
+        rebalanceAfterErase(tx, cursor);      // see §3
+        return removed;
+    }
+
+    /// Remove and return the first entry that matches both key and value.
+    /// Multiple identical pairs may exist; only the first encountered is
+    /// deleted.
+    ///
+    /// @param tx     the active transaction
+    /// @param key    key to match
+    /// @param value  value to match
+    /// @returns      the removed entry, or {0,0} if not found
+    ///
+    Entry takeExact(Transaction* tx, uint32_t key, uint32_t value)
+    {
+        Cursor cursor;
+        if (!findLowerBound(tx, key, cursor))
+        {
+            return {0, 0};
+        }
+
+        // Walk forward until we run out of duplicates or leaves
+        do
+        {
+            typename Cursor::Level& leafLevel = cursor.levels[height - 1];
+            Node* leaf = leafLevel.node;
+
+            for (uint32_t p = leafLevel.pos; p < leaf->count(); ++p)
+            {
+                Entry& e = leaf->entries[p + 1];
+                if (e.key != key)
+                {
+                    break;      // keys are ordered – no further matches
+                }
+                if (e.child == value)
+                {
+                    Entry removed = e;
+                    leaf->remove(p);
+                    rebalanceAfterErase(tx, cursor);
+                    return removed;
+                }
+            }
+        }
+        while (cursor.advanceNode(tx, height));
+
+        return {0, 0};          // not found
     }
 };
 
