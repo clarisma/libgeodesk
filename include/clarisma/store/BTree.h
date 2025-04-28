@@ -255,7 +255,7 @@ public:
                 newCount * sizeof(Entry));
             // entry 0 is the header
             node->count() = mid;     // trim left node
-            bool insertLeft = pLevel->pos <= mid;  // TODO: check
+            bool insertLeft = pLevel->pos < mid;  // TODO: check
             Node* targetNode = insertLeft ? node : newNode;
             uint32_t targetPos = insertLeft ? pLevel->pos : pLevel->pos - mid - isInterior;
             targetNode->insert(targetPos, {key,value});
