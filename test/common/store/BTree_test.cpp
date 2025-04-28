@@ -9,6 +9,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <clarisma/store/BTree.h>
 #include <clarisma/data/HashMap.h>
+#include <clarisma/data/HashSet.h>
 
 
 using namespace clarisma;
@@ -44,11 +45,10 @@ TEST_CASE("BlobStoreTree")
     tree.insert(&tx, 15, 1500);
 
     auto iter = tree.iter(&tx);
-    for (;;)
+    while (iter.hasMore())
     {
-        auto* e = iter.next();
-        if (!e) break;
-        std::cout << e->key << " = " << e->value << std::endl;
+        auto& e = iter.next();
+        std::cout << e.key << " = " << e.value << std::endl;
     }
 }
 
@@ -63,21 +63,42 @@ TEST_CASE("Random BlobStoreTree")
     std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
     std::uniform_int_distribution<uint32_t> dist(1, 250'000); // inclusive bounds
 
-    for (int i=0; i<10000; i++)
+    int targetCount = 1000000;
+    HashSet<uint32_t> keys;
+    std::vector<BTreeData::Entry> items;
+
+    for (int i=0; i<targetCount; i++)
     {
         uint32_t k = dist(rng);
         tree.insert(&tx, k, k * 100);
+        keys.insert(k);
+        items.push_back(BTreeData::Entry{k, k * 100});
+        REQUIRE(tree.count(&tx) == i + 1);
     }
+    std::sort(items.begin(), items.end());
 
+    HashSet<uint32_t> actualKeys;
+    std::vector<BTreeData::Entry> actualItems;
     int count = 0;
     auto iter = tree.iter(&tx);
-    for (;;)
+    while (iter.hasMore())
     {
-        auto* e = iter.next();
-        if (!e) break;
-        std::cout << e->key << " = " << e->value << std::endl;
+        auto& e = iter.next();
+        actualKeys.insert(e.key);
+        actualItems.push_back(e);
+        // std::cout << e.key << " = " << e.value << std::endl;
         count++;
     }
-    assert(count == 10000);
+    std::sort(actualItems.begin(), actualItems.end());
+
+    REQUIRE(items.size() == targetCount);
+    REQUIRE(tree.count(&tx) == targetCount);
+    REQUIRE(actualKeys.size() == keys.size());
+
+    REQUIRE(count == targetCount);
+    REQUIRE(actualKeys == keys);
+    REQUIRE(actualItems == items);
+
+
 }
 

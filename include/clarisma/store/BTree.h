@@ -3,6 +3,7 @@
 
 #pragma once
 #include <clarisma/store/BTreeData.h>
+#include <cassert>
 #include <cstring>
 #include <iterator>
 #include <limits>
@@ -17,20 +18,6 @@ public:
     static constexpr size_t MAX_ENTRIES = 511;
     static constexpr size_t MIN_ENTRIES = (MAX_ENTRIES + 1) / 2;
     static constexpr size_t MAX_HEIGHT = 8;
-
-    struct Entry
-    {
-        union
-        {
-            uint32_t key;
-            uint32_t count;
-        };
-        union
-        {
-            uint32_t value;
-            uint32_t child;
-        };
-    };
 
     struct Node
     {
@@ -62,7 +49,7 @@ public:
             uint32_t pos;
         };
 
-        Entry* buildPathToLeftmost(Transaction* tx, PageNum page,
+        void buildPathToLeftmost(Transaction* tx, PageNum page,
             uint32_t depth, uint32_t height)
         {
             while (depth < height)
@@ -74,37 +61,38 @@ public:
                 page = node->entries[0].child;
                 depth++;
             }
-            return &levels[height-1].node->entries[1];
         }
 
-        Entry* advance(Transaction* tx, uint32_t height)
+        bool advance(Transaction* tx, uint32_t height)
         {
-            // TODO: assert not already at end
-
-            // 1) Move to next entry in current leaf if possible
             Level& leaf = levels[height - 1];
-            if (leaf.pos + 1 <= leaf.node->count())
+            if (leaf.pos < leaf.node->count() - 1)
             {
                 leaf.pos++;
-                return &leaf.node->entries[leaf.pos];
+                return true;
             }
+            return advanceNode(tx, height);
+        }
 
+        bool advanceNode(Transaction* tx, uint32_t height)
+        {
             // 2) Ascend until we can move right, then descend leftmost
-            int depth = static_cast<int>(height) - 1;
+            int depth = static_cast<int>(height) - 2;
             while (depth >= 0)
             {
                 Level& level = levels[depth];
                 Node* node = level.node;
-                if (level.pos + 1 < node->count())
+                if (level.pos < node->count())
                 {
                     level.pos++;
                     PageNum next = node->entries[level.pos].child;
-                    return buildPathToLeftmost(tx, next, depth + 1, height);
+                    buildPathToLeftmost(tx, next, depth + 1, height);
+                    return true;
                 }
                 depth--;
             }
             // Reached end of root
-            return nullptr;
+            return false;
         }
 
         Level levels[MAX_HEIGHT];
@@ -114,27 +102,27 @@ public:
     {
     public:
         Iterator(BTree* tree, Transaction* tx) :
-            done_(tree->height == 0),
+            hasMore_(tree->height != 0),
             height_(tree->height),
             tx_(tx)
         {
-            if (!done_)
-            {
-                cursor_.buildPathToLeftmost(
-                    tx, tree->root, 0, tree->height);
-            }
+            cursor_.buildPathToLeftmost(
+                tx, tree->root, 0, tree->height);
         }
 
-        Entry* next()
+        bool hasMore() const { return hasMore_; }
+
+        Entry& next()
         {
-            if (done_) return nullptr;
-            Entry* current = cursor_.advance(tx_, height_);
-            done_ = current==nullptr;
+            assert(hasMore_);
+            auto& leaf = cursor_.levels[height_-1];
+            Entry& current = leaf.node->entries[leaf.pos+1];
+            hasMore_ = cursor_.advance(tx_, height_);
             return current;
         }
 
     private:
-        bool done_;
+        bool hasMore_;
         uint32_t height_;
         Transaction* tx_;
         Cursor cursor_;
@@ -218,6 +206,21 @@ private:
     }
 
 public:
+    size_t count(Transaction* tx) const
+    {
+        if (height == 0) return 0;
+        size_t count = 0;
+        Cursor cursor;
+        cursor.buildPathToLeftmost(tx, root, 0, height);
+        typename Cursor::Level& leaf = cursor.levels[height-1];
+        do
+        {
+            count += leaf.node->count();
+        }
+        while (cursor.advanceNode(tx, height));
+        return count;
+    }
+
     void insert(Transaction* tx, uint32_t key, uint32_t value)
     {
         Cursor cursor;
@@ -252,7 +255,7 @@ public:
                 newCount * sizeof(Entry));
             // entry 0 is the header
             node->count() = mid;     // trim left node
-            bool insertLeft = pLevel->pos < mid;  // TODO: check
+            bool insertLeft = pLevel->pos <= mid;  // TODO: check
             Node* targetNode = insertLeft ? node : newNode;
             uint32_t targetPos = insertLeft ? pLevel->pos : pLevel->pos - mid - isInterior;
             targetNode->insert(targetPos, {key,value});
