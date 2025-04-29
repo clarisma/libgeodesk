@@ -147,6 +147,7 @@ public:
     // Entry& findLowerBound(Transaction* tx, uint32_t x) const;
     // Entry takeLowerBound(Transaction* tx, uint32_t x);
 
+    const BTreeData& data() const { return *this; }
     Iterator iter(Transaction* tx) { return Iterator(this, tx); }
 
 private:

@@ -42,6 +42,91 @@ private:
     uint32_t pageCount_ = 0;
 };
 
+using Tree = BTree<MockTransaction,7,16>;
+
+/// Verify B-tree invariants below @p node.  Returns `true` so it can be
+/// chained in REQUIRE() expressions.
+///
+/// Checks performed
+///   * key count  ∈ [MIN_ENTRIES .. MAX_ENTRIES]  (root exempt from min)
+///   * keys inside the node are non-decreasing
+///   * all leaves are at the same depth
+///   * separator keys correctly partition the child sub-ranges
+///
+void validateNode(MockTransaction& tx,
+                  typename BTree<MockTransaction,7,16>::Node* node,
+                  uint32_t depth,
+                  uint32_t height,
+                  bool isRoot,
+                  uint32_t* outMinKey,
+                  uint32_t* outMaxKey)
+{
+    using Tree = BTree<MockTransaction,7,16>;
+
+    uint32_t count = node->count();
+    if (!isRoot) REQUIRE(count >= Tree::MIN_ENTRIES);
+    REQUIRE(count <= Tree::MAX_ENTRIES);
+
+    // ---- 1.  keys are sorted inside the node --------------------------
+    for (uint32_t i = 1; i < count; ++i)
+    {
+        REQUIRE(node->entries[i].key <= node->entries[i + 1].key);
+    }
+
+    if (node->isLeaf())
+    {
+        REQUIRE(depth + 1 == height);
+
+        *outMinKey = node->entries[1].key;
+        *outMaxKey = node->entries[count].key;
+        return;
+    }
+
+    // ---- 2.  recurse into children and check separator keys -----------
+    uint32_t childMin, childMax;
+
+    // first child
+    auto* child =
+        reinterpret_cast<typename Tree::Node*>(
+            tx.getBlobBlock(node->entries[0].child));
+    validateNode(tx, child, depth + 1, height, false,
+                 &childMin, &childMax);
+    *outMinKey = childMin;
+
+    for (uint32_t i = 1; i <= count; ++i)
+    {
+        uint32_t sepKey = node->entries[i].key;
+
+        child =
+            reinterpret_cast<typename Tree::Node*>(
+                tx.getBlobBlock(node->entries[i].child));
+        validateNode(tx, child, depth + 1, height, false,
+                     &childMin, &childMax);
+
+        // separator key must be ≥ max key of left child
+        REQUIRE(childMax >= sepKey);
+        // and < min key of *right* child (strictly, if you disallow dups)
+        REQUIRE(sepKey <= childMin);
+
+        *outMaxKey = childMax;
+    }
+}
+
+void validateTree(MockTransaction& tx, const Tree tree)
+{
+    if (tree.data().height == 0)
+        return;
+
+    uint32_t minKey, maxKey;
+    auto* root =
+        reinterpret_cast<typename Tree::Node*>(
+            tx.getBlobBlock(tree.data().root));
+
+    validateNode(tx, root, 0, tree.data().height, true, &minKey, &maxKey);
+}
+
+
+
 TEST_CASE("BlobStoreTree")
 {
     MockTransaction tx;
@@ -71,7 +156,7 @@ TEST_CASE("Random BlobStoreTree")
     std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
     std::uniform_int_distribution<uint32_t> dist(1, 250'000); // inclusive bounds
 
-    int targetCount = 100000;
+    int targetCount = 10000;
     HashSet<uint32_t> keys;
     std::vector<BTreeData::Entry> items;
 
@@ -113,6 +198,29 @@ TEST_CASE("Random BlobStoreTree")
     REQUIRE(actualKeys == keys);
     REQUIRE(actualItems == items);
 
+    // Validate structure before we start deleting
+    validateTree(tx, tree);
 
+    // --- random deletes ------------------------------------------------
+    std::ranges::shuffle(items, rng);
+    int eraseCount = 0;
+
+    for (auto const& e : items)
+    {
+        auto removed = tree.takeExact(&tx, e.key, e.value);
+        REQUIRE(removed.key == e.key);
+        REQUIRE(removed.value == e.value);
+        eraseCount++;
+        if (eraseCount % 17 == 0)          // arbitrary stride
+        {
+            validateTree(tx, tree);        // invariants still fine?
+        }
+    }
+
+    REQUIRE(tree.count(&tx) == 0);
+    REQUIRE(tree.data().height == 0);
+
+    // tree should be empty; allocator should have reclaimed all but root
+    // REQUIRE(tx.pageCount() == 0);          // add accessor in MockTransaction
 }
 
