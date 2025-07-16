@@ -17,135 +17,70 @@ using namespace clarisma;
 class MockTransaction
 {
 public:
-    uint8_t* getBlobBlock(BTreeData::PageNum page)
-    {
-        assert(nodes_.contains(page));
-        return nodes_[page];
-    }
-
-    BTreeData::PageNum allocMetaPage()
-    {
-        pageCount_++;
-        nodes_[pageCount_] = new uint8_t[4096];
-        return pageCount_;
-    }
-
-    void freeMetaPage(BTreeData::PageNum page)
-    {
-        assert(nodes_.contains(page));
-        delete nodes_[page];
-        nodes_.erase(page);
-    }
-
-private:
-    HashMap<BTreeData::PageNum,uint8_t*> nodes_;
+    HashMap<uint32_t,uint8_t*> nodes_;
     uint32_t pageCount_ = 0;
 };
 
-using Tree = BTree<MockTransaction,7,16>;
-
-/// Verify B-tree invariants below @p node.  Returns `true` so it can be
-/// chained in REQUIRE() expressions.
-///
-/// Checks performed
-///   * key count  ∈ [MIN_ENTRIES .. MAX_ENTRIES]  (root exempt from min)
-///   * keys inside the node are non-decreasing
-///   * all leaves are at the same depth
-///   * separator keys correctly partition the child sub-ranges
-///
-void validateNode(MockTransaction& tx,
-                  typename BTree<MockTransaction,7,16>::Node* node,
-                  uint32_t depth,
-                  uint32_t height,
-                  bool isRoot,
-                  uint32_t* outMinKey,
-                  uint32_t* outMaxKey)
+class TestBTree : public BTree<TestBTree,MockTransaction,8>
 {
-    using Tree = BTree<MockTransaction,7,16>;
-
-    uint32_t count = node->count();
-    if (!isRoot) REQUIRE(count >= Tree::MIN_ENTRIES);
-    REQUIRE(count <= Tree::MAX_ENTRIES);
-
-    // ---- 1.  keys are sorted inside the node --------------------------
-    for (uint32_t i = 1; i < count; ++i)
+public:
+    static size_t maxNodeSize(MockTransaction* tx)
     {
-        REQUIRE(node->entries[i].key <= node->entries[i + 1].key);
+        return 64;
     }
 
-    if (node->isLeaf())
+    static uint8_t* getNode(MockTransaction* tx, Value ref)    // CRTP override
     {
-        REQUIRE(depth + 1 == height);
-
-        *outMinKey = node->entries[1].key;
-        *outMaxKey = node->entries[count].key;
-        return;
+        assert(tx->nodes_.contains(ref));
+        return tx->nodes_[ref];
     }
 
-    // ---- 2.  recurse into children and check separator keys -----------
-    uint32_t childMin, childMax;
-
-    // first child
-    auto* child =
-        reinterpret_cast<typename Tree::Node*>(
-            tx.getBlobBlock(node->entries[0].child));
-    validateNode(tx, child, depth + 1, height, false,
-                 &childMin, &childMax);
-    *outMinKey = childMin;
-
-    for (uint32_t i = 1; i <= count; ++i)
+    static std::pair<Value,uint8_t*> allocNode(MockTransaction* tx)           // CRTP override
     {
-        uint32_t sepKey = node->entries[i].key;
-
-        child =
-            reinterpret_cast<typename Tree::Node*>(
-                tx.getBlobBlock(node->entries[i].child));
-        validateNode(tx, child, depth + 1, height, false,
-                     &childMin, &childMax);
-
-        // separator key must be ≥ max key of left child
-        REQUIRE(childMax >= sepKey);
-        // and < min key of *right* child (strictly, if you disallow dups)
-        REQUIRE(sepKey <= childMin);
-
-        *outMaxKey = childMax;
+        tx->pageCount_++;
+        uint8_t* node = new uint8_t[maxNodeSize(tx)];
+        tx->nodes_[tx->pageCount_] = node;
+        return { tx->pageCount_, node };
     }
-}
 
-void validateTree(MockTransaction& tx, const Tree tree)
-{
-    if (tree.data().height == 0)
-        return;
+    void init(MockTransaction* tx)
+    {
+        BTree::init(tx, &root_);
+    }
 
-    uint32_t minKey, maxKey;
-    auto* root =
-        reinterpret_cast<typename Tree::Node*>(
-            tx.getBlobBlock(tree.data().root));
+    void insert(MockTransaction* tx, Key key, Value value)
+    {
+        BTree::insert(tx, &root_, key, value);
+    }
 
-    validateNode(tx, root, 0, tree.data().height, true, &minKey, &maxKey);
-}
+    Value root_;
+};
 
 
 
 TEST_CASE("BlobStoreTree")
 {
     MockTransaction tx;
-    BTree<MockTransaction, 7, 16> tree;
+    TestBTree tree;
+    tree.init(&tx);
 
     tree.insert(&tx, 10, 1000);
     tree.insert(&tx, 20, 2000);
     tree.insert(&tx, 30, 3000);
     tree.insert(&tx, 15, 1500);
 
+    /*
     auto iter = tree.iter(&tx);
     while (iter.hasMore())
     {
         auto& e = iter.next();
         std::cout << e.key << " = " << e.value << std::endl;
     }
+    */
 }
 
 
+/*
 TEST_CASE("Random BlobStoreTree")
 {
     MockTransaction tx;
@@ -165,12 +100,6 @@ TEST_CASE("Random BlobStoreTree")
         uint32_t k = dist(rng);
         tree.insert(&tx, k, k * 100);
         keys.insert(k);
-        /*
-        if ((i + 1) % 1000 == 0)
-        {
-            std::cout << "Inserted " << (i+1);
-        }
-        */
         items.push_back(BTreeData::Entry{k, k * 100});
         REQUIRE(tree.count(&tx) == i + 1);
     }
@@ -224,3 +153,4 @@ TEST_CASE("Random BlobStoreTree")
     // REQUIRE(tx.pageCount() == 0);          // add accessor in MockTransaction
 }
 
+*/

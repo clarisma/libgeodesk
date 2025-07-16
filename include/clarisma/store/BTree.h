@@ -8,563 +8,407 @@
 
 namespace clarisma {
 
-template<typename Transaction, size_t MaxEntries, size_t MaxHeight>
-class BTree : BTreeData
+template<typename Derived, typename Transaction, size_t MaxHeight>
+class BTree
 {
 public:
-    // TODO: should be based on page size
-    static constexpr size_t MAX_ENTRIES = MaxEntries;
-    static constexpr size_t MIN_ENTRIES = MAX_ENTRIES / 2;
-    static constexpr size_t MAX_HEIGHT = MaxHeight;
+    using Key = uint64_t;
+    using Value = uint32_t;
 
-    struct Node
+    struct Level
     {
-        uint32_t& count() { return entries[0].count; }
-        bool isLeaf() const { return entries[0].child == 0; }
-
-        void insert(int pos, Entry entry)
-        {
-            assert(count() < MAX_ENTRIES);
-            if (pos < count())
-            {
-                std::memmove(&entries[pos+2], &entries[pos+1],
-                    (count() - pos) * sizeof(Entry));
-            }
-            entries[pos+1] = entry;
-            // Remember, entries[0] is the header!
-            count()++;
-        }
-
-        /// Remove the entry at logical position @p pos (0-based, not counting
-        /// the header).  Does *not* rebalance the tree; the caller must take
-        /// care of that if needed.
-        ///
-        /// @param pos  index of the entry to delete
-        ///
-        void remove(uint32_t pos)
-        {
-            assert(pos < count());
-
-            if (pos < count() - 1)
-            {
-                std::memmove(&entries[pos + 1], &entries[pos + 2],
-                    (count() - pos - 1) * sizeof(Entry));
-            }
-            count()--;
-        }
-
-        Entry entries[MAX_ENTRIES + 1];
+        uint8_t* node;
+        int pos;
+        // Value value;
     };
 
-    struct Cursor
-    {
-        struct Level
-        {
-            Node* node;
-            PageNum page;
-            uint32_t pos;
-        };
-
-        void buildPathToLeftmost(Transaction* tx, PageNum page,
-            uint32_t depth, uint32_t height)
-        {
-            while (depth < height)
-            {
-                Node* node = BTree::getNode(tx, page);
-                levels[depth].node = node;
-                levels[depth].page = page;
-                levels[depth].pos  = 0;
-                page = node->entries[0].child;
-                depth++;
-            }
-        }
-
-        bool advance(Transaction* tx, uint32_t height)
-        {
-            Level& leaf = levels[height - 1];
-            if (leaf.pos < leaf.node->count() - 1)
-            {
-                leaf.pos++;
-                return true;
-            }
-            return advanceNode(tx, height);
-        }
-
-        bool advanceNode(Transaction* tx, uint32_t height)
-        {
-            // 2) Ascend until we can move right, then descend leftmost
-            int depth = static_cast<int>(height) - 2;
-            while (depth >= 0)
-            {
-                Level& level = levels[depth];
-                Node* node = level.node;
-                if (level.pos < node->count())
-                {
-                    level.pos++;
-                    PageNum next = node->entries[level.pos].child;
-                    buildPathToLeftmost(tx, next, depth + 1, height);
-                    return true;
-                }
-                depth--;
-            }
-            // Reached end of root
-            return false;
-        }
-
-        Level levels[MAX_HEIGHT];
-    };
-
-    class Iterator
+    class Cursor
     {
     public:
-        Iterator(BTree* tree, Transaction* tx) :
-            hasMore_(tree->height != 0),
-            height_(tree->height),
-            tx_(tx)
+        Cursor(Transaction* tx, Value* root) :
+            transaction_(tx), root_(root), leaf_(nullptr) {}
+
+        Level* leaf() { return leaf_; }
+
+        int height() const
         {
-            cursor_.buildPathToLeftmost(
-                tx, tree->root, 0, tree->height);
+            return leaf_ - &levels_[0] + 1;
         }
 
-        bool hasMore() const { return hasMore_; }
-
-        Entry& next()
+        Value value() const
         {
-            assert(hasMore_);
-            auto& leaf = cursor_.levels[height_-1];
-            Entry& current = leaf.node->entries[leaf.pos+1];
-            hasMore_ = cursor_.advance(tx_, height_);
-            return current;
+            return *reinterpret_cast<Value*>(leaf_->node + leaf_->pos * 8 + 4);
         }
+
+        void find(Key key)
+        {
+            Level* level = &levels_[0];
+            uint8_t* node = getNode(*root_);
+            for(;;)
+            {
+                level->node = node;
+                if(Derived::isLeaf(node))
+                {
+                    level->pos = Derived::findLeafNodeEntry(node, key);
+                    leaf_ = level;
+                    return;
+                }
+                level->pos = Derived::findInnerNodeEntry(node, key);
+                node = Derived::getChildNode(transaction_, level);
+                ++level;
+
+                // TODO: Check that maximum tree height is not exceeded
+            }
+        }
+
+        void moveToFirst()
+        {
+            Level* level = &levels_[0];
+            uint8_t* node = getNode(*root_);
+            for(;;)
+            {
+                level->node = node;
+                if(Derived::isLeaf(node))
+                {
+                    level->pos = 1;
+                    leaf_ = level;
+                    return;
+                }
+                level->pos = 0;
+                node = Derived::getChildNode(transaction_, level);
+                ++level;
+
+                // TODO: Check that maximum tree height is not exceeded
+            }
+        }
+
+        /*
+        void moveToFirst(Level* level)
+        {
+            Level* level = &levels_[0];
+            uint8_t* node = Derived::getNode(*root_);
+            for(;;)
+            {
+                level->node = node;
+                if(Derived::isLeaf(node))
+                {
+                    level->pos = 1;
+                    leaf_ = level;
+                    return;
+                }
+                level->pos = 0;
+                node = Derived::getChildNode(level);
+                ++level;
+
+                // TODO: Check that maximum tree height is not exceeded
+            }
+        }
+        */
+
+        void moveToLast()
+        {
+            Level* level = &levels_[0];
+            uint8_t* node = getNode(*root_);
+            for(;;)
+            {
+                level->node = node;
+                int count = Derived::keyCount(node);
+                if(Derived::isLeaf(node))
+                {
+                    level->pos = count;
+                    leaf_ = level;
+                    return;
+                }
+                level->pos = count-1;
+                node = Derived::getChildNode(transaction_, level);
+                ++level;
+
+                // TODO: Check that maximum tree height is not exceeded
+            }
+        }
+
+        void moveNext()
+        {
+            Level* level = leaf_;
+            uint8_t* node = level->node;
+            if (++level->pos <= Derived::keyCount(node)) return;
+            while(level > &levels_[0])
+            {
+                --level;
+                node = level->node;
+                if (level->pos < Derived::keyCount(node))
+                {
+                    ++level->pos;
+                    for (;;)
+                    {
+                        node = Derived::getChildNode(transaction_, level);
+                        ++level;
+                        level->node = node;
+                        if (Derived::isLeaf(node))
+                        {
+                            level->pos = 1;
+                            return;
+                        }
+                        level->pos = 0;
+                    }
+                }
+            }
+        }
+
+        Level* levels() { return levels_; }
 
     private:
-        bool hasMore_;
-        uint32_t height_;
-        Transaction* tx_;
-        Cursor cursor_;
+        uint8_t* getNode(Value ref)
+        {
+            return Derived::getNode(transaction_, ref);
+        }
+
+        Transaction* transaction_;
+        Value* root_;
+        Level* leaf_;
+        Level levels_[MaxHeight];
     };
 
-    // Entry& findLowerBound(Transaction* tx, uint32_t x) const;
-    // Entry takeLowerBound(Transaction* tx, uint32_t x);
-
-    const BTreeData& data() const { return *this; }
-    Iterator iter(Transaction* tx) { return Iterator(this, tx); }
-
-private:
-
-    static Node* getNode(Transaction* tx, PageNum page)
+protected:
+    /// @brief Determines whether the given node is a leaf.
+    ///
+    static bool isLeaf(const uint8_t* node)
     {
-        return reinterpret_cast<Node*>(tx->getBlobBlock(page));
+        return *reinterpret_cast<const uint32_t*>(node + 4) == 0;
     }
 
-    static PageNum allocNode(Transaction* tx)
+    /// @brief Returns the actual size (including header) of
+    /// the given node
+    ///
+    static size_t nodeSize(const uint8_t* node)
     {
-        return tx->allocMetaPage();
+        return *reinterpret_cast<const uint32_t*>(node) + 4;
     }
 
-    static void freeNode(Transaction* tx, PageNum page)
+    static size_t maxNodeSize(Transaction* tx)
     {
-        tx->freeMetaPage(page);
+        return 4096;
     }
 
-    /// Finds the path to the first (lowest) entry whose key is >= x
+    /// @brief The number of keys in the given node
     ///
-    /// @param tx       the transaction
-    /// @param x        the key to be found
-    /// @param cursor   the cursor where the path will be stored
-    ///
-    /// @returns true if an entry with key >= x has been found
-    ///
-    bool findLowerBound(Transaction* tx, uint32_t x, Cursor& cursor) const
+    static size_t keyCount(const uint8_t* node)
     {
-        typename Cursor::Level* level = &cursor.levels[0];
-        Node* node;
+        return *reinterpret_cast<const uint32_t*>(node) / 8;
+    }
 
-        if(!root) return false;
-        // TODO: nonzero root be precondition instead?
+    /// @brief The pointer to the given entry
+    ///
+    static uint8_t* ptrOfEntry(uint8_t* node, int pos)
+    {
+        return node + pos * 8;
+    }
 
-        // 1) Descend to find lower_bound
-        PageNum page = root;
-        uint32_t lo = 0;
-        do
+    /// @brief Returns the number of entries in an inner node
+    ///
+    static size_t innerNodeEntryCount(const uint8_t* node)
+    {
+        return Derived::nodeSize(node) / 8 - 1;
+    }
+
+    /// @brief Returns the number of entries in a leaf node
+    ///
+    static size_t leafNodeEntryCount(const uint8_t* node)
+    {
+        return Derived::nodeSize(node) / 8 - 1;
+    }
+
+    /// Returns a pointer to a node, based on the given node reference
+    /// (e.g. the number of the page that holds the node for a disk-based
+    /// implementation)
+    ///
+    static uint8_t* getNode(Transaction* tx, Value ref);    // CRTP override
+
+    static std::pair<Value,uint8_t*> allocNode(Transaction* tx);     // CRTP override
+
+    /*
+    static uint8_t* createNode()
+    {
+        uint8_t* node = Derived::allocNode();
+        *reinterpret_cast<uint64_t*>(node) = 4;
+        // Set payload size to 4 and mark as leaf
+        return node;
+    }
+    */
+
+    static uint8_t* getChildNode(Transaction* tx, Level* level)
+    {
+        return Derived::getNode(tx, *reinterpret_cast<Value*>(
+            level->node + level->pos * 8 + 4));
+    }
+
+    /// @brief Returns a pointer to the child node value in
+    /// the given inner node.
+    ///
+    /// @return A pointer to the child node pointer where `key`
+    /// can be found (or would be inserted)
+    ///
+    /// This default implementation assumes internal nodes
+    /// have this layout (all items are uint32_t):
+    ///   payload_length (in bytes, excluding this header word)
+    ///   leftmost_child
+    ///   key0
+    ///   child0
+    ///   ...
+    ///   key_n
+    ///   child_n
+    ///
+    static int findInnerNodeEntry(uint8_t* node, Key key)
+    {
+        assert(!Derived::isLeaf(node));     // node must be an inner node
+        size_t count = Derived::innerNodeEntryCount(node);
+        size_t left = 1;
+        size_t right = count + 1;
+        while (left < right)
         {
-            node = getNode(tx, page);
-
-            // binary search for first entry.key >= x
-            lo = 0;
-            uint32_t hi = node->count();
-            while (lo < hi)
+            size_t mid = left + (right - left) / 2;
+            if (*reinterpret_cast<uint32_t*>(node + mid * 8) <= key)
             {
-                uint32_t mid = (lo + hi) >> 1;
-                if (node->entries[mid+1].key < x)   // entries are 1-based due to header
-                {
-                    lo = mid + 1;
-                }
-                else
-                {
-                    hi = mid;
-                }
-            }
-
-            level->node = node;
-            level->page = page;
-            level->pos = lo;
-            level++;
-
-            assert(level - &cursor.levels[0] < MAX_HEIGHT);
-
-            if (node->isLeaf()) break;
-            page = node->entries[lo].child;
-        }
-        while (page);
-        assert(level - &cursor.levels[0] == height);
-        // TODO: could base loop on level, which
-        //  would free up the child ptr of leaf node
-        //  (possible use: chaining leaves)
-
-        return lo < node->count();
-    }
-
-    // ==========================================================================
-    //  Re-balancing helpers  (private: inside template<class …> class BTree)
-    // ==========================================================================
-
-    /// Small run-time check for the direction argument
-    static constexpr bool isValidDir(int8_t d) noexcept
-    {
-        return d == -1 || d == +1;
-    }
-
-    /// Borrow one key (and its adjacent child pointer) from @p sibling and
-    /// shift it into @p node.
-    ///
-    /// The caller must ***guarantee***
-    ///   `sibling->count() > MIN_ENTRIES`  *and*  `isValidDir(direction)`.
-    ///
-    /// @param parent          parent node
-    /// @param nodePos         index of @p node in the parent’s child list
-    /// @param node            under-full node that *receives* the key
-    /// @param sibling         sibling that *donates* the key
-    /// @param direction       –1 → sibling is left of node, +1 → right
-    ///
-    static void borrowFromSibling(Node* parent, uint32_t nodePos,
-        Node* node, Node* sibling, int8_t direction)
-    {
-        assert(isValidDir(direction));
-        assert(sibling->count() > MIN_ENTRIES);
-
-        const bool fromLeft  = (direction < 0);
-        const bool fromRight = !fromLeft;
-
-        // 1. Make room in @p node (only when borrowing from the left)
-        if (fromLeft)
-        {
-            std::memmove(&node->entries[2],
-                         &node->entries[1],
-                         (node->count() + 1) * sizeof(Entry));
-        }
-
-        // 2. Copy key + child from @p sibling into @p node
-        uint32_t srcPos    = fromLeft ? sibling->count()            // last entry
-                                      : 1;                          // first entry
-        uint32_t dstPos    = fromLeft ? 1                           // new first key
-                                      : node->count() + 1;          // new last key
-        node->entries[dstPos] = sibling->entries[srcPos];
-
-        // 3. Update separator key in @p parent
-        uint32_t sepKeyPos = fromLeft ? nodePos - 1 : nodePos;      // key index
-        parent->entries[sepKeyPos + 1].key =
-            fromLeft ? node->entries[1].key
-                     : sibling->entries[2].key;    // new first key of right sib.
-
-        // 4. Close the gap in @p sibling (only when borrowing from the right)
-        if (fromRight)
-        {
-            std::memmove(&sibling->entries[1],
-                         &sibling->entries[2],
-                         (sibling->count() - 1) * sizeof(Entry));
-        }
-
-        node->count()++;
-        sibling->count()--;
-    }
-
-    /// Merge @p node with its neighbouring @p sibling and delete the separator
-    /// key from @p parent.  The *receiver* (the node that keeps the combined
-    /// data) is chosen according to @p direction.
-    ///
-    /// Pre-conditions
-    ///   * `isValidDir(direction)`
-    ///   * `sibling` is exactly the child left (-1) or right (+1) of @p node
-    ///
-    /// @param tx             current transaction (needed to free the orphan page)
-    /// @param parent         parent node
-    /// @param nodePos        index of @p node in the parent’s child list
-    /// @param node           under-full node
-    /// @param sibling        adjacent sibling
-    /// @param direction      –1 → merge with left sibling (left keeps data)
-    ///                       +1 → merge with right sibling (node keeps data)
-    ///
-    void mergeWithSibling(Transaction* tx, Node* parent,
-        uint32_t nodePos, Node* node, Node* sibling, int8_t direction)
-    {
-        assert(isValidDir(direction));
-
-        const bool withLeft  = (direction < 0);
-        Node* receiver = withLeft ? sibling : node;
-        Node* donor    = withLeft ? node    : sibling;
-
-        // 1. Bring separator key down into the receiver (interior only)
-        if (!receiver->isLeaf())
-        {
-            uint32_t keyIdxParent = withLeft ? nodePos - 1 : nodePos;
-            uint32_t dstPos       = receiver->count() + 1;
-
-            receiver->entries[dstPos].key =
-                parent->entries[keyIdxParent + 1].key;
-
-            receiver->entries[dstPos].child = donor->entries[0].child;
-            receiver->count()++;
-        }
-
-        // 2. Append all donor keys to the receiver
-        std::memcpy(&receiver->entries[receiver->count() + 1],
-                    &donor->entries[1],
-                    donor->count() * sizeof(Entry));
-        receiver->count() += donor->count();
-
-        // 3. Remove separator key from parent
-        uint32_t keyIdxParent = withLeft ? nodePos - 1 : nodePos;
-        parent->remove(keyIdxParent);
-
-        // 4. Free the now-empty donor page
-        freeNode(tx, reinterpret_cast<PageNum>(donor));
-    }
-
-    /// Restore B-tree invariants after a single entry has been erased.
-    ///
-    /// Works its way up from the leaf stored in @p cursor, borrowing from or
-    /// merging with siblings until every node holds at least `MIN_ENTRIES`
-    /// keys, or until the root collapses.
-    ///
-    void rebalanceAfterErase(Transaction* tx, Cursor& cursor)
-    {
-        if (height == 0)
-        {
-            return;
-        }
-
-        // Walk from leaf (depth = height-1) toward the root (depth = 0)
-        for (int depth = static_cast<int>(height) - 1; depth > 0; --depth)
-        {
-            typename Cursor::Level& leafLvl   = cursor.levels[depth];
-            typename Cursor::Level& parentLvl = cursor.levels[depth - 1];
-
-            Node* node       = leafLvl.node;
-            Node* parent     = parentLvl.node;
-            uint32_t nodePos = parentLvl.pos;          // child index in parent
-
-            if (node->count() >= MIN_ENTRIES)
-            {
-                break;                  // All higher nodes are safe, we are done
-            }
-
-            // ----- 1.  try to borrow from left sibling -----------------------
-            if (nodePos > 0)
-            {
-                Node* left = getNode(tx, parent->entries[nodePos - 1].child);
-                if (left->count() > MIN_ENTRIES)
-                {
-                    borrowFromSibling(parent, nodePos, node, left, -1);
-                    continue;           // balance restored for this level
-                }
-            }
-
-            // ----- 2.  try to borrow from right sibling ----------------------
-            if (nodePos < parent->count())
-            {
-                Node* right = getNode(tx, parent->entries[nodePos + 1].child);
-                if (right->count() > MIN_ENTRIES)
-                {
-                    borrowFromSibling(parent, nodePos, node, right, +1);
-                    continue;
-                }
-            }
-
-            // ----- 3.  must merge – prefer left sibling when available -------
-            if (nodePos > 0)
-            {
-                Node* left = getNode(tx, parent->entries[nodePos - 1].child);
-                mergeWithSibling(tx, parent, nodePos, node, left, -1);
-
-                // After merge the cursor now points at the surviving left node
-                leafLvl.node = left;
-                parentLvl.pos = nodePos - 1;
+                left = mid + 1;
             }
             else
             {
-                Node* right = getNode(tx, parent->entries[nodePos + 1].child);
-                mergeWithSibling(tx, parent, nodePos, node, right, +1);
-                // cursor already points at the survivor (node)
+                right = mid;
             }
-            // Loop continues – parent may now be under-full
         }
-
-        // ---------- 4.  root shrink check ------------------------------------
-        Node* rootNode = getNode(tx, root);
-
-        if (height > 1 && rootNode->count() == 0)
-        {
-            PageNum newRoot = rootNode->entries[0].child;
-            freeNode(tx, root);
-            root = newRoot;
-            --height;
-        }
-        else if (height == 1 && rootNode->count() == 0)
-        {
-            freeNode(tx, root);
-            root   = 0;
-            height = 0;
-        }
+        return left - 1;
     }
 
-public:
-    size_t count(Transaction* tx) const
+    /// @brief Returns a pointer to the value in the given
+    /// leaf node whose key is the lowest key that is >= the
+    /// search key; if all keys are lower, the returned pointer
+    /// points beyond the entries (in that case, the address may
+    /// not be valid if the node is full)
+    ///
+    /// This default implementation assumes internal nodes
+    /// have this layout (all items are uint32_t):
+    ///   payload_length (in bytes, excluding this header word)
+    ///   always 0 (to distinguish from inner nodes)
+    ///   key0
+    ///   value0
+    ///   ...
+    ///   key_n
+    ///   value_n
+    ///
+    static int findLeafNodeEntry(uint8_t* node, Key key)
     {
-        if (height == 0) return 0;
-        size_t count = 0;
-        Cursor cursor;
-        cursor.buildPathToLeftmost(tx, root, 0, height);
-        typename Cursor::Level& leaf = cursor.levels[height-1];
+        assert(Derived::isLeaf(node));     // node must be leaf
+        size_t count = Derived::leafNodeEntryCount(node);
+        size_t left = 1;
+        size_t right = count + 1;
+        while (left < right)
+        {
+            size_t mid = left + (right - left) / 2;
+            if (*reinterpret_cast<uint32_t*>(node + mid * 8) < key)
+            {
+                left = mid + 1;
+            }
+            else
+            {
+                right = mid;
+            }
+        }
+        return left;
+    }
+
+    /// @brief Inserts a key/value pair into a node. This method
+    /// assumes that the node has sufficent room.
+    ///
+    static void insertRaw(uint8_t* node, int pos, Key key, Value value)
+    {
+        uint8_t* p = Derived::ptrOfEntry(node, pos);
+        uint8_t* end = node + Derived::nodeSize(node);
+        if(p < end)
+        {
+            std::memmove(p + 8, p, end - p);
+        }
+        *reinterpret_cast<uint32_t*>(p) = static_cast<uint32_t>(key);
+        *reinterpret_cast<uint32_t*>(p+4) = static_cast<uint32_t>(value);
+        *reinterpret_cast<uint32_t*>(node) += 8;
+    }
+
+
+    // static bool tryInsert(
+
+    static void insert(Transaction* tx, Value* root, Key key, Value value)
+    {
+        Cursor cursor(tx, root);
+        cursor.find(key);
+        Level* level = cursor.leaf();
         do
         {
-            count += leaf.node->count();
-        }
-        while (cursor.advanceNode(tx, height));
-        return count;
-    }
-
-    void insert(Transaction* tx, uint32_t key, uint32_t value)
-    {
-        Cursor cursor;
-        Node* node;
-
-        findLowerBound(tx, key, cursor);
-        uint32_t level = height;
-        typename Cursor::Level *pLevel = &cursor.levels[level];
-        bool isInterior = false;
-        while (level > 0)
-        {
-            level--;
-            pLevel--;
-            node = pLevel->node;
-            assert(node->count() <= MAX_ENTRIES);
-            assert(node->count() >0 || level==0);
-            if (node->count() < MAX_ENTRIES)
+            uint8_t* node = level->node;
+            int pos = level->pos;
+            if(nodeSize(node) + 8 < maxNodeSize(tx))
             {
-                // no split required
-                node->insert(pLevel->pos, {key,value});
+                // There's enough room in the node
+                insertRaw(node, pos, key, value);
                 return;
             }
-            uint32_t mid = node->count() / 2;
-            uint32_t parentKey = node->entries[mid+1].key;
-            // entry 0 is the header
-            PageNum newNodePage = allocNode(tx);
-            Node* newNode = getNode(tx, newNodePage);
-            uint32_t newCount = node->count() - mid - isInterior;
-            newNode->count() = newCount;
-            newNode->entries[0].child = isInterior ? node->entries[mid+1].child : 0;
-            std::memcpy(&newNode->entries[1], &node->entries[mid+ 1 +isInterior],
-                newCount * sizeof(Entry));
-            // entry 0 is the header
-            node->count() = mid;     // trim left node
-            bool insertLeft = pLevel->pos < (mid + isInterior);  // TODO: check
-            Node* targetNode = insertLeft ? node : newNode;
-            uint32_t targetPos = insertLeft ? pLevel->pos : pLevel->pos - mid - isInterior;
-            targetNode->insert(targetPos, {key,value});
-            isInterior = true;
-            key = parentKey;
-            value = newNodePage;
+            // We need to split the node
+            auto [rightRef, rightNode] = Derived::allocNode(tx);
+            bool leafFlag = isLeaf(node);
+            int numberOfKeys = keyCount(node);
+            int splitPos = numberOfKeys / 2;
+
+            // copy entries into the new right node
+            // For leaf nodes, we copy everything starting
+            // with the split key; for internal nodes, we skip
+            // the split key, and instead copy its pointer value
+            // into the slot for the leftmost pointer
+            // (so for internals, we copy 4 bytes less, and place
+            // them 4 bytes earlier into the node)
+
+            uint8_t* src = node + splitPos * 8 + (leafFlag ? 8 : 12);
+            uint8_t* dest = rightNode + 4 + leafFlag * 4;
+            size_t rightPayloadSize = (numberOfKeys - splitPos) * 8 + 4;
+            size_t bytesToCopy = rightPayloadSize - (leafFlag ? 4 : 0);
+            *reinterpret_cast<uint64_t*>(rightNode) = rightPayloadSize;
+                // This sets word 1 to 0, indicating a leaf
+                // copying an internal node will overwrite this with
+                // the leftmost pointer
+            std::memcpy(dest, src, bytesToCopy);
+
+            uint32_t splitKey = *reinterpret_cast<uint32_t*>(
+                node + (splitPos + 1) * 8);
+
+            // trim the left node
+            *reinterpret_cast<uint32_t*>(node) = splitPos * 8 + 4;
+
+            // Now, insert the key & value
+            bool insertRight = pos > splitPos;
+            insertRaw(insertRight ? rightNode : node ,
+                insertRight ? (pos - splitPos) : pos, key, value);
+
+            --level;
+            key = splitKey;
+            value = rightRef;
         }
-        // create new root
-        height++;
-        PageNum oldRoot = root;
-        root = allocNode(tx);
-        node = getNode(tx, root);
-        node->count() = 1;
-        node->entries[0].child = oldRoot;
-        node->entries[1].key = key;
-        node->entries[1].child = value;
+        while (level >= cursor.levels());
+
+        // Create a new root level
+
+        auto [rootRef, rootNode] = Derived::allocNode(tx);
+        uint32_t* pInt = reinterpret_cast<uint32_t*>(rootNode);
+        pInt[0] = 12;
+        pInt[1] = *root;
+        pInt[2] = static_cast<uint32_t>(key);
+        pInt[3] = value;
+        *root = rootRef;
     }
 
-    /// Remove and return the first entry whose key is **≥ x**.
-    ///
-    /// @param tx  the active transaction
-    /// @param x   lower-bound key
-    /// @returns   the removed entry, or {0,0} if nothing matched
-    ///
-    Entry takeLowerBound(Transaction* tx, uint32_t x)
+    void init(Transaction* tx, Value* root)
     {
-        Cursor cursor;
-        if (!findLowerBound(tx, x, cursor))
-        {
-            return {0, 0};     // nothing >= x
-        }
-
-        typename Cursor::Level& leafLevel = cursor.levels[height - 1];
-        Node* leaf = leafLevel.node;
-        uint32_t pos = leafLevel.pos;
-
-        Entry removed = leaf->entries[pos + 1];
-        leaf->remove(pos);
-
-        rebalanceAfterErase(tx, cursor);      // see §3
-        return removed;
+        auto [ref, node] = Derived::allocNode(tx);
+        *reinterpret_cast<uint64_t*>(node) = 4;
+        *root = ref;
     }
 
-    /// Remove and return the first entry that matches both key and value.
-    /// Multiple identical pairs may exist; only the first encountered is
-    /// deleted.
-    ///
-    /// @param tx     the active transaction
-    /// @param key    key to match
-    /// @param value  value to match
-    /// @returns      the removed entry, or {0,0} if not found
-    ///
-    Entry takeExact(Transaction* tx, uint32_t key, uint32_t value)
-    {
-        Cursor cursor;
-        if (!findLowerBound(tx, key, cursor))
-        {
-            return {0, 0};
-        }
-
-        // Walk forward until we run out of duplicates or leaves
-        do
-        {
-            typename Cursor::Level& leafLevel = cursor.levels[height - 1];
-            Node* leaf = leafLevel.node;
-
-            for (uint32_t p = leafLevel.pos; p < leaf->count(); ++p)
-            {
-                Entry& e = leaf->entries[p + 1];
-                if (e.key != key)
-                {
-                    break;      // keys are ordered – no further matches
-                }
-                if (e.child == value)
-                {
-                    Entry removed = e;
-                    leaf->remove(p);
-                    rebalanceAfterErase(tx, cursor);
-                    return removed;
-                }
-            }
-        }
-        while (cursor.advanceNode(tx, height));
-
-        return {0, 0};          // not found
-    }
 };
 
 } // namespace clarisma
