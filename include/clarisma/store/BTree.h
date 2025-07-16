@@ -5,6 +5,7 @@
 #include <clarisma/store/BTreeData.h>
 #include <cassert>
 #include <cstring>
+#include <clarisma/util/log.h>
 
 namespace clarisma {
 
@@ -35,9 +36,19 @@ public:
             return leaf_ - &levels_[0] + 1;
         }
 
+        Key key() const
+        {
+            return *reinterpret_cast<uint32_t*>(leaf_->node + leaf_->pos * 8);
+        }
+
         Value value() const
         {
             return *reinterpret_cast<Value*>(leaf_->node + leaf_->pos * 8 + 4);
+        }
+
+        bool isAfter() const
+        {
+            return leaf_->pos > Derived::keyCount(leaf_->node);
         }
 
         void find(Key key)
@@ -82,29 +93,6 @@ public:
             }
         }
 
-        /*
-        void moveToFirst(Level* level)
-        {
-            Level* level = &levels_[0];
-            uint8_t* node = Derived::getNode(*root_);
-            for(;;)
-            {
-                level->node = node;
-                if(Derived::isLeaf(node))
-                {
-                    level->pos = 1;
-                    leaf_ = level;
-                    return;
-                }
-                level->pos = 0;
-                node = Derived::getChildNode(level);
-                ++level;
-
-                // TODO: Check that maximum tree height is not exceeded
-            }
-        }
-        */
-
         void moveToLast()
         {
             Level* level = &levels_[0];
@@ -147,6 +135,7 @@ public:
                         if (Derived::isLeaf(node))
                         {
                             level->pos = 1;
+                            leaf_ = level;
                             return;
                         }
                         level->pos = 0;
@@ -168,6 +157,42 @@ public:
         Level* leaf_;
         Level levels_[MaxHeight];
     };
+
+    class Iterator
+    {
+    public:
+        Iterator(Transaction* tx, Value* root) :
+            cursor_(tx, root)
+        {
+            cursor_.moveToFirst();
+        }
+
+        bool hasNext() const { return !cursor_.isAfter(); }
+        std::pair<Key,Value> next()
+        {
+            std::pair<Key,Value> entry = { cursor_.key(), cursor_.value() };
+            cursor_.moveNext();
+            return entry;
+        }
+
+    private:
+        Cursor cursor_;
+    };
+
+    enum Error
+    {
+        OK,
+        INVALID_NODE_SIZE,
+        KEY_OUT_OF_RANGE,
+        KEY_OUT_OF_ORDER,
+        INVALID_NODE_REF,
+        UNBALANCED
+    };
+
+    Iterator iter(Transaction* tx, Value* root)
+    {
+        return Iterator(tx, root);
+    }
 
 protected:
     /// @brief Determines whether the given node is a leaf.
@@ -317,7 +342,7 @@ protected:
     }
 
     /// @brief Inserts a key/value pair into a node. This method
-    /// assumes that the node has sufficent room.
+    /// assumes that the node has sufficient room.
     ///
     static void insertRaw(uint8_t* node, int pos, Key key, Value value)
     {
@@ -340,11 +365,11 @@ protected:
         Cursor cursor(tx, root);
         cursor.find(key);
         Level* level = cursor.leaf();
-        do
+        for (;;)
         {
             uint8_t* node = level->node;
             int pos = level->pos;
-            if(nodeSize(node) + 8 < maxNodeSize(tx))
+            if(nodeSize(node) + 8 <= Derived::maxNodeSize(tx))
             {
                 // There's enough room in the node
                 insertRaw(node, pos, key, value);
@@ -356,6 +381,11 @@ protected:
             int numberOfKeys = keyCount(node);
             int splitPos = numberOfKeys / 2;
 
+            if(!leafFlag)
+            {
+                // std::cout << "Splitting internal node.";
+            }
+
             // copy entries into the new right node
             // For leaf nodes, we copy everything starting
             // with the split key; for internal nodes, we skip
@@ -366,7 +396,7 @@ protected:
 
             uint8_t* src = node + splitPos * 8 + (leafFlag ? 8 : 12);
             uint8_t* dest = rightNode + 4 + leafFlag * 4;
-            size_t rightPayloadSize = (numberOfKeys - splitPos) * 8 + 4;
+            size_t rightPayloadSize = (numberOfKeys - splitPos - !leafFlag) * 8 + 4;
             size_t bytesToCopy = rightPayloadSize - (leafFlag ? 4 : 0);
             *reinterpret_cast<uint64_t*>(rightNode) = rightPayloadSize;
                 // This sets word 1 to 0, indicating a leaf
@@ -382,14 +412,18 @@ protected:
 
             // Now, insert the key & value
             bool insertRight = pos > splitPos;
+                // TODO: Check line above !!!!
             insertRaw(insertRight ? rightNode : node ,
                 insertRight ? (pos - splitPos) : pos, key, value);
 
-            --level;
             key = splitKey;
             value = rightRef;
+
+            if (level == cursor.levels()) break;
+            --level;
+            ++level->pos;
         }
-        while (level >= cursor.levels());
+
 
         // Create a new root level
 
@@ -409,6 +443,12 @@ protected:
         *root = ref;
     }
 
+    /*
+    Error verifyNode(Transaction* tx, uint8_t* node, Key minKey, Key maxKey)
+    {
+
+    }
+    */
 };
 
 } // namespace clarisma

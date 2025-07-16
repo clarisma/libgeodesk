@@ -48,6 +48,11 @@ public:
         BTree::init(tx, &root_);
     }
 
+    Iterator iter(MockTransaction* tx)
+    {
+        return Iterator(tx, &root_);
+    }
+
     void insert(MockTransaction* tx, Key key, Value value)
     {
         BTree::insert(tx, &root_, key, value);
@@ -80,31 +85,33 @@ TEST_CASE("BlobStoreTree")
 }
 
 
-/*
 TEST_CASE("Random BlobStoreTree")
 {
     MockTransaction tx;
-    BTree<MockTransaction, 7, 16> tree;
+    TestBTree tree;
+    tree.init(&tx);
 
     // one-time set-up, e.g. in main()
     std::random_device rd;                         // nondet seed
     std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
     std::uniform_int_distribution<uint32_t> dist(1, 250'000); // inclusive bounds
 
-    int targetCount = 10000;
-    HashSet<uint32_t> keys;
-    std::vector<BTreeData::Entry> items;
+    int targetCount = 50;
 
     for (int i=0; i<targetCount; i++)
     {
         uint32_t k = dist(rng);
         tree.insert(&tx, k, k * 100);
-        keys.insert(k);
-        items.push_back(BTreeData::Entry{k, k * 100});
-        REQUIRE(tree.count(&tx) == i + 1);
     }
-    std::sort(items.begin(), items.end());
 
+    TestBTree::Iterator it = tree.iter(&tx);
+    while (it.hasNext())
+    {
+        auto [k,v] = it.next();
+        std::cout << k << " = " << v << std::endl;
+    }
+
+    /*
     HashSet<uint32_t> actualKeys;
     std::vector<BTreeData::Entry> actualItems;
     int count = 0;
@@ -151,6 +158,6 @@ TEST_CASE("Random BlobStoreTree")
 
     // tree should be empty; allocator should have reclaimed all but root
     // REQUIRE(tx.pageCount() == 0);          // add accessor in MockTransaction
+    */
 }
 
-*/
