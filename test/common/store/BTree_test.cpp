@@ -43,6 +43,12 @@ public:
         return { tx->pageCount_, node };
     }
 
+    static void freeNode(MockTransaction* tx, Value ref)           // CRTP override
+    {
+        assert(tx->nodes_.contains(ref));
+        delete[] tx->nodes_[ref];
+    }
+
     void init(MockTransaction* tx)
     {
         BTree::init(tx, &root_);
@@ -56,6 +62,13 @@ public:
     void insert(MockTransaction* tx, Key key, Value value)
     {
         BTree::insert(tx, &root_, key, value);
+    }
+
+    void removeFirst(MockTransaction* tx)
+    {
+        Cursor cursor(tx, &root_);
+        cursor.moveToFirst();
+        remove(cursor);
     }
 
     Value root_;
@@ -96,20 +109,38 @@ TEST_CASE("Random BlobStoreTree")
     std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
     std::uniform_int_distribution<uint32_t> dist(1, 250'000); // inclusive bounds
 
-    int targetCount = 50;
+    int targetCount = 1000000;
+    uint32_t hash = 0;
 
     for (int i=0; i<targetCount; i++)
     {
         uint32_t k = dist(rng);
         tree.insert(&tx, k, k * 100);
+        hash ^= k;
     }
 
+    int actualCount = 0;
+    uint32_t actualHash = 0;
     TestBTree::Iterator it = tree.iter(&tx);
     while (it.hasNext())
     {
         auto [k,v] = it.next();
-        std::cout << k << " = " << v << std::endl;
+        ++actualCount;
+        actualHash ^= k;
+        // std::cout << k << " = " << v << std::endl;
     }
+
+    REQUIRE(actualCount == targetCount);
+    REQUIRE(actualHash == hash);
+
+    for (int i=0; i<actualCount; i++)
+    {
+        tree.removeFirst(&tx);
+    }
+
+    it = tree.iter(&tx);
+    REQUIRE(!it.hasNext());
+
 
     /*
     HashSet<uint32_t> actualKeys;
