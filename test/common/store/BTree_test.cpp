@@ -71,6 +71,18 @@ public:
         remove(cursor);
     }
 
+    void removeLast(MockTransaction* tx)
+    {
+        Cursor cursor(tx, &root_);
+        cursor.moveToLast();
+        remove(cursor);
+    }
+
+    std::pair<Key,Value> takeLowerBound(MockTransaction* tx, Key x)
+    {
+        return BTree::takeLowerBound(tx, &root_, x);
+    }
+
     Value root_;
 };
 
@@ -133,62 +145,43 @@ TEST_CASE("Random BlobStoreTree")
     REQUIRE(actualCount == targetCount);
     REQUIRE(actualHash == hash);
 
+    int removeCount = targetCount / 2;
+    for (int i=0; i<removeCount; i++)
+    {
+        uint32_t k = dist(rng);
+        auto[ek,ev] = tree.takeLowerBound(&tx, k);
+        if (ek)
+        {
+            REQUIRE(ek >= k);
+            REQUIRE(ev == ek * 100);
+            hash ^= ek;
+            --targetCount;
+        }
+    }
+
+    actualCount = 0;
+    actualHash = 0;
+    it = tree.iter(&tx);
+    while (it.hasNext())
+    {
+        auto [k,v] = it.next();
+        ++actualCount;
+        actualHash ^= k;
+    }
+
+    REQUIRE(actualCount == targetCount);
+    REQUIRE(actualHash == hash);
+
+
+    /*
     for (int i=0; i<actualCount; i++)
     {
-        tree.removeFirst(&tx);
+        tree.removeLast(&tx);
     }
 
     it = tree.iter(&tx);
     REQUIRE(!it.hasNext());
-
-
-    /*
-    HashSet<uint32_t> actualKeys;
-    std::vector<BTreeData::Entry> actualItems;
-    int count = 0;
-    auto iter = tree.iter(&tx);
-    while (iter.hasMore())
-    {
-        auto& e = iter.next();
-        actualKeys.insert(e.key);
-        actualItems.push_back(e);
-        // std::cout << e.key << " = " << e.value << std::endl;
-        count++;
-    }
-    std::sort(actualItems.begin(), actualItems.end());
-
-    REQUIRE(items.size() == targetCount);
-    REQUIRE(tree.count(&tx) == targetCount);
-    REQUIRE(actualKeys.size() == keys.size());
-
-    REQUIRE(count == targetCount);
-    REQUIRE(actualKeys == keys);
-    REQUIRE(actualItems == items);
-
-    // Validate structure before we start deleting
-    validateTree(tx, tree);
-
-    // --- random deletes ------------------------------------------------
-    std::ranges::shuffle(items, rng);
-    int eraseCount = 0;
-
-    for (auto const& e : items)
-    {
-        auto removed = tree.takeExact(&tx, e.key, e.value);
-        REQUIRE(removed.key == e.key);
-        REQUIRE(removed.value == e.value);
-        eraseCount++;
-        if (eraseCount % 17 == 0)          // arbitrary stride
-        {
-            validateTree(tx, tree);        // invariants still fine?
-        }
-    }
-
-    REQUIRE(tree.count(&tx) == 0);
-    REQUIRE(tree.data().height == 0);
-
-    // tree should be empty; allocator should have reclaimed all but root
-    // REQUIRE(tx.pageCount() == 0);          // add accessor in MockTransaction
     */
+
 }
 

@@ -9,6 +9,8 @@
 
 namespace clarisma {
 
+// TODO: Fix copy construction of Cursor, leaf_ must be adjusted!
+
 template<typename Derived, typename Transaction, size_t MaxHeight>
 class BTree
 {
@@ -29,6 +31,23 @@ public:
         Cursor(Transaction* tx, Value* root) :
             transaction_(tx), root_(root), leaf_(nullptr) {}
 
+        Cursor(const Cursor& other)
+        {
+            std::memcpy(this, &other, sizeof(Cursor));
+            int n = other.leaf_ - &other.levels_[0];
+            Level* adjustedLeaf = &levels_[n];
+            leaf_ = leaf_ ? adjustedLeaf : nullptr;
+        }
+
+        Cursor& operator=(const Cursor& other)
+        {
+            std::memcpy(this, &other, sizeof(Cursor));
+            int n = other.leaf_ - &other.levels_[0];
+            Level* adjustedLeaf = &levels_[n];
+            leaf_ = leaf_ ? adjustedLeaf : nullptr;
+            return *this;
+        }
+
         Level* leaf() { return leaf_; }
 
         Transaction* transaction() const { return transaction_; };
@@ -48,6 +67,11 @@ public:
             return *reinterpret_cast<Value*>(leaf_->node + leaf_->pos * 8 + 4);
         }
 
+        std::pair<Key,Value> entry() const
+        {
+            return { key(), value() };
+        }
+
         Value root() const { return *root_; }
         void setRoot(Value root) const { *root_ = root; }
 
@@ -56,7 +80,7 @@ public:
             return leaf_->pos > Derived::keyCount(leaf_->node);
         }
 
-        void find(Key key)
+        void findLowerBound(Key key)
         {
             Level* level = &levels_[0];
             uint8_t* node = getNode(*root_);
@@ -122,6 +146,7 @@ public:
 
         void moveNext()
         {
+            assert(!isAfter());
             Level* level = leaf_;
             uint8_t* node = level->node;
             if (++level->pos <= Derived::keyCount(node)) return;
@@ -136,6 +161,7 @@ public:
                     {
                         node = Derived::getChildNode(transaction_, level);
                         ++level;
+                        assert(level < &levels_[MaxHeight]);
                         level->node = node;
                         if (Derived::isLeaf(node))
                         {
@@ -197,6 +223,16 @@ public:
     Iterator iter(Transaction* tx, Value* root)
     {
         return Iterator(tx, root);
+    }
+
+    std::pair<Key,Value> takeLowerBound(Transaction* tx, Value* root, Key x)
+    {
+        Cursor cursor(tx, root);
+        cursor.findLowerBound(x);
+        if (cursor.isAfter()) return {0,0};
+        auto e = cursor.entry();
+        remove(cursor);
+        return e;
     }
 
 protected:
@@ -380,7 +416,7 @@ protected:
     static void insert(Transaction* tx, Value* root, Key key, Value value)
     {
         Cursor cursor(tx, root);
-        cursor.find(key);
+        cursor.findLowerBound(key);
         Level* level = cursor.leaf();
         for (;;)
         {
