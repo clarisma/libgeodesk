@@ -411,10 +411,13 @@ protected:
             *reinterpret_cast<uint32_t*>(node) = splitPos * 8 + 4;
 
             // Now, insert the key & value
-            bool insertRight = pos > splitPos;
-                // TODO: Check line above !!!!
+            bool insertRight = pos > splitPos + 1;
             insertRaw(insertRight ? rightNode : node ,
-                insertRight ? (pos - splitPos) : pos, key, value);
+                insertRight ? (pos - splitPos - !leafFlag) : pos, key, value);
+                // If inserting in the rightNode, we need to shift
+                // the position by 1 slot more if the node is an internal
+                // node, to account for the fact that the middle key
+                // is moved to the parent
 
             key = splitKey;
             value = rightRef;
