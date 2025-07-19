@@ -36,7 +36,7 @@ public:
             std::memcpy(this, &other, sizeof(Cursor));
             int n = other.leaf_ - &other.levels_[0];
             Level* adjustedLeaf = &levels_[n];
-            leaf_ = leaf_ ? adjustedLeaf : nullptr;
+            leaf_ = other.leaf_ ? adjustedLeaf : nullptr;
         }
 
         Cursor& operator=(const Cursor& other)
@@ -44,7 +44,7 @@ public:
             std::memcpy(this, &other, sizeof(Cursor));
             int n = other.leaf_ - &other.levels_[0];
             Level* adjustedLeaf = &levels_[n];
-            leaf_ = leaf_ ? adjustedLeaf : nullptr;
+            leaf_ = other.leaf_ ? adjustedLeaf : nullptr;
             return *this;
         }
 

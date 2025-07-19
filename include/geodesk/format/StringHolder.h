@@ -23,7 +23,7 @@ public:
         data_.referenced.ptr = s->data();
     }
 
-    // TODO: The inline space cannot accommodate the full range of Decimla values;
+    // TODO: The inline space cannot accommodate the full range of Decimal values;
     //  it is sufficient for tag values stored as numbers
     explicit StringHolder(clarisma::Decimal d)
     {
