@@ -37,6 +37,10 @@ inline uint32_t readVarint32(const uint8_t*& p)
 	return static_cast<uint32_t>(readVarint35(p));
 }
 
+// TODO: Read 9 bytes max, last byte does not need a continuation bit
+//  8 x 7 bits = 56 bits, plus final 8 bits means we can store 64 bits
+//  in 9 bytes
+
 inline uint64_t readVarint64(const uint8_t*& p)
 {
 	uint64_t val;
@@ -135,6 +139,7 @@ inline void skipVarintsBackwardUnsafe(const uint8_t*& p, int count)
 	while (count);
 }
 
+// TODO: modify so we can write 64 bits in 9 bytes, no continuation bit in final
 
 inline void writeVarint(uint8_t*& p, uint64_t val)
 {
