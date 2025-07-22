@@ -140,4 +140,12 @@ TEST_CASE_METHOD(GolFixture, "Iterate tags of anonymous nodes")
 		<< highwayNodeCount << " highway nodes.";
 }
 
+TEST_CASE("Issue 21")
+{
+	Features world("c:\\geodesk\\tests\\w.gol");
+	Box tileBounds = Box::ofWSEN(-10, -10, 10, 10);
+	Features tile = world(tileBounds);
+	Features features = tile("w");
+}
+
 // TODO: Test if parent relation iterator respect types
