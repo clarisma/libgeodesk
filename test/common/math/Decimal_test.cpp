@@ -84,3 +84,19 @@ TEST_CASE("Decimal")
 	d = Decimal("1000000000000000000000000000", true);
 	REQUIRE(!d.isValid());
 }
+
+TEST_CASE("Decimal bug #22")
+{
+	Decimal d = Decimal("0.061", false);
+	REQUIRE(d.isValid());
+	REQUIRE(d == 0.061);
+	char buf[32];
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.061");
+
+	d = Decimal("-0.0099", false);
+	REQUIRE(d.isValid());
+	REQUIRE(d == -0.0099);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "-0.0099");
+}

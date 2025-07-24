@@ -102,36 +102,51 @@ char* Decimal::format(char* buf) const noexcept
         return buf + 7;
     }
 
+    int64_t v = mantissa();
+    bool isNegative = v < 0;
+    v = isNegative ? -v : v;
     char temp[32];
     char* end = temp + sizeof(temp);
-    char* start = Format::integerReverse(mantissa(), end);
-    size_t len = end - start;
+    char* start = Format::unsignedIntegerReverse(
+        static_cast<uint64_t>(v), end);
+
+    char* p = buf;
+    *p = '-';
+    p += isNegative;
+    int len = static_cast<int>(end - start);
     int scale = this->scale();
     if (scale == 0)
     {
-        memcpy(buf, start, len);
+        memcpy(p, start, len);
+        p += len;
     }
     else
     {
-        size_t wholePartLen = len - scale;
-        if (wholePartLen == 0)
+        int wholePartLen = len - scale;
+        if (wholePartLen <= 0)
         {
             // Insert leading '0' before decimal point
-            buf[0] = '0';
-            buf[1] = '.';
-            memcpy(buf + 2, start, len);
-            len += 2;
+            *p++ = '0';
+            *p++ = '.';
+            while (wholePartLen < 0)
+            {
+                *p++ = '0';
+                wholePartLen++;
+            }
         }
         else
         {
-            memcpy(buf, start, wholePartLen);
-            buf[wholePartLen] = '.';
-            memcpy(buf + wholePartLen + 1, start + wholePartLen, len - wholePartLen);
-            len++;
+            memcpy(p, start, wholePartLen);
+            p += wholePartLen;
+            *p++ = '.';
+            start += wholePartLen;
+            len -= wholePartLen;
         }
+        memcpy(p, start, len);
+        p += len;
     }
-    buf[len] = 0;
-    return buf + len;
+    *p = 0;
+    return p;
 }
 
 } // namespace clarisma
