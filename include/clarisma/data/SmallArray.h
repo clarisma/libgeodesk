@@ -51,7 +51,7 @@ public:
 private:
     bool isInline() const noexcept
     {
-        return reinterpret_cast<std::byte*>(data_) == inlineData_;
+        return data_ == reinterpret_cast<const T*>(&inlineData_[0]);
     }
 
     T* data_;
