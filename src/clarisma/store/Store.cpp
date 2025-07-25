@@ -328,6 +328,12 @@ MutableDataPtr Store::Transaction::dataPtr(uint64_t pos)
     return MutableDataPtr(block + ofs);
 }
 
+// TODO: For unjournaled writes, we need to determine their mappings
+//  and mark them as dirty, so they are forced during commit
+//  Currently not an issue, as the first block is always journaled,
+//  but once we switch to new allocation scheme, the Transaction
+//  must be explicitly notified about mappings that contain unjournaled
+//  writes
 void Store::Transaction::commit()
 {
     // TODO
@@ -379,6 +385,7 @@ void Store::Transaction::commit()
     preCommitStoreSize_ = newStoreSize;
 }
 
+// TODO: Use buffering!
 
 void Store::Journal::save(DateTime timestamp, const JournaledBlocks& blocks)
 {
