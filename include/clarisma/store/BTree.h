@@ -2,21 +2,25 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
-#include <clarisma/store/BTreeData.h>
 #include <cassert>
 #include <cstring>
 #include <clarisma/util/log.h>
 
 namespace clarisma {
 
-// TODO: Fix copy construction of Cursor, leaf_ must be adjusted!
-
-template<typename Derived, typename Transaction, size_t MaxHeight>
+template<typename Derived, typename Transaction, typename Key, typename Value, size_t MaxHeight>
 class BTree
 {
 public:
-    using Key = uint64_t;
-    using Value = uint32_t;
+    static_assert(sizeof(Key) == 4);
+    static_assert(sizeof(Value) == 4);
+    using NodeRef = uint32_t;
+
+    struct alignas(8) Entry
+    {
+        uint32_t key;
+        uint32_t value;
+    };
 
     struct Level
     {
@@ -59,7 +63,7 @@ public:
 
         Key key() const
         {
-            return *reinterpret_cast<uint32_t*>(leaf_->node + leaf_->pos * 8);
+            return *reinterpret_cast<Key*>(leaf_->node + leaf_->pos * 8);
         }
 
         Value value() const
@@ -67,13 +71,18 @@ public:
             return *reinterpret_cast<Value*>(leaf_->node + leaf_->pos * 8 + 4);
         }
 
-        std::pair<Key,Value> entry() const
+        Entry entry() const
         {
-            return { key(), value() };
+            return *entryPtr();
         }
 
-        Value root() const { return *root_; }
-        void setRoot(Value root) const { *root_ = root; }
+        Entry* entryPtr() const
+        {
+            return reinterpret_cast<Entry*>(leaf_->node + leaf_->pos * 8);
+        }
+
+        NodeRef root() const { return *root_; }
+        void setRoot(NodeRef root) const { *root_ = root; }
 
         bool isAfter() const
         {
@@ -178,13 +187,13 @@ public:
         Level* levels() { return levels_; }
 
     private:
-        uint8_t* getNode(Value ref)
+        uint8_t* getNode(NodeRef ref)
         {
             return Derived::getNode(transaction_, ref);
         }
 
         Transaction* transaction_;
-        Value* root_;
+        NodeRef* root_;
         Level* leaf_;
         Level levels_[MaxHeight];
     };
@@ -192,7 +201,7 @@ public:
     class Iterator
     {
     public:
-        Iterator(Transaction* tx, Value* root) :
+        Iterator(Transaction* tx, NodeRef* root) :
             cursor_(tx, root)
         {
             cursor_.moveToFirst();
@@ -225,7 +234,7 @@ public:
         return Iterator(tx, root);
     }
 
-    std::pair<Key,Value> takeLowerBound(Transaction* tx, Value* root, Key x)
+    Entry takeLowerBound(Transaction* tx, NodeRef* root, Key x)
     {
         Cursor cursor(tx, root);
         cursor.findLowerBound(x);
@@ -298,25 +307,15 @@ protected:
     /// (e.g. the number of the page that holds the node for a disk-based
     /// implementation)
     ///
-    static uint8_t* getNode(Transaction* tx, Value ref);    // CRTP override
+    static uint8_t* getNode(Transaction* tx, NodeRef ref);    // CRTP override
 
-    static std::pair<Value,uint8_t*> allocNode(Transaction* tx);     // CRTP override
+    static std::pair<NodeRef,uint8_t*> allocNode(Transaction* tx);     // CRTP override
 
-    static std::pair<Value,uint8_t*> freeNode(Transaction* tx, Value ref);     // CRTP override
-
-    /*
-    static uint8_t* createNode()
-    {
-        uint8_t* node = Derived::allocNode();
-        *reinterpret_cast<uint64_t*>(node) = 4;
-        // Set payload size to 4 and mark as leaf
-        return node;
-    }
-    */
+    static void freeNode(Transaction* tx, NodeRef ref);     // CRTP override
 
     static uint8_t* getChildNode(Transaction* tx, Level* level)
     {
-        return Derived::getNode(tx, *reinterpret_cast<Value*>(
+        return Derived::getNode(tx, *reinterpret_cast<NodeRef*>(
             level->node + level->pos * 8 + 4));
     }
 
@@ -413,7 +412,7 @@ protected:
 
     // static bool tryInsert(
 
-    static void insert(Transaction* tx, Value* root, Key key, Value value)
+    static void insert(Transaction* tx, NodeRef* root, Key key, Value value)
     {
         Cursor cursor(tx, root);
         cursor.findLowerBound(key);
@@ -633,7 +632,7 @@ protected:
         }
     }
 
-    void init(Transaction* tx, Value* root)
+    void init(Transaction* tx, NodeRef* root)
     {
         auto [ref, node] = Derived::allocNode(tx);
         *reinterpret_cast<uint64_t*>(node) = 4;

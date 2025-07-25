@@ -21,21 +21,22 @@ public:
     uint32_t pageCount_ = 0;
 };
 
-class TestBTree : public BTree<TestBTree,MockTransaction,8>
+class TestBTree : public BTree<TestBTree,MockTransaction,uint32_t,uint32_t,8>
 {
 public:
     static size_t maxNodeSize(MockTransaction* tx)
     {
-        return 64;
+        // return 64;
+        return 4096;
     }
 
-    static uint8_t* getNode(MockTransaction* tx, Value ref)    // CRTP override
+    static uint8_t* getNode(MockTransaction* tx, uint32_t ref)    // CRTP override
     {
         assert(tx->nodes_.contains(ref));
         return tx->nodes_[ref];
     }
 
-    static std::pair<Value,uint8_t*> allocNode(MockTransaction* tx)           // CRTP override
+    static std::pair<NodeRef,uint8_t*> allocNode(MockTransaction* tx)           // CRTP override
     {
         tx->pageCount_++;
         uint8_t* node = new uint8_t[maxNodeSize(tx)];
@@ -43,7 +44,7 @@ public:
         return { tx->pageCount_, node };
     }
 
-    static void freeNode(MockTransaction* tx, Value ref)           // CRTP override
+    static void freeNode(MockTransaction* tx, NodeRef ref)           // CRTP override
     {
         assert(tx->nodes_.contains(ref));
         delete[] tx->nodes_[ref];
@@ -59,7 +60,7 @@ public:
         return Iterator(tx, &root_);
     }
 
-    void insert(MockTransaction* tx, Key key, Value value)
+    void insert(MockTransaction* tx, uint32_t key, uint32_t value)
     {
         BTree::insert(tx, &root_, key, value);
     }
@@ -78,12 +79,12 @@ public:
         remove(cursor);
     }
 
-    std::pair<Key,Value> takeLowerBound(MockTransaction* tx, Key x)
+    Entry takeLowerBound(MockTransaction* tx, uint32_t x)
     {
         return BTree::takeLowerBound(tx, &root_, x);
     }
 
-    Value root_;
+    NodeRef root_;
 };
 
 
