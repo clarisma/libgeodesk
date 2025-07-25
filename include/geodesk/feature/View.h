@@ -126,9 +126,12 @@ public:
     {
         //printf("Destroying view, store refcount before = %llu\n", store_->refcount());
         //fflush(stdout);
-        store_->release();
+
         matcher_->release();
         if (filter_) filter_->release();
+        store_->release();
+            // Store must be released *last*, since the default matcher
+            //  resides within it (cause of #20)
     }
 
     View& operator=(const View& other)

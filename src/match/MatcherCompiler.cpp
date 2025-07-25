@@ -84,7 +84,11 @@ const MatcherHolder* MatcherCompiler::getMatcher(const char* query)
 		LOG("%.*s\n", static_cast<int>(buf.length()), buf.data());
 #endif
 	}
-	matcher->addref();
+
+	// matcher->addref();
+	// Don't addref, newly created matchers already have
+	// a refcount of 1 (#21)
+
 	return matcher;
 }
 
