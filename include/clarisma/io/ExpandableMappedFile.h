@@ -12,6 +12,7 @@ using std::byte;
 
 // TODO: Allow setting initial size, may be more efficient to access?
 
+// TODO: Currently does not automatically unmap if closed or destroyed!
 /**
  * A MappedFile that grows on demand (if opened in writable mode).
  * The main mapping covers the entire current file (rounded up to nearest 1 GB
@@ -49,6 +50,7 @@ public:
 	 */
 	byte* translate(uint64_t ofs);
 	byte* mainMapping() const { return mainMapping_; }
+	size_t mainMappingSize() { return mainMappingSize_; }
 	byte* mapping(int n);
 	size_t mappingSize(int n) const;
 	int mappingNumber(uint64_t ofs) const;

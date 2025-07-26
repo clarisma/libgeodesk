@@ -12,6 +12,7 @@ class PileFile
 public:
 	PileFile();
 	~PileFile() { close(); }
+		// TODO: currently, this does not unmap!!!
 
 	struct Data
 	{
@@ -25,7 +26,7 @@ public:
 	void preallocate(int pile, int pages);
 	void append(int pile, const uint8_t* data, uint32_t len);
 	void load(int pile, ReusableBlock& block);
-	void close() { file_.close(); }
+	void close() { file_.close(); }		// TODO: currently, this does not unmap!!!
 	void clear();
 
 	static const int MAX_PILE_COUNT = (1 << 26) - 1;
