@@ -20,6 +20,23 @@ BOOL WINAPI consoleHandler(DWORD signal)
 	return FALSE;
 }
 
+LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
+{
+	/*
+	if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
+	{
+		std::cerr << "Caught access violation (segfault).\n";
+		// Perform cleanup, logging, etc.
+		ExitProcess(1);  // Graceful termination
+	}
+	return EXCEPTION_CONTINUE_SEARCH;  // Let others handle it too
+	*/
+
+	// TODO: For windows, may prefer ExitProcess(code)
+	CliApplication::shutdown("Abnormal termination.");
+	std::abort();
+}
+
 /*		// Does not work on Windows
 #ifndef NDEBUG
 
@@ -79,6 +96,7 @@ CliApplication::CliApplication()
 {
 	theApp_ = this;
 	#ifdef _WIN32
+	AddVectoredExceptionHandler(1, vectoredExceptionHandler);
 	SetConsoleCtrlHandler(consoleHandler, TRUE);
     #else
     std::signal(SIGINT, signalHandler);
