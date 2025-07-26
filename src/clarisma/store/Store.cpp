@@ -59,58 +59,111 @@ bool Store::tryExclusiveLock()
     return true;
 }
 
-void Store::open(const char* filename, int mode)
+// TODO: Change the way Stores are opened:
+//  - if opened as readonly, we want to make the mappings readonly to
+//    guard the Store against corruption from a buggy client
+//  - but we still need to apply the journal (if present), even if
+//    the store is opened readonly, and that requires write access
+//  - when opening readonly, we may also need to trim the file to its
+//    true size (it may be left at inflated size due to a writing
+//    process that has been terminated before trimming on close)
+//  - ExpandableMappedFile needs the file size, should only obtain
+//    it once
+//
+void Store::open(const char* filename, int requestedMode)
 {
     if (isOpen()) throw StoreException("Store is already open");
 
     fileName_ = filename;
     journal_.setFileName(fileName_ + ".journal");
 
-    // LOG("Opening %s (Mode %d) ...", filename, mode);
+    // LOG("Opening %s (Mode %d) ...", filename, mode
 
-    ExpandableMappedFile::open(filename, (mode & ~OpenMode::EXCLUSIVE) |
-        File::OpenMode::READ | File::OpenMode::WRITE);
-        // Don't pass EXCLUSIVE to base because it has no meaning
-        // TODO: 10/25/24 Added implicit write access
-        // TODO: This causes file to be resided to closest 1 GB;
-        //  we only need write access to shrink it back to its real size
-
-    // TODO: Ideally, we should lock before mapping (Creating a writable 
-    // mapping can grow the file, if we can't obtain the lock we may get
-    // an exception -- ideally, we should catch the exception and then
-    // shrink back the file)
-    lock((mode & OpenMode::EXCLUSIVE) ? LOCK_EXCLUSIVE : LOCK_READ);
-
-    DataPtr p(mainMapping());
-
-    /*
-    if (p.getUnsignedInt() == 0)
+    openMode_ = requestedMode;
+    for (;;)
     {
-        // TODO: Use different exception; the file is present,
-        //  but is invalid
-        throw FileNotFoundException(filename);
-    }
-    */
-        
-    if (journal_.exists()) processJournal();
+        ExpandableMappedFile::open(filename, (openMode_ & ~OpenMode::EXCLUSIVE) |
+            File::OpenMode::READ);
+        // Don't pass EXCLUSIVE to base because it has no meaning
 
-    initialize((mode & OpenMode::CREATE) != 0);
+        // TODO: Ideally, we should lock before mapping (Creating a writable
+        // mapping can grow the file, if we can't obtain the lock we may get
+        // an exception -- ideally, we should catch the exception and then
+        // shrink back the file)
+        // But this may not matter
+        lock((openMode_ & OpenMode::EXCLUSIVE) ? LOCK_EXCLUSIVE : LOCK_READ);
+        if (journal_.exists())
+        {
+            // Need write access to process journal
+            if (openMode_ & File::OpenMode::WRITE)
+            {
+                processJournal();
+                if (openMode_ == requestedMode) break;
+                openMode_ = requestedMode;
+            }
+            else
+            {
+                openMode_ |= OpenMode::EXCLUSIVE;
+            }
+        }
+        else
+        {
+            if (openMode_ == requestedMode) break;
+            openMode_ = requestedMode;
+        }
+        lock(LOCK_NONE);
+        unmapSegments();
+            // TODO: EMF::close() should unmap!
+        ExpandableMappedFile::close();
+    }
+
+    initialize((openMode_ & OpenMode::CREATE) != 0);
     
     // TODO: turn IOException into StoreException?
 }
 
-
+// If Store was opened in write mode, we may need to trim the file
+//  to its true size
+// If reading, we should check if the mapping size corresponds
+//  to the true size
+//
 void Store::close()
 {
     if(!isOpen()) return;     // TODO: spec this behavior
     
     uint64_t trueSize = getTrueSize();
-    bool journalPresent = journal_.exists();
 
     lock(LOCK_NONE);
 
-    if (journalPresent || trueSize > 0)
+    bool cleanupNeeded;
+    if (openMode_ & OpenMode::WRITE)
     {
+        cleanupNeeded = trueSize > 0;
+    }
+    else
+    {
+        cleanupNeeded = trueSize != mainMappingSize() && trueSize > 0;
+        if (cleanupNeeded)  [[unlikely]]
+        {
+            // In rare cases, the file is physically larger than
+            // its true size while we're in readonly mode; this
+            // can happen if another process that has opened the
+            // Store for writing has crashed before this process
+            // started reading the Store
+
+            // If the Store is readonly, we'll need to re-open
+            // as writeable in order to trim its size
+
+            unmapSegments();
+            ExpandableMappedFile::close();
+            ExpandableMappedFile::open(fileName_.c_str(),
+                File::OpenMode::READ | File::OpenMode::WRITE);
+        }
+    }
+
+    if (cleanupNeeded)
+    {
+        bool journalPresent = journal_.exists();
         if (tryExclusiveLock())
         {
             if (journalPresent)
