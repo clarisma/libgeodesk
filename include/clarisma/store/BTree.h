@@ -8,6 +8,13 @@
 
 namespace clarisma {
 
+// TODO: Check: Can an entry ever be inserted at first position in a node??
+//  If so, its parent key would need to be updated
+//  Safer to store that entry as last in left sibling node
+//  Checked: Item will never be smaller than first item in leaf
+//  We always descend into the leaf where the item should be found
+//  if it existed
+
 template<typename Derived, typename Transaction, typename Key, typename Value, size_t MaxHeight>
 class BTree
 {
@@ -32,7 +39,7 @@ public:
     class Cursor
     {
     public:
-        Cursor(Transaction* tx, Value* root) :
+        Cursor(Transaction* tx, NodeRef* root) :
             transaction_(tx), root_(root), leaf_(nullptr) {}
 
         Cursor(const Cursor& other)
@@ -84,12 +91,37 @@ public:
         NodeRef root() const { return *root_; }
         void setRoot(NodeRef root) const { *root_ = root; }
 
-        bool isAfter() const
+        bool isAfterLast() const
         {
+            // Leaf entries are 1-based
             return leaf_->pos > Derived::keyCount(leaf_->node);
         }
 
-        void findLowerBound(Key key)
+        bool isBeforeFirst() const
+        {
+            // Leaf entries are 1-based
+            return leaf_->pos == 0;
+        }
+
+        void moveToLowerBound(Key key)
+        {
+            moveToInsertionPoint(key);
+            if (leaf_->pos > Derived::keyCount(leaf_->node))    [[unlikely]]
+            {
+                --leaf_->pos;
+                moveNext();
+            }
+        }
+
+        Entry* findExact(Key key)
+        {
+            moveToInsertionPoint(key);
+            if (isAfterLast()) return nullptr;
+            Entry* pEntry = entryPtr();
+            return pEntry->key == key ? pEntry : nullptr;
+        }
+
+        void moveToInsertionPoint(Key key)
         {
             Level* level = &levels_[0];
             uint8_t* node = getNode(*root_);
@@ -108,6 +140,18 @@ public:
 
                 // TODO: Check that maximum tree height is not exceeded
             }
+        }
+
+        bool moveToExact(Key key, Value value)
+        {
+            moveToInsertionPoint(key);
+            while (!isAfterLast())
+            {
+                Entry entry = *entryPtr();
+                if (entry.key == key && entry.value == value) return true;
+                moveNext();
+            }
+            return false;
         }
 
         void moveToFirst()
@@ -155,7 +199,7 @@ public:
 
         void moveNext()
         {
-            assert(!isAfter());
+            assert(!isAfterLast());
             Level* level = leaf_;
             uint8_t* node = level->node;
             if (++level->pos <= Derived::keyCount(node)) return;
@@ -184,6 +228,147 @@ public:
             }
         }
 
+        void movePrev()
+        {
+            assert(!isBeforeFirst());
+            Level* level = leaf_;
+            uint8_t* node = level->node;
+            if (--level->pos > 0) return;
+            while(level > &levels_[0])
+            {
+                --level;
+                if (level->pos > 0)
+                {
+                    --level->pos;
+                    for (;;)
+                    {
+                        node = Derived::getChildNode(transaction_, level);
+                        ++level;
+                        assert(level < &levels_[MaxHeight]);
+                        level->node = node;
+                        level->pos = Derived::keyCount(node);
+                        if (Derived::isLeaf(node))
+                        {
+                            leaf_ = level;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// @brief Inserts the key and value. If an item with
+        /// the given key already exists, this method inserts
+        /// a duplicate. The cursor position is irrelevant prior
+        /// to the call, and left indeterminate afterward.
+        ///
+        void insert(Key key, Value value)
+        {
+            moveToInsertionPoint(key);
+            insertAtCurrent(key, value);
+        }
+
+        /// @brief Inserts an item after the current cursor
+        /// position. The cursor may be located before the
+        /// first item, but not be located after the last.
+        /// The cursor position post-call is indeterminate.
+        ///
+        void insertAfterCurrent(Key key, Value value)
+        {
+            assert(!isAfterLast());
+            ++leaf_->pos;
+            insertAtCurrent(key, value);
+        }
+
+
+        void insertAtCurrent(Key key, Value value)
+        {
+            Level* level = leaf_;
+            for (;;)
+            {
+                uint8_t* node = level->node;
+                int pos = level->pos;
+                if(nodeSize(node) + 8 <= Derived::maxNodeSize(transaction_))
+                {
+                    // There's enough room in the node
+                    Derived::insertRaw(node, pos, key, value);
+                    return;
+                }
+                // We need to split the node
+                auto [rightRef, rightNode] = Derived::allocNode(transaction_);
+                bool leafFlag = isLeaf(node);
+                int numberOfKeys = keyCount(node);
+                int splitPos = numberOfKeys / 2;
+
+                if(!leafFlag)
+                {
+                    // std::cout << "Splitting internal node.";
+                }
+
+                // copy entries into the new right node
+                // For leaf nodes, we copy everything starting
+                // with the split key; for internal nodes, we skip
+                // the split key, and instead copy its pointer value
+                // into the slot for the leftmost pointer
+                // (so for internals, we copy 4 bytes less, and place
+                // them 4 bytes earlier into the node)
+
+                uint8_t* src = node + splitPos * 8 + (leafFlag ? 8 : 12);
+                uint8_t* dest = rightNode + 4 + leafFlag * 4;
+                size_t rightPayloadSize = (numberOfKeys - splitPos - !leafFlag) * 8 + 4;
+                size_t bytesToCopy = rightPayloadSize - (leafFlag ? 4 : 0);
+                *reinterpret_cast<uint64_t*>(rightNode) = rightPayloadSize;
+                    // This sets word 1 to 0, indicating a leaf
+                    // copying an internal node will overwrite this with
+                    // the leftmost pointer
+                std::memcpy(dest, src, bytesToCopy);
+
+                uint32_t splitKey = *reinterpret_cast<uint32_t*>(
+                    node + (splitPos + 1) * 8);
+
+                // trim the left node
+                *reinterpret_cast<uint32_t*>(node) = splitPos * 8 + 4;
+
+                // Now, insert the key & value
+                bool insertRight = pos > splitPos + 1;
+                Derived::insertRaw(insertRight ? rightNode : node ,
+                    insertRight ? (pos - splitPos - !leafFlag) : pos, key, value);
+                    // If inserting in the rightNode, we need to shift
+                    // the position by 1 slot more if the node is an internal
+                    // node, to account for the fact that the middle key
+                    // is moved to the parent
+
+                key = splitKey;
+                value = rightRef;
+
+                if (level == levels_) break;
+                --level;
+                ++level->pos;
+            }
+
+            // Create a new root level
+
+            auto [rootRef, rootNode] = Derived::allocNode(transaction_);
+            uint32_t* pInt = reinterpret_cast<uint32_t*>(rootNode);
+            pInt[0] = 12;
+            pInt[1] = *root_;
+            pInt[2] = static_cast<uint32_t>(key);
+            pInt[3] = value;
+            *root_ = rootRef;
+        }
+
+        void remove()
+        {
+            Derived::remove(*this);
+        }
+
+        bool remove(Key k, Value v)
+        {
+            if (!moveToExact(k,v)) return false;
+            remove();
+            return true;
+        }
+
         Level* levels() { return levels_; }
 
     private:
@@ -207,7 +392,7 @@ public:
             cursor_.moveToFirst();
         }
 
-        bool hasNext() const { return !cursor_.isAfter(); }
+        bool hasNext() const { return !cursor_.isAfterLast(); }
         std::pair<Key,Value> next()
         {
             std::pair<Key,Value> entry = { cursor_.key(), cursor_.value() };
@@ -229,16 +414,16 @@ public:
         UNBALANCED
     };
 
-    Iterator iter(Transaction* tx, Value* root)
+    static Iterator iter(Transaction* tx, Value* root)
     {
         return Iterator(tx, root);
     }
 
-    Entry takeLowerBound(Transaction* tx, NodeRef* root, Key x)
+    static Entry takeLowerBound(Transaction* tx, NodeRef* root, Key x)
     {
         Cursor cursor(tx, root);
-        cursor.findLowerBound(x);
-        if (cursor.isAfter()) return {0,0};
+        cursor.moveToLowerBound(x);
+        if (cursor.isAfterLast()) return Derived::nullEntry();
         auto e = cursor.entry();
         remove(cursor);
         return e;
@@ -247,7 +432,7 @@ public:
 protected:
     /// @brief Determines whether the given node is a leaf.
     ///
-    static bool isLeaf(const uint8_t* node)
+    static bool isLeaf(const uint8_t* node) // CRTP virtual
     {
         return *reinterpret_cast<const uint32_t*>(node + 4) == 0;
     }
@@ -255,7 +440,7 @@ protected:
     /// @brief Returns the actual size (including header) of
     /// the given node
     ///
-    static size_t nodeSize(const uint8_t* node)
+    static size_t nodeSize(const uint8_t* node) // CRTP virtual
     {
         return *reinterpret_cast<const uint32_t*>(node) + 4;
     }
@@ -275,9 +460,14 @@ protected:
         return Derived::maxNodeSize(tx) / 2 - 8;
     }
 
+    static Entry nullEntry()    // CRTP virtual
+    {
+        return {0,0};
+    }
+
     /// @brief The number of keys in the given node
     ///
-    static size_t keyCount(const uint8_t* node)
+    static size_t keyCount(const uint8_t* node) // CRTP virtual
     {
         return *reinterpret_cast<const uint32_t*>(node) / 8;
     }
@@ -410,87 +600,6 @@ protected:
     }
 
 
-    // static bool tryInsert(
-
-    static void insert(Transaction* tx, NodeRef* root, Key key, Value value)
-    {
-        Cursor cursor(tx, root);
-        cursor.findLowerBound(key);
-        Level* level = cursor.leaf();
-        for (;;)
-        {
-            uint8_t* node = level->node;
-            int pos = level->pos;
-            if(nodeSize(node) + 8 <= Derived::maxNodeSize(tx))
-            {
-                // There's enough room in the node
-                insertRaw(node, pos, key, value);
-                return;
-            }
-            // We need to split the node
-            auto [rightRef, rightNode] = Derived::allocNode(tx);
-            bool leafFlag = isLeaf(node);
-            int numberOfKeys = keyCount(node);
-            int splitPos = numberOfKeys / 2;
-
-            if(!leafFlag)
-            {
-                // std::cout << "Splitting internal node.";
-            }
-
-            // copy entries into the new right node
-            // For leaf nodes, we copy everything starting
-            // with the split key; for internal nodes, we skip
-            // the split key, and instead copy its pointer value
-            // into the slot for the leftmost pointer
-            // (so for internals, we copy 4 bytes less, and place
-            // them 4 bytes earlier into the node)
-
-            uint8_t* src = node + splitPos * 8 + (leafFlag ? 8 : 12);
-            uint8_t* dest = rightNode + 4 + leafFlag * 4;
-            size_t rightPayloadSize = (numberOfKeys - splitPos - !leafFlag) * 8 + 4;
-            size_t bytesToCopy = rightPayloadSize - (leafFlag ? 4 : 0);
-            *reinterpret_cast<uint64_t*>(rightNode) = rightPayloadSize;
-                // This sets word 1 to 0, indicating a leaf
-                // copying an internal node will overwrite this with
-                // the leftmost pointer
-            std::memcpy(dest, src, bytesToCopy);
-
-            uint32_t splitKey = *reinterpret_cast<uint32_t*>(
-                node + (splitPos + 1) * 8);
-
-            // trim the left node
-            *reinterpret_cast<uint32_t*>(node) = splitPos * 8 + 4;
-
-            // Now, insert the key & value
-            bool insertRight = pos > splitPos + 1;
-            insertRaw(insertRight ? rightNode : node ,
-                insertRight ? (pos - splitPos - !leafFlag) : pos, key, value);
-                // If inserting in the rightNode, we need to shift
-                // the position by 1 slot more if the node is an internal
-                // node, to account for the fact that the middle key
-                // is moved to the parent
-
-            key = splitKey;
-            value = rightRef;
-
-            if (level == cursor.levels()) break;
-            --level;
-            ++level->pos;
-        }
-
-
-        // Create a new root level
-
-        auto [rootRef, rootNode] = Derived::allocNode(tx);
-        uint32_t* pInt = reinterpret_cast<uint32_t*>(rootNode);
-        pInt[0] = 12;
-        pInt[1] = *root;
-        pInt[2] = static_cast<uint32_t>(key);
-        pInt[3] = value;
-        *root = rootRef;
-    }
-
     /// @brief Deletes a key/value pair from a node, without
     /// attempting to simplify the tree.
     ///
@@ -557,7 +666,7 @@ protected:
                     *reinterpret_cast<uint32_t*>(leftNode) -= 8;
                     if (isLeaf)
                     {
-                        insertRaw(node, 1, borrowedKey, borrowedValue);
+                        Derived::insertRaw(node, 1, borrowedKey, borrowedValue);
                     }
                     else
                     {
@@ -632,6 +741,7 @@ protected:
         }
     }
 
+public:
     void init(Transaction* tx, NodeRef* root)
     {
         auto [ref, node] = Derived::allocNode(tx);
