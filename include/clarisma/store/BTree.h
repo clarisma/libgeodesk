@@ -393,9 +393,9 @@ public:
         }
 
         bool hasNext() const { return !cursor_.isAfterLast(); }
-        std::pair<Key,Value> next()
+        Entry next()
         {
-            std::pair<Key,Value> entry = { cursor_.key(), cursor_.value() };
+            Entry entry = cursor_.entry();
             cursor_.moveNext();
             return entry;
         }
@@ -614,6 +614,8 @@ protected:
         *reinterpret_cast<uint32_t*>(node) -= 8;
     }
 
+    // TODO: If removing first key in a leaf node,
+    //  may need to update the parent node's separator key
     static void remove(Cursor& cursor)
     {
         Transaction* tx = cursor.transaction();
@@ -742,7 +744,7 @@ protected:
     }
 
 public:
-    void init(Transaction* tx, NodeRef* root)
+    static void init(Transaction* tx, NodeRef* root)
     {
         auto [ref, node] = Derived::allocNode(tx);
         *reinterpret_cast<uint64_t*>(node) = 4;

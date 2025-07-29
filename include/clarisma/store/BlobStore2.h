@@ -64,6 +64,8 @@ public:
 			freedBlobs_.emplace_back(firstPage, pages);
 		}
 
+		void dumpFreePages();
+
 		void commit();
 		void end() { Store::Transaction::end(); }
 
@@ -83,6 +85,7 @@ public:
 		uint32_t allocMetaPage();
 		void freeMetaPage(uint32_t page);
 		void performFreePages(uint32_t firstPage, uint32_t pages);
+
 		[[nodiscard]] bool isFirstPageOfSegment(uint32_t page) const
 		{
 			return (page & ((0x3fff'ffff) >> store()->pageSizeShift_)) == 0;

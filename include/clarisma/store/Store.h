@@ -152,6 +152,11 @@ protected:
 		byte* getBlock(uint64_t pos);
 		const byte* getConstBlock(uint64_t pos);
 		MutableDataPtr dataPtr(uint64_t pos);
+		MutableDataPtr unjournaledDataPtr(uint64_t pos)
+		{
+			return MutableDataPtr(store_->translate(pos));
+			// TODO: mark segment dirty
+		}
 		void commit();
 		void end();
 

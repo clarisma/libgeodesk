@@ -26,7 +26,7 @@ option(GEODESK_MULTITHREADED "Allow multiple threads to use the same GOL" OFF)
 # Option to choose between static or shared library
 # Only set the option if BUILD_SHARED_LIBS is not already defined
 if (NOT DEFINED BUILD_SHARED_LIBS)
-    option(BUILD_SHARED_LIBS "Build shared library" ON)
+    option(BUILD_SHARED_LIBS "Build shared library" OFF)
 endif()
 
 include(FetchContent)
