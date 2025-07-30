@@ -125,10 +125,14 @@ uint32_t BlobStore2::Transaction::allocMetaPage()
     uint32_t page = root->firstFreeMetaPage;
     if (page)
     {
+        // LOGS << "Taking meta page from free list\n";
+
         byte* p = getPageBlock(page);
         root->firstFreeMetaPage = *reinterpret_cast<uint32_t*>(p + 4);
         return page;
     }
+    LOGS << "Creating new meta page\n";
+
     page = root->totalPageCount++;
     return page;
 }
@@ -138,10 +142,15 @@ void BlobStore2::Transaction::freeMetaPage(uint32_t page)
     Header* root = getRootBlock();
     if (page == root->totalPageCount - 1)
     {
+        LOGS << "Discarding meta page\n";
+
         // Page is at the end of the store -> shrink the store
         root->totalPageCount--;
         return;
     }
+
+    // LOGS << "Adding meta page to free list\n";
+
     byte* p = getPageBlock(page);
     *reinterpret_cast<uint32_t*>(p + 4) = root->firstFreeMetaPage;
     root->firstFreeMetaPage = page;
@@ -158,8 +167,8 @@ uint32_t BlobStore2::Transaction::allocPages(uint32_t requestedPages)
     assert(requestedPages > 0);
     assert(requestedPages <= (SEGMENT_LENGTH >> store()->pageSizeShift_));
 
-    checkFreeTrees();
-    LOGS << "Allocating " << requestedPages << " pages\n";
+    // checkFreeTrees();
+    // LOGS << "Allocating " << requestedPages << " pages\n";
 
     Header* root = getRootBlock();
     FreeSizeTree::Cursor bySize(this, &root->freeSizeTreeRoot);
@@ -189,8 +198,10 @@ uint32_t BlobStore2::Transaction::allocPages(uint32_t requestedPages)
 
         if (freePages == requestedPages)
         {
+            /*
             LOGS << "  Found perfect fit of " << requestedPages
                 << " pages at " << firstPage;
+            */
 
             // Perfect fit
             byEnd.remove();
@@ -199,10 +210,12 @@ uint32_t BlobStore2::Transaction::allocPages(uint32_t requestedPages)
 
         // we need to give back the remaining chunk
 
+        /*
         LOGS << "  Allocated " << requestedPages
             << " pages at " << firstPage << ", giving back "
             << (freePages - requestedPages) << " at " <<
                 (firstPage + requestedPages) << "\n";
+        */
 
         bySize.insertSizeAndEnd(
             freePages - requestedPages,
@@ -233,14 +246,18 @@ uint32_t BlobStore2::Transaction::allocPages(uint32_t requestedPages)
             // the total page count due to meta-page allocation
         performFreePages(firstRemainingPage, remainingPages);
 
+        /*
         LOGS << "  Allocated virgin " << requestedPages << " pages at "
             << firstPage << ", skipping " << remainingPages << " at "
             << firstRemainingPage;
+        */
         return firstPage;
     }
 
+    /*
     LOGS << "  Allocated virgin " << requestedPages
         << " pages at " << firstPage;
+    */
 
     root->totalPageCount = firstPage + requestedPages;
     return firstPage;
@@ -251,8 +268,8 @@ void BlobStore2::Transaction::performFreePages(uint32_t firstPage, uint32_t page
     assert(pages > 0);
     assert(pages <= (SEGMENT_LENGTH >> store()->pageSizeShift_));
 
-    checkFreeTrees();
-    LOGS << firstPage << ": Freeing " << pages << " pages\n";
+    // checkFreeTrees();
+    // LOGS << firstPage << ": Freeing " << pages << " pages\n";
 
     Header* root = getRootBlock();
     FreeSizeTree::Cursor bySize(this, &root->freeSizeTreeRoot);
@@ -293,8 +310,10 @@ void BlobStore2::Transaction::performFreePages(uint32_t firstPage, uint32_t page
         {
             right = pEntry;
 
+            /*
             LOGS << "  Found right neighbor at " << rightStart <<
                 " (" << rightSize << " pages)\n";
+            */
 
             pages += rightSize;
             right->value = pages;
@@ -316,8 +335,10 @@ void BlobStore2::Transaction::performFreePages(uint32_t firstPage, uint32_t page
             left = pEntry;
             uint32_t leftSize = pEntry->value;
 
+            /*
             LOGS << "  Found left neighbor at " << (left->key-leftSize) <<
                 " (" << leftSize << " pages)\n";
+            */
 
             pages += leftSize;
             bySize.removeSizeAndEnd(leftSize, left->key);
@@ -331,11 +352,11 @@ void BlobStore2::Transaction::performFreePages(uint32_t firstPage, uint32_t page
                     // Caution: At this point, `neighbor` may no longer
                     // point to a valid position!
 
-                LOGS << "  Merging left and new block into right\n";
+                // LOGS << "  Merging left and new block into right\n";
             }
             else
             {
-                LOGS << "  Merging left block into new\n";
+                // LOGS << "  Merging left block into new\n";
             }
 
             // We always remove the end-entry of the left neighbor
@@ -363,7 +384,7 @@ void BlobStore2::Transaction::commit()
     for (const auto& [firstPage, pages] : freedBlobs_)
     {
         performFreePages(firstPage, pages);
-        checkFreeTrees();
+        // checkFreeTrees();
     }
 
     Store::Transaction::commit();
@@ -379,6 +400,7 @@ void BlobStore2::Transaction::commit()
         //  the "hole"
     }
     */
+
     freedBlobs_.clear();
 }
 
@@ -410,7 +432,8 @@ void BlobStore2::Transaction::dumpFreePages()
 {
     Header* root = getRootBlock();
 
-    size_t count = 0;
+    size_t sizeSize = 0;
+    size_t sizeCount = 0;
     FreeSizeTree::Iterator iter(this, &root->freeSizeTreeRoot);
     LOGS << "Free pages by size:\n";
     while (iter.hasNext())
@@ -418,20 +441,28 @@ void BlobStore2::Transaction::dumpFreePages()
         FreeTree::Entry entry = iter.next();
         LOGS << "- " << entry.value << ": " <<
             FreeSizeTree::sizeFromKey(entry.key) << '\n';
-        count++;
+        sizeCount++;
+        sizeSize += FreeSizeTree::sizeFromKey(entry.key);
     }
-    LOGS << "  " << count << " entries\n";
+    LOGS << "  " << sizeCount << " entries with " << sizeSize << " total pages\n";
 
-    count = 0;
+    size_t endSize = 0;
+    size_t endCount = 0;
+
     FreeTree::Iterator iter2(this, &root->freeEndTreeRoot);
     LOGS << "Free pages by location:\n";
     while (iter2.hasNext())
     {
         FreeTree::Entry entry = iter2.next();
         LOGS << "- " << (entry.key - entry.value) << ": " << entry.value << '\n';
-        count++;
+        endCount++;
+        endSize += entry.value;
     }
-    LOGS << "  " << count << " entries\n";
+    LOGS << "  " << endCount << " entries with " << endSize << " total pages\n";
+    LOGS << root->totalPageCount << " total pages\n";
+    LOGS << "Free ratio: " << (static_cast<double>(endSize) / root->totalPageCount) << "\n";
+    assert(endCount == sizeCount);
+    assert(endSize == sizeSize);
 }
 
 struct Free

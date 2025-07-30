@@ -435,7 +435,10 @@ void Store::Transaction::commit()
         if (n < 0) break;
         store_->syncMapping(n);
     }
+
     LOGS << "Dirty mappings synced.\n";
+
+    blocks_.clear();
     
     store_->journal_.clear();
     LOGS << "Journal cleared.\n";

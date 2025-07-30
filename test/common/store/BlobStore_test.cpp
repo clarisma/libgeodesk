@@ -143,88 +143,173 @@ TEST_CASE("BlobStore Random Alloc & Free")
 }
 
 
-/*
 
-std::unique_ptr<uint8_t[]> createJunk(size_t size)
+
+TEST_CASE("FeatureStore simulation")
 {
-	// Define the pattern "ABCDEFG..."
-	const char* pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	size_t patternLength = strlen(pattern);
+	std::random_device rd;                         // nondet seed
+	std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
 
-	// Allocate the memory block
-	std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
-
-	// Fill the buffer with the repeating pattern
-	for (size_t i = 0; i < size; ++i)
+	struct Blob
 	{
-		buffer[i] = pattern[i % patternLength];
+		uint32_t firstPage;
+		uint32_t pages;
+	};
+
+	std::vector<Blob> tiles;
+
+	const char *filename = R"(c:\geodesk\tests\fstore-sim2.bin)";
+
+	Console console;
+	TestBlobStore store;
+	std::remove(filename);
+
+	store.open(filename, File::OpenMode::READ | File::OpenMode::WRITE |
+		File::OpenMode::CREATE);
+	TestBlobStore::Transaction t0(&store);
+	t0.begin();
+	t0.createStore();
+	std::uniform_int_distribution<uint32_t> initialSizeRange(100, 1000);
+
+	int tileCount = 60000;
+	for (int i= 0; i<tileCount; i++)
+	{
+		int pages = initialSizeRange(rng);
+		int firstPage = t0.allocPages(pages);
+		tiles.emplace_back(firstPage, pages);
+	}
+	t0.commit();
+	t0.end();
+
+	int typicalEdits = 200;
+
+	std::uniform_int_distribution<uint32_t> editCountRange(
+		typicalEdits-100, typicalEdits + 100);
+
+	std::vector<Blob> edited;
+
+	TestBlobStore::Transaction tx(&store);
+	tx.begin();
+
+	for (int i=0; i<1000; i++)
+	{
+		int editCount = editCountRange(rng);
+		edited.reserve(editCount);
+		for (int i2 = 0; i2<editCount; i2++)
+		{
+			std::uniform_int_distribution<size_t> tileRange(0, tiles.size()-1);
+			size_t index = tileRange(rng);
+			auto [firstPage, pages] = tiles[index];
+			edited.emplace_back(firstPage, pages);
+			tx.freePages(firstPage, pages);
+			tiles.erase(tiles.begin() + index);
+		}
+
+		for (int i2 = 0; i2<editCount; i2++)
+		{
+			auto [firstPage, pages] = edited[i2];
+			uint32_t minPages = pages < 51 ? 50 : (pages-1);
+			uint32_t maxPages = pages > 1495 ? 1500 : (pages + 5);
+			std::uniform_int_distribution<uint32_t> newSizeRange(
+				minPages, maxPages);
+			pages = newSizeRange(rng);
+			firstPage = tx.allocPages(pages);
+			// tx.checkFreeTrees();
+			tiles.emplace_back(firstPage, pages);
+		}
+		edited.clear();
+
+		LOGS << "Committing #" << i << "\n";
+		tx.commit();
+		LOGS << "Committed #" << i << "\n";
+		printf("Committed #%d\n", i);
+		fflush(stdout);
+		// tx.checkFreeTrees();
 	}
 
-	return buffer;
-}
+	tx.dumpFreePages();
+	size_t tilePages = 0;
+	for (const auto& e : tiles)
+	{
+		tilePages += e.pages;
+	}
+	LOGS << tiles.size() << " tiles with " << tilePages << " pages\n";
 
-
-TEST_CASE("BlobStore")
-{
-	const char *filename = R"(c:\geodesk\tests\blobstore.bin)";
-	BlobStore::CreateTransaction<BlobStore> t0;
-	t0.begin(filename);
-	t0.commit();
-	t0.end();
-
-	BlobStore store;
-	store.open(filename, File::OpenMode::READ | File::OpenMode::WRITE);
-	BlobStore::Transaction t1(&store);
-	std::string_view dataA("Test data");
-	std::string_view dataB("More test data");
-	std::string_view dataC("Even more test data");
-	BlobStore::PageNum a = t1.addBlob(ByteSpan(reinterpret_cast<const uint8_t*>(dataA.data()), dataA.size()));
-	BlobStore::PageNum b = t1.addBlob(ByteSpan(reinterpret_cast<const uint8_t*>(dataB.data()), dataB.size()));
-	t1.commit();
-	t1.end();
-
-	BlobStore::Transaction t2(&store);
-    t2.begin();
-	t2.free(a);
-	t2.commit();
-	t2.end();
-
-	BlobStore::Transaction t3(&store);
-	t3.begin();
-	BlobStore::PageNum c = t3.addBlob(ByteSpan(reinterpret_cast<const uint8_t*>(dataC.data()), dataC.size()));
-    t3.commit();
-	t3.end();
-
+	tx.end();
 	store.close();
 }
 
 
-TEST_CASE("BlobStore Hole-Punching")
+TEST_CASE("BlobStore Random Alloc & Free")
 {
-	const char *filename = R"(c:\geodesk\tests\blobstore-holes.bin)";
-	BlobStore::CreateTransaction<BlobStore> t0;
-	t0.begin(filename);
+	std::random_device rd;                         // nondet seed
+	std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
+
+	struct Blob
+	{
+		uint32_t firstPage;
+		uint32_t pages;
+	};
+
+	std::vector<Blob> blobs;
+
+	const char *filename = R"(c:\geodesk\tests\blobstore-alloc.bin)";
+
+	Console console;
+	TestBlobStore store;
+	std::remove(filename);
+
+	store.open(filename, File::OpenMode::READ | File::OpenMode::WRITE |
+		File::OpenMode::CREATE);
+	TestBlobStore::Transaction t0(&store);
+	t0.begin();
+	t0.createStore();
 	t0.commit();
 	t0.end();
 
-	BlobStore store;
-	store.open(filename, File::READ | File::WRITE);
-	BlobStore::Transaction t1(&store);
-    t1.begin();
-	size_t chunkSize = 16 * 1024 * 1024;
-	std::unique_ptr<uint8_t[]> junk = createJunk(chunkSize);
-	BlobStore::PageNum a = t1.addBlob(ByteSpan(junk.get(), chunkSize));
-	BlobStore::PageNum b = t1.alloc(3 * 1024); 
-	t1.commit();
-	t1.end();
+	int maxInserts = 1000;
+	int maxBlobSize = 10000; // 1 << 18;
 
-	BlobStore::Transaction t2(&store);
-    t2.begin();
-	t2.free(a);
-	t2.commit();
-	t2.end();
+	std::uniform_int_distribution<uint32_t> insertCountRange(1, maxInserts);
+	std::uniform_int_distribution<uint32_t> insertSizeRange(1, maxBlobSize);
 
+	TestBlobStore::Transaction tx(&store);
+	tx.begin();
+
+	for (int i=0; i<100; i++)
+	{
+		int insertCount = insertCountRange(rng);
+		for (int i2 = 0; i2<insertCount; i2++)
+		{
+			int pages = insertSizeRange(rng);
+			int firstPage = tx.allocPages(pages);
+			// tx.checkFreeTrees();
+			blobs.emplace_back(firstPage, pages);
+		}
+
+		int deleteCount = insertCountRange(rng) * 7 / 8;
+		for (int i2 = 0; i2<deleteCount; i2++)
+		{
+			if (blobs.empty()) break;
+			std::uniform_int_distribution<size_t> entryRange(0, blobs.size()-1);
+			size_t index = entryRange(rng);
+			auto [firstPage, pages] = blobs[index];
+			tx.freePages(firstPage, pages);
+			blobs.erase(blobs.begin() + index);
+		}
+		LOGS << "Committing #" << i << "\n";
+		tx.commit();
+		LOGS << "Committed #" << i << "\n";
+		printf("Committed #%d\n", i);
+		fflush(stdout);
+		// tx.checkFreeTrees();
+	}
+
+	tx.dumpFreePages();
+	LOGS << blobs.size() << " blobs\n";
+
+	tx.end();
 	store.close();
 }
 
-*/
+
