@@ -65,6 +65,7 @@ public:
 		}
 
 		void dumpFreePages();
+		void checkFreeTrees();
 
 		void commit();
 		void end() { Store::Transaction::end(); }

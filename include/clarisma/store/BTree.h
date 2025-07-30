@@ -145,10 +145,36 @@ public:
         bool moveToExact(Key key, Value value)
         {
             moveToInsertionPoint(key);
+
+            // Because this B+Tree allows duplicate keys,
+            // there may be matches in the preceding leaf
+
+            if (leaf_->pos == 1 && leaf_ > levels_)
+            {
+                // We're at the first item in a leaf node
+                // that has a parent. We need to scan for
+                // potential matches in the leaf to the left
+                Cursor back = Cursor(*this);
+                for (;;)
+                {
+                    back.movePrev();
+                    if (back.isBeforeFirst()) break;
+                    Entry entry = *back.entryPtr();
+                    if (entry.key < key) break;
+                    assert(entry.key == key);
+                    if (entry.value == value)
+                    {
+                        *this = back;
+                        return true;
+                    }
+                }
+            }
             while (!isAfterLast())
             {
                 Entry entry = *entryPtr();
-                if (entry.key == key && entry.value == value) return true;
+                if (entry.key > key) break;
+                assert(entry.key == key);
+                if (entry.value == value) return true;
                 moveNext();
             }
             return false;
@@ -367,6 +393,18 @@ public:
             if (!moveToExact(k,v)) return false;
             remove();
             return true;
+        }
+
+        size_t size()
+        {
+            size_t count = 0;
+            moveToFirst();
+            while (!isAfterLast())
+            {
+                moveNext();
+                count++;
+            }
+            return count;
         }
 
         Level* levels() { return levels_; }

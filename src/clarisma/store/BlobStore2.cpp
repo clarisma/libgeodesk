@@ -68,7 +68,14 @@ public:
 
         void removeSizeAndEnd(uint32_t size, uint32_t endPage)
         {
-            remove(keyFromSizeAndEnd(size, endPage), endPage - size);
+            bool success = remove(keyFromSizeAndEnd(size, endPage), endPage - size);
+            if (!success)
+            {
+                transaction()->dumpFreePages();
+                // try again for debugging
+                remove(keyFromSizeAndEnd(size, endPage), endPage - size);
+            }
+            assert(success);
         }
     };
 };
@@ -151,6 +158,9 @@ uint32_t BlobStore2::Transaction::allocPages(uint32_t requestedPages)
     assert(requestedPages > 0);
     assert(requestedPages <= (SEGMENT_LENGTH >> store()->pageSizeShift_));
 
+    checkFreeTrees();
+    LOGS << "Allocating " << requestedPages << " pages\n";
+
     Header* root = getRootBlock();
     FreeSizeTree::Cursor bySize(this, &root->freeSizeTreeRoot);
     bySize.moveToMinimumSize(requestedPages);
@@ -163,7 +173,13 @@ uint32_t BlobStore2::Transaction::allocPages(uint32_t requestedPages)
         uint32_t firstPage = sizeEntry.value;
         FreeTree::Cursor byEnd(this, &root->freeEndTreeRoot);
         FreeTree::Entry* pEndEntry = byEnd.findExact(
-            firstPage + requestedPages);
+            firstPage + freePages);
+        if (!pEndEntry)
+        {
+            LOGS << "End table does not contain free blob at "
+                << firstPage << " (" << freePages << " pages)\n";
+            dumpFreePages();
+        }
         assert(pEndEntry);
 
         // There must be an entry in the free-by-end index with
@@ -173,6 +189,9 @@ uint32_t BlobStore2::Transaction::allocPages(uint32_t requestedPages)
 
         if (freePages == requestedPages)
         {
+            LOGS << "  Found perfect fit of " << requestedPages
+                << " pages at " << firstPage;
+
             // Perfect fit
             byEnd.remove();
             return firstPage;
@@ -180,9 +199,14 @@ uint32_t BlobStore2::Transaction::allocPages(uint32_t requestedPages)
 
         // we need to give back the remaining chunk
 
+        LOGS << "  Allocated " << requestedPages
+            << " pages at " << firstPage << ", giving back "
+            << (freePages - requestedPages) << " at " <<
+                (firstPage + requestedPages) << "\n";
+
         bySize.insertSizeAndEnd(
             freePages - requestedPages,
-            firstPage + requestedPages);
+            firstPage + freePages);
         pEndEntry->value -= requestedPages;
         return firstPage;
     }
@@ -208,8 +232,15 @@ uint32_t BlobStore2::Transaction::allocPages(uint32_t requestedPages)
             // Also be aware that performFreePages() may increase
             // the total page count due to meta-page allocation
         performFreePages(firstRemainingPage, remainingPages);
+
+        LOGS << "  Allocated virgin " << requestedPages << " pages at "
+            << firstPage << ", skipping " << remainingPages << " at "
+            << firstRemainingPage;
         return firstPage;
     }
+
+    LOGS << "  Allocated virgin " << requestedPages
+        << " pages at " << firstPage;
 
     root->totalPageCount = firstPage + requestedPages;
     return firstPage;
@@ -219,6 +250,9 @@ void BlobStore2::Transaction::performFreePages(uint32_t firstPage, uint32_t page
 {
     assert(pages > 0);
     assert(pages <= (SEGMENT_LENGTH >> store()->pageSizeShift_));
+
+    checkFreeTrees();
+    LOGS << firstPage << ": Freeing " << pages << " pages\n";
 
     Header* root = getRootBlock();
     FreeSizeTree::Cursor bySize(this, &root->freeSizeTreeRoot);
@@ -237,6 +271,7 @@ void BlobStore2::Transaction::performFreePages(uint32_t firstPage, uint32_t page
             root->totalPageCount -= free.value;
             bySize.removeSizeAndEnd(free.value, free.key);
             byEnd.remove();
+            LOGS << (free.key- free.value) << ": Trimmed " << free.value << " from end";
         }
     }
 
@@ -257,6 +292,10 @@ void BlobStore2::Transaction::performFreePages(uint32_t firstPage, uint32_t page
             !isFirstPageOfSegment(rightStart))
         {
             right = pEntry;
+
+            LOGS << "  Found right neighbor at " << rightStart <<
+                " (" << rightSize << " pages)\n";
+
             pages += rightSize;
             right->value = pages;
             bySize.removeSizeAndEnd(rightSize, right->key);
@@ -276,8 +315,12 @@ void BlobStore2::Transaction::performFreePages(uint32_t firstPage, uint32_t page
             // Found a left neighbor
             left = pEntry;
             uint32_t leftSize = pEntry->value;
+
+            LOGS << "  Found left neighbor at " << (left->key-leftSize) <<
+                " (" << leftSize << " pages)\n";
+
             pages += leftSize;
-            bySize.removeSizeAndEnd(left->value, left->key);
+            bySize.removeSizeAndEnd(leftSize, left->key);
 
             if (right)
             {
@@ -287,6 +330,12 @@ void BlobStore2::Transaction::performFreePages(uint32_t firstPage, uint32_t page
                 right->value = pages;
                     // Caution: At this point, `neighbor` may no longer
                     // point to a valid position!
+
+                LOGS << "  Merging left and new block into right\n";
+            }
+            else
+            {
+                LOGS << "  Merging left block into new\n";
             }
 
             // We always remove the end-entry of the left neighbor
@@ -314,10 +363,12 @@ void BlobStore2::Transaction::commit()
     for (const auto& [firstPage, pages] : freedBlobs_)
     {
         performFreePages(firstPage, pages);
+        checkFreeTrees();
     }
 
     Store::Transaction::commit();
 
+    /*
     for (const auto& [firstPage, pages] : freedBlobs_)
     {
         uint64_t ofs = store()->offsetOf(firstPage);
@@ -327,6 +378,7 @@ void BlobStore2::Transaction::commit()
         //  is larger than the page size? If so, must align
         //  the "hole"
     }
+    */
     freedBlobs_.clear();
 }
 
@@ -357,13 +409,81 @@ void BlobStore2::Transaction::endCreateStore()
 void BlobStore2::Transaction::dumpFreePages()
 {
     Header* root = getRootBlock();
-    FreeTree::Iterator iter(this, &root->freeEndTreeRoot);
-    LOGS << "Free pages:\n";
+
+    size_t count = 0;
+    FreeSizeTree::Iterator iter(this, &root->freeSizeTreeRoot);
+    LOGS << "Free pages by size:\n";
     while (iter.hasNext())
     {
         FreeTree::Entry entry = iter.next();
+        LOGS << "- " << entry.value << ": " <<
+            FreeSizeTree::sizeFromKey(entry.key) << '\n';
+        count++;
+    }
+    LOGS << "  " << count << " entries\n";
+
+    count = 0;
+    FreeTree::Iterator iter2(this, &root->freeEndTreeRoot);
+    LOGS << "Free pages by location:\n";
+    while (iter2.hasNext())
+    {
+        FreeTree::Entry entry = iter2.next();
         LOGS << "- " << (entry.key - entry.value) << ": " << entry.value << '\n';
+        count++;
+    }
+    LOGS << "  " << count << " entries\n";
+}
+
+struct Free
+{
+    uint32_t firstPage;
+    uint32_t pages;
+
+    bool operator==(const Free& other) const = default;
+
+    bool operator<(const Free& other) const
+    {
+        return firstPage < other.firstPage;
+    }
+};
+
+void dumpFreeEntries(const char* name, std::vector<Free>& list)
+{
+    LOGS << "Free entries (" << name << "):\n";
+    for (const auto& entry : list)
+    {
+        LOGS << "- " << entry.firstPage << ": " << entry.pages << "\n";
     }
 }
+
+void BlobStore2::Transaction::checkFreeTrees()
+{
+    std::vector<Free> inSize;
+    std::vector<Free> inEnd;
+
+    Header* root = getRootBlock();
+    FreeSizeTree::Iterator bySize(this, &root->freeSizeTreeRoot);
+    while (bySize.hasNext())
+    {
+        const auto [k,v] = bySize.next();
+        inSize.emplace_back(v, FreeSizeTree::sizeFromKey(k));
+    }
+    FreeTree::Iterator byEnd(this, &root->freeEndTreeRoot);
+    while (byEnd.hasNext())
+    {
+        const auto [k,v] = byEnd.next();
+        inEnd.emplace_back(k-v, v);
+    }
+
+    std::sort(inSize.begin(), inSize.end());
+    if (inSize != inEnd)
+    {
+        LOGS << "FreeBlob trees don't match.\n";
+        dumpFreeEntries("by size", inSize);
+        dumpFreeEntries("by end", inEnd);
+        assert(false);
+    }
+}
+
 
 } // namespace clarisma

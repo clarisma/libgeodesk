@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <memory>
+#include <random>
 #include <string_view>
 #include <catch2/catch_test_macros.hpp>
 #include <clarisma/cli/Console.h>
+#include <clarisma/util/log.h>
 
 #include "clarisma/store/BlobStore2.h"
 
@@ -66,6 +68,77 @@ TEST_CASE("BlobStore")
 	t3.dumpFreePages();
 	t3.end();
 
+	store.close();
+}
+
+
+TEST_CASE("BlobStore Random Alloc & Free")
+{
+	std::random_device rd;                         // nondet seed
+	std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
+
+	struct Blob
+	{
+		uint32_t firstPage;
+		uint32_t pages;
+	};
+
+	std::vector<Blob> blobs;
+
+	const char *filename = R"(c:\geodesk\tests\blobstore-alloc.bin)";
+
+	Console console;
+	TestBlobStore store;
+	std::remove(filename);
+
+	store.open(filename, File::OpenMode::READ | File::OpenMode::WRITE |
+		File::OpenMode::CREATE);
+	TestBlobStore::Transaction t0(&store);
+	t0.begin();
+	t0.createStore();
+	t0.commit();
+	t0.end();
+
+	int maxInserts = 10;
+	int maxBlobSize = 10000; // 1 << 18;
+
+	std::uniform_int_distribution<uint32_t> insertCountRange(1, maxInserts);
+	std::uniform_int_distribution<uint32_t> insertSizeRange(1, maxBlobSize);
+
+	TestBlobStore::Transaction tx(&store);
+	tx.begin();
+
+	for (int i=0; i<10000; i++)
+	{
+		int insertCount = insertCountRange(rng);
+		for (int i2 = 0; i2<insertCount; i2++)
+		{
+			int pages = insertSizeRange(rng);
+			int firstPage = tx.allocPages(pages);
+			tx.checkFreeTrees();
+			blobs.emplace_back(firstPage, pages);
+		}
+
+		int deleteCount = insertCountRange(rng) * 7 / 8;
+		for (int i2 = 0; i2<deleteCount; i2++)
+		{
+			if (blobs.empty()) break;
+			std::uniform_int_distribution<size_t> entryRange(0, blobs.size()-1);
+			size_t index = entryRange(rng);
+			auto [firstPage, pages] = blobs[index];
+			tx.freePages(firstPage, pages);
+			blobs.erase(blobs.begin() + index);
+		}
+		LOGS << "Committing #" << i << "\n";
+		tx.commit();
+		LOGS << "Committed #" << i << "\n";
+		tx.checkFreeTrees();
+	}
+
+	tx.dumpFreePages();
+	LOGS << blobs.size() << " blobs\n";
+
+	tx.end();
 	store.close();
 }
 

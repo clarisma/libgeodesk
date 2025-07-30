@@ -399,6 +399,8 @@ void Store::Transaction::commit()
     //  are written before tile contents -- make sure to write blocks
     //  that are part of metadata *last*
 
+    LOGS << "Syncing " << blocks_.size() << " blocks\n";
+
     uint32_t dirtyMappings = 0;
     for (const auto& it : blocks_)
     {
@@ -424,6 +426,7 @@ void Store::Transaction::commit()
         }
     }
 
+    LOGS << "Syncing dirty mappings...\n";
     // Ensure that the modified mappings are written to disk
     BitIterator<uint32_t> iter(dirtyMappings);
     for (;;)
@@ -432,8 +435,10 @@ void Store::Transaction::commit()
         if (n < 0) break;
         store_->syncMapping(n);
     }
+    LOGS << "Dirty mappings synced.\n";
     
     store_->journal_.clear();
+    LOGS << "Journal cleared.\n";
 
     preCommitStoreSize_ = newStoreSize;
 }
