@@ -20,7 +20,7 @@ BOOL WINAPI consoleHandler(DWORD signal)
 	return FALSE;
 }
 
-LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo)
+LONG CALLBACK crashHandler(PEXCEPTION_POINTERS ExceptionInfo)
 {
 	/*
 	if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
@@ -96,7 +96,11 @@ CliApplication::CliApplication()
 {
 	theApp_ = this;
 	#ifdef _WIN32
-	AddVectoredExceptionHandler(1, vectoredExceptionHandler);
+	#ifdef NDEBUG	// don't install crash handler for debug
+	SetUnhandledExceptionFilter(crashHandler);
+		// Don't use AddVectoredExceptionHandler() because it will
+		// catch *any* exception
+	#endif
 	SetConsoleCtrlHandler(consoleHandler, TRUE);
     #else
     std::signal(SIGINT, signalHandler);
