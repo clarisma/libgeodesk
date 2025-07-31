@@ -272,7 +272,10 @@ void Console::debug(const char* format, ...)
 ConsoleWriter Console::end()
 {
 	Console* self = get();
-	self->consoleState_.store(ConsoleState::NORMAL, std::memory_order_release);
+	self->consoleState_.store(
+		self->verbosity_ == Verbosity::SILENT ?
+			ConsoleState::OFF :	ConsoleState::NORMAL,
+		std::memory_order_release);
 	if(self->thread_.joinable()) self->thread_.detach();
 		// TODO: needed?
 	return ConsoleWriter(Stream::STDERR);
