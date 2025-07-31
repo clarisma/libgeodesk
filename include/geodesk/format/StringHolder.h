@@ -11,9 +11,26 @@ namespace geodesk {
 class StringHolder 
 {
 public:
+    static constexpr int MAX_INLINED_LENGTH = 15;
+
     StringHolder()
     {
         data_.inlined.flaggedLen = 0;
+    }
+
+    static StringHolder inlineCopy(const char *s, size_t size)
+    {
+        StringHolder holder;
+        unsigned char len = static_cast<unsigned char>(
+            std::min(size, std::size_t(15)));
+        holder.data_.inlined.flaggedLen = len;
+        memcpy(holder.data_.inlined.data, s, len);
+        return holder;
+    }
+
+    static StringHolder inlineCopy(std::string_view s)
+    {
+        return inlineCopy(s.data(), s.size());
     }
 
     explicit StringHolder(const clarisma::ShortVarString* s)
@@ -37,6 +54,14 @@ public:
     {
         return isInlined() ? data_.inlined.data : data_.referenced.ptr;
     }
+
+    /*
+    char* inlineDataMax15()
+    {
+        assert(isInlined());
+        return data_.inlined.data;
+    }
+    */
 
     size_t size() const noexcept
     {
@@ -67,6 +92,8 @@ public:
     }
 
 private:
+
+
     bool isInlined() const
     {
         return (data_.inlined.flaggedLen & REFERENCED_FLAG) == 0;
