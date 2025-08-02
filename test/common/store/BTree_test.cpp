@@ -62,7 +62,8 @@ public:
 
     void insert(MockTransaction* tx, uint32_t key, uint32_t value)
     {
-        BTree::insert(tx, &root_, key, value);
+        Cursor cursor(tx, &root_);
+        cursor.insert(key, value);
     }
 
     void removeFirst(MockTransaction* tx)
