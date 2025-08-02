@@ -18,6 +18,18 @@ TEST_CASE("Decimal")
 	d.format(buf);
 	REQUIRE(std::string(buf) == "0.5");
 
+	d = Decimal("");
+	REQUIRE(!d.isValid());
+	d = Decimal("", true);
+	REQUIRE(!d.isValid());
+
+	d = Decimal("0");
+	REQUIRE(d == 0);
+	d = Decimal("0", true);
+	REQUIRE(d == 0);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0");
+
 	d= Decimal("3.5 t");
 	REQUIRE(d == 3.5);
 
