@@ -48,17 +48,32 @@ TEST_CASE("Decimal")
 	d = Decimal("01", false);
 	REQUIRE(d == 1);
 
+	d = Decimal("08135", false);
+	REQUIRE(d == 8135);
+
+	d = Decimal("08135", true);
+	REQUIRE(!d.isValid());
+
+	d = Decimal("0.0", false);
+	REQUIRE(d == 0);
+
 	d = Decimal("0.0", true);
+	REQUIRE(!d.isValid());
+
+	d = Decimal("0.00", false);
 	REQUIRE(d == 0);
 
 	d = Decimal("0.00", true);
-	REQUIRE(d == 0);
+	REQUIRE(!d.isValid());
 
 	d = Decimal("0.500", false);
 	REQUIRE(d == .5);
 
 	d = Decimal("0.500", true);
-	REQUIRE(d == .5);
+	REQUIRE(!d.isValid());
+
+	d = Decimal("00.500", false);
+	REQUIRE(0.5);
 
 	d = Decimal("00.500", true);
 	REQUIRE(!d.isValid());

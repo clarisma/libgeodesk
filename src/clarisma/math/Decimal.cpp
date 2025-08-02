@@ -42,12 +42,13 @@ int64_t Decimal::parse(std::string_view s, bool strict)
         }
     }
 
+    char ch = 0;
     while(p < end)
     {
-        char ch = *p++;
+        ch = *p++;
         if (ch == '0')
         {
-            leadingZeroes = seenZero & !seenNonZero;
+            leadingZeroes |= seenZero & !seenNonZero;
             seenZero = true;
             value *= 10;
             if ((value & 0xf800'0000'0000'0000ULL) != 0) return INVALID;
@@ -75,7 +76,7 @@ int64_t Decimal::parse(std::string_view s, bool strict)
             trailingNonNumeric = true;
             break;
         }
-        leadingZeroes = seenZero & !seenNonZero;
+        leadingZeroes |= seenZero & !seenNonZero;
         seenNonZero = true;
         value = value * 10 + (ch - '0');
         if ((value & 0xf800'0000'0000'0000ULL) != 0) return INVALID;
@@ -83,7 +84,7 @@ int64_t Decimal::parse(std::string_view s, bool strict)
     if (strict)
     {
         if (trailingNonNumeric) return INVALID;
-        if (seenDot & (scale == 0 | (!seenZero & !seenNonZero)))
+        if (seenDot & (scale == 0 | (!seenZero & !seenNonZero) | ch=='0'))
         {
             return INVALID;
         }
