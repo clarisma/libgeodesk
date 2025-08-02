@@ -15,7 +15,13 @@ namespace clarisma {
 //  We always descend into the leaf where the item should be found
 //  if it existed
 
-template<typename Derived, typename Transaction, typename Key, size_t MAX_HEIGHT>
+template<
+    typename Derived,
+    typename Transaction,
+    typename Key,
+    typename NodeRef,
+    NodeRef NULL_REF,
+    size_t MAX_HEIGHT>
 class BTree
 {
 public:
@@ -32,7 +38,10 @@ public:
     {
     public:
         Cursor(Transaction* tx, NodeRef* root) :
-            transaction_(tx), root_(root), leaf_(nullptr) {}
+            transaction_(tx), root_(root),
+            maxNodeSize_(Derived::maxNodeSize(tx)),
+            innerKeysOfs_(Derived::innerKeysOfs(tx)),
+            leaf_(nullptr) {}
 
         Cursor(const Cursor& other)
         {
@@ -81,7 +90,7 @@ public:
         bool isAfterLast() const
         {
             // Leaf entries are 1-based
-            return leaf_->pos > Derived::keyCount(leaf_->node);
+            return leaf_->pos > Derived::leafKeyCount(leaf_->node);
         }
 
         bool isBeforeFirst() const
@@ -91,24 +100,6 @@ public:
         }
 
         void moveToLowerBound(Key key)
-        {
-            moveToInsertionPoint(key);
-            if (leaf_->pos > Derived::keyCount(leaf_->node))    [[unlikely]]
-            {
-                --leaf_->pos;
-                moveNext();
-            }
-        }
-
-        Entry* findExact(Key key)
-        {
-            moveToInsertionPoint(key);
-            if (isAfterLast()) return nullptr;
-            Entry* pEntry = entryPtr();
-            return pEntry->key == key ? pEntry : nullptr;
-        }
-
-        void moveToInsertionPoint(Key key)
         {
             Level* level = &levels_[0];
             uint8_t* node = getNode(*root_);
@@ -127,44 +118,6 @@ public:
 
                 // TODO: Check that maximum tree height is not exceeded
             }
-        }
-
-        bool moveToExact(Key key, Value value)
-        {
-            moveToInsertionPoint(key);
-
-            // Because this B+Tree allows duplicate keys,
-            // there may be matches in the preceding leaf
-
-            if (leaf_->pos == 1 && leaf_ > levels_)
-            {
-                // We're at the first item in a leaf node
-                // that has a parent. We need to scan for
-                // potential matches in the leaf to the left
-                Cursor back = Cursor(*this);
-                for (;;)
-                {
-                    back.movePrev();
-                    if (back.isBeforeFirst()) break;
-                    Entry entry = *back.entryPtr();
-                    if (entry.key < key) break;
-                    assert(entry.key == key);
-                    if (entry.value == value)
-                    {
-                        *this = back;
-                        return true;
-                    }
-                }
-            }
-            while (!isAfterLast())
-            {
-                Entry entry = *entryPtr();
-                if (entry.key > key) break;
-                assert(entry.key == key);
-                if (entry.value == value) return true;
-                moveNext();
-            }
-            return false;
         }
 
         void moveToFirst()
@@ -195,14 +148,13 @@ public:
             for(;;)
             {
                 level->node = node;
-                int count = Derived::keyCount(node);
                 if(Derived::isLeaf(node))
                 {
-                    level->pos = count;
+                    level->pos = Derived::leafKeyCount(node);
                     leaf_ = level;
                     return;
                 }
-                level->pos = count-1;
+                level->pos = Derived::innerleafKeyCount(node)-1;
                 node = Derived::getChildNode(transaction_, level);
                 ++level;
 
@@ -215,19 +167,19 @@ public:
             assert(!isAfterLast());
             Level* level = leaf_;
             uint8_t* node = level->node;
-            if (++level->pos <= Derived::keyCount(node)) return;
+            if (++level->pos <= Derived::leafKeyCount(node)) return;
             while(level > &levels_[0])
             {
                 --level;
                 node = level->node;
-                if (level->pos < Derived::keyCount(node))
+                if (level->pos < Derived::innerKeyCount(node))
                 {
                     ++level->pos;
                     for (;;)
                     {
                         node = Derived::getChildNode(transaction_, level);
                         ++level;
-                        assert(level < &levels_[MaxHeight]);
+                        assert(level < &levels_[MAX_HEIGHT]);
                         level->node = node;
                         if (Derived::isLeaf(node))
                         {
@@ -257,28 +209,28 @@ public:
                     {
                         node = Derived::getChildNode(transaction_, level);
                         ++level;
-                        assert(level < &levels_[MaxHeight]);
+                        assert(level < &levels_[MAX_HEIGHT]);
                         level->node = node;
-                        level->pos = Derived::keyCount(node);
                         if (Derived::isLeaf(node))
                         {
+                            level->pos = Derived::leafKeyCount(node);
                             leaf_ = level;
                             return;
                         }
+                        level->pos = Derived::innerKeyCount(node);
                     }
                 }
             }
         }
 
-        /// @brief Inserts the key and value. If an item with
-        /// the given key already exists, this method inserts
-        /// a duplicate. The cursor position is irrelevant prior
+        /// @brief Inserts the key and value. The cursor
+        /// position is irrelevant prior
         /// to the call, and left indeterminate afterward.
         ///
-        void insert(Key key, Value value)
+        void insert(Key key)
         {
-            moveToInsertionPoint(key);
-            insertAtCurrent(key, value);
+            moveToLowerBound(key);
+            insertAtCurrent(key);
         }
 
         /// @brief Inserts an item after the current cursor
@@ -286,45 +238,86 @@ public:
         /// first item, but not be located after the last.
         /// The cursor position post-call is indeterminate.
         ///
-        void insertAfterCurrent(Key key, Value value)
+        void insertAfterCurrent(Key key)
         {
             assert(!isAfterLast());
             ++leaf_->pos;
-            insertAtCurrent(key, value);
+            insertAtCurrent(key);
+        }
+
+        void insertRaw(uint8_t* node, int pos, Key key, NodeRef ref)
+        {
+            bool isLeaf = ref == NULL_REF;
+            uint32_t nodeSize = Derived::nodeSize(node);
+            Derived::setNodeSize(node, nodeSize + sizeof(Key));
+
+            Key* start = reinterpret_cast<Key*>(node + nodeSize);
+            Key* p = reinterpret_cast<Key*>(node
+                + (isLeaf ? Derived::leafKeysOfs() : innerKeysOfs_)
+                + sizeof(Key) * pos);
+                // p points to the rightmost dest slot
+                // start points to the leftmost dest slot
+            while (p > start)
+            {
+                *p = *(p-1);
+                --p;
+            }
+            if (!isLeaf)    [[unlikely]]
+            {
+                uint32_t keyCount = nodeSize - innerKeysOfs_;
+                NodeRef* startPtr = reinterpret_cast<NodeRef*>(node +
+                    Derived::pointersOfs() + keyCount * sizeof(NodeRef));
+                NodeRef* pPtr = reinterpret_cast<NodeRef*>(
+                    node + Derived::pointersOfs() + sizeof(NodeRef) * pos);
+                    // p points to the rightmost dest slot
+                    // start points to the leftmost dest slot
+                while (pPtr > startPtr)
+                {
+                    *pPtr = *(pPtr-1);
+                    --pPtr;
+                }
+            }
         }
 
 
-        void insertAtCurrent(Key key, Value value)
+        void insertAtCurrent(Key key, Key keyMask)
         {
             Level* level = leaf_;
+            assert(Derived::isLeaf(leaf_));
+            NodeRef ref = NULL_REF;
+
             for (;;)
             {
                 uint8_t* node = level->node;
                 int pos = level->pos;
-                if(nodeSize(node) + 8 <= Derived::maxNodeSize(transaction_))
+                uint32_t nodeSize = nodeSize(node);
+                if(nodeSize + sizeof(key) <= maxNodeSize_)
                 {
                     // There's enough room in the node
-                    Derived::insertRaw(node, pos, key, value);
+                    insertRaw(node, pos, key, ref);
                     return;
                 }
                 // We need to split the node
+                bool isLeaf = ref == NULL_REF;
                 auto [rightRef, rightNode] = Derived::allocNode(transaction_);
-                bool leafFlag = isLeaf(node);
-                int numberOfKeys = keyCount(node);
-                int splitPos = numberOfKeys / 2;
+                uint32_t keysOfs = isLeaf ? Derived::leafKeysOfs() : innerKeysOfs_;
+                const Key* keys = reinterpret_cast<const Key*>(node + keysOfs);
+                uint32_t numberOfKeys = (nodeSize - keysOfs) / sizeof(Key);
+                uint32_t splitPos = numberOfKeys / 2;
 
-                if(!leafFlag)
-                {
-                    // std::cout << "Splitting internal node.";
-                }
-
-                // copy entries into the new right node
+                // copy keys into the new right node
                 // For leaf nodes, we copy everything starting
                 // with the split key; for internal nodes, we skip
-                // the split key, and instead copy its pointer value
-                // into the slot for the leftmost pointer
-                // (so for internals, we copy 4 bytes less, and place
-                // them 4 bytes earlier into the node)
+                // the split key
+
+                Key* pDest = reinterpret_cast<Key*>(rightNode + keysOfs);
+                Key* pSrc = reinterpret_cast<Key*>(node + keysOfs +
+                    (splitPos + !isLeaf) * sizeof(Key));
+                Key* pSrcEnd = reinterpret_cast<Key*>(node + nodeSize);
+                while (pSrc < pSrcEnd)
+                {
+                    *pDest++ = pSrc++;
+                }
 
                 uint8_t* src = node + splitPos * 8 + (leafFlag ? 8 : 12);
                 uint8_t* dest = rightNode + 4 + leafFlag * 4;
@@ -404,6 +397,8 @@ public:
 
         Transaction* transaction_;
         NodeRef* root_;
+        uint32_t maxNodeSize_;
+        uint32_t innerKeysOfs_;
         Level* leaf_;
         Level levels_[MaxHeight];
     };
