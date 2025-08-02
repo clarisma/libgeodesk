@@ -7,6 +7,8 @@
 #include <clarisma/text/Format.h>
 #include <clarisma/util/log.h>
 
+#include "clarisma/cli/CliApplication.h"
+
 namespace clarisma {
 
 // TODO: Get rid of the vectors, just use simple arrays?
@@ -142,7 +144,9 @@ private:
         catch (std::exception& ex)
         {
             // TODO
-            Console::debug(ex.what());
+            // Console::debug(ex.what());
+            CliApplication::shutdown(ex.what());
+            std::abort();
         }
     }
     

@@ -126,7 +126,9 @@ ConsoleWriter& ConsoleWriter::failed()
 	if(isTerminal_) putStringUnsafe("\r\033[2K");	// clear current line
 	if(hasColor())
 	{
-		putStringUnsafe("\033[38;5;9m ─────── \033[0m");
+		// putStringUnsafe("\033[38;5;9m ─────── \033[0m");
+		putStringUnsafe("\033[38;5;15;48;5;1m ────── \033[0m ");
+			// 160 is brigher red
 	}
 	else
 	{
