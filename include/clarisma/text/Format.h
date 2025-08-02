@@ -232,6 +232,34 @@ namespace Format
     }
 
     char* timeAgo(char* buf, int64_t secs);
+
+    template<typename Stream>
+    void writeReplacedString(Stream& out, const char* s,
+        const char* find, size_t findLen,
+        const char* replaceWith, size_t replaceLen)
+    {
+        for (;;)
+        {
+            const char* next = strstr(s, find);
+            if (!next)
+            {
+                out << s;
+                return;
+            }
+            out.write(s, next - s);
+            out.write(replaceWith, replaceLen);
+            s = next + findLen;
+        }
+    }
+
+    template <typename Stream, size_t NF>
+    void writeReplacedString(Stream& out, const char* s, const char(&find)[NF],
+        const char* replaceWith)
+    {
+        size_t replaceLen = strlen(replaceWith);
+        writeReplacedString(out, s, find, NF-1, replaceWith, replaceLen);
+    }
+
 }
 
 class FormattedLong

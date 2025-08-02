@@ -17,6 +17,9 @@ public:
         latitudeFirst_ = true;
     }
 
+    void writeHeader(clarisma::Buffer& out, const char* extraStyles = nullptr);
+    void writeFooter(clarisma::Buffer& out, const Box& bounds);
+
     void writeNodeGeometry(clarisma::Buffer& out, NodePtr node) const
     {
         out.write("L.circleMarker(");
@@ -29,7 +32,7 @@ public:
         writeWayCoordinates(out, way, way.isArea());
     }
 
-    void writeRelationAreaGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+    void writeAreaRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
     {
         Polygonizer polygonizer;
         polygonizer.createRings(store, rel);
@@ -49,8 +52,35 @@ public:
     void writeCollectionRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
     {
         out.write("L.featureGroup([");
-        writeMemberGeometries(out, store, rel);
+        uint64_t count = 0;
+        bool isFirst = true;
+        FastMemberIterator iter(store, rel);
+        for (;;)
+        {
+            FeaturePtr member = iter.next();
+            if (member.isNull()) break;
+            if (!isFirst) out.writeByte(',');
+            isFirst = false;
+            int memberType = member.typeCode();
+            if (memberType == 1)
+            {
+                self().writeWayGeometry(out, WayPtr(member));
+            }
+            else if (memberType == 0)
+            {
+                self().writeNodeGeometry(out, NodePtr(member));
+            }
+            else
+            {
+                assert(memberType == 2);
+                self().writeRelationGeometry(out, store, RelationPtr(member));
+            }
+            out.writeByte(')');
+        }
+        out.writeByte(']');
     }
+
+    void writeBox(clarisma::Buffer& out, const Box& box);
 
 
 private:

@@ -28,9 +28,9 @@ public:
     void put(T&& item)
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        if (count_ == size_)
+        while (count_ == size_)
         {
-            notFull_.wait(lock, [this] { return count_ < size_; });
+            notFull_.wait(lock); // , [this] { return count_ < size_; });
         }
         queue_[rear_] = std::move(item);
         rear_ = (rear_ + 1) % size_;
@@ -52,9 +52,9 @@ public:
     T take()
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        if (count_ == 0)
+        while (count_ == 0)
         {
-            notEmpty_.wait(lock, [this] { return count_ > 0; });
+            notEmpty_.wait(lock); // , [this] { return count_ > 0; });
         }
         T item = std::move(queue_[front_]);
         front_ = (front_ + 1) % size_;

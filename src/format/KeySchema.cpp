@@ -31,8 +31,6 @@ void KeySchema::addKey(std::string_view key)
     key = Strings::trim(key);
     if (key.empty()) return;
 
-    // TODO: "special" keys: lon, lat, etc.
-
     if (key[key.size()-1] == '*') [[unlikely]]
     {
         startsWith_.emplace_back(key.data(), key.size() - 1);
@@ -45,6 +43,25 @@ void KeySchema::addKey(std::string_view key)
     }
 
     columns_.push_back(key);
+    assert(columns_.size() < (1 << 16));
+    uint16_t col = static_cast<uint16_t>(columns_.size());
+
+    if (key == "id")
+    {
+        specialKeyCols_[ID] = col;
+        return;
+    }
+    if (key == "lon")
+    {
+        specialKeyCols_[LON] = col;
+        return;
+    }
+    if (key == "lat")
+    {
+        specialKeyCols_[LAT] = col;
+        return;
+    }
+
     int code = strings_->getCode(key);
     if (code >= 0 && code <= FeatureConstants::MAX_COMMON_KEY)
     {

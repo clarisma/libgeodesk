@@ -15,7 +15,12 @@ namespace geodesk {
 class TagWalker
 {
 public:
-	TagWalker(TagTablePtr tags, StringTable& strings);
+	TagWalker(TagTablePtr tags, StringTable& strings) :
+		tags_(tags),
+		p_(tags_.ptr()),
+		strings_(strings)
+	{
+	}
 
 	bool next()
 	{

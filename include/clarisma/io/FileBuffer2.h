@@ -45,6 +45,11 @@ public:
 		p_ = buf_;
 	}
 
+	void flush()
+	{
+		flush(p_);
+	}
+
 private:
 	File file_;
 };

@@ -213,8 +213,9 @@ private:
 
 	/**
 	 * The mutex that must be held any time transaction_ is accessed.
+	 *  TODO: not currently in use, Transaction assumes single-thread use
 	 */
-	std::mutex transactionMutex_;
+	// std::mutex transactionMutex_;
 	// std::thread::id transactionThread_;
 
 	friend class Transaction;
