@@ -40,7 +40,7 @@ void Parser::skipWhitespace()
 	}
 }
 
-
+// TODO: should this skip trailing whitespace??
 ParsedString Parser::string()
 {
 	ParsedString parsed;
