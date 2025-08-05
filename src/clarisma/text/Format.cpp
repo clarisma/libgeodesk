@@ -238,10 +238,10 @@ char* formatDouble(char* out, double d, int precision, bool zeroFill)
     assert(precision >= 0 && precision <= 15);
     char buf[64];
     double multiplier = Math::POWERS_OF_10[precision];
-    long long roundedScaled = static_cast<long long>(round(d * multiplier));
+    long long roundedScaled = static_cast<long long>(std::abs(round(d * multiplier)));
     long long intPart = static_cast<long long>(roundedScaled / multiplier);
     unsigned long long fracPart = static_cast<unsigned long long>(
-        abs(roundedScaled - intPart * multiplier));
+        roundedScaled - intPart * multiplier);
 
     // Format the whole portion
     char* end = buf + sizeof(buf);
