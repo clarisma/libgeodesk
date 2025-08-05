@@ -17,22 +17,22 @@ void LeafletFormatter::writeBox(clarisma::Buffer& out, const Box& box)
 	out << "]]";
 }
 
-void LeafletFormatter::writeHeader(clarisma::Buffer& out, const char* extraStyles)
+void LeafletFormatter::writeHeader(Buffer& out, const LeafletSettings& settings, const char* extraStyles)
 {
 	out <<
 	  "<html><head><meta charset=\"utf-8\">"
 	  "<link rel=\"stylesheet\" href=\"";
-	Format::writeReplacedString(out, leafletStylesheetUrl_, "{leaflet_version}", leafletVersion_);
+	Format::writeReplacedString(out, settings.leafletStylesheetUrl, "{leaflet_version}", leafletVersion_);
 	out << "\">\n<script src=\"";
-	Format::writeReplacedString(out, leafletUrl_, "{leaflet_version}", leafletVersion_);
+	Format::writeReplacedString(out, settings.leafletUrl, "{leaflet_version}", leafletVersion_);
 	out <<  "\"></script>\n<style>\n#map {height: 100%;}\nbody {margin:0;}\n";
 	if(extraStyles) out << extraStyles;
 	out << "</style>\n</head>\n<body>\n<div id=\"map\"></div>\n<script>"
 		"var map = L.map('map');\n"
 		"var tilesUrl='";
-	out << basemapUrl_;
+	out << settings.basemapUrl;
 	out << "';\nvar tilesAttrib='";
-	out << attribution_;
+	out << settings.attribution;
 	out <<
 		"';\nvar tileLayer = new L.TileLayer("
 		"tilesUrl, {minZoom: " << minZoom_
