@@ -42,10 +42,9 @@ int64_t Decimal::parse(std::string_view s, bool strict)
         }
     }
 
-    char ch = 0;
     while(p < end)
     {
-        ch = *p++;
+        char ch = *p++;
         if (ch == '0')
         {
             leadingZeroes |= seenZero & !seenNonZero;
@@ -84,7 +83,7 @@ int64_t Decimal::parse(std::string_view s, bool strict)
     if (strict)
     {
         if (trailingNonNumeric) return INVALID;
-        if (seenDot & (scale == 0 | (!seenZero & !seenNonZero) | ch=='0'))
+        if (seenDot & (scale == 0 | (!seenZero & !seenNonZero)))
         {
             return INVALID;
         }
