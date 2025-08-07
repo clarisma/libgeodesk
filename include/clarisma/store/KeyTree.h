@@ -228,7 +228,7 @@ public:
 
         static uint8_t* getChildNode(Level* level)
         {
-            return Derived::unwrapPointerAt(level->node + level->pos * 16 + 4);
+            return Derived::unwrapPointerAt(level->node + level->pos * 16 + 8);
         }
 
         /// @brief Returns a pointer to the child node value in
@@ -369,8 +369,8 @@ public:
                 }
                 // We need to split the node
 
-                int numberOfKeys = keyCount(node, isLeaf);
-                int splitPos = numberOfKeys / 2;
+                int numberOfKeys = keyCount(node, !isInternal);
+                int keysInLeft = numberOfKeys / 2;
                 uint8_t* rightNode = tree_->allocNode();
 
                 // copy entries into the new right node
@@ -379,24 +379,25 @@ public:
                 // the split key, and instead copy its pointer value
                 // into the slot for the leftmost pointer
 
-                uint8_t* p = node + (splitPos << (3 + isInternal));
-                uint32_t extraForInternal = isInternal << 3;
-                uint8_t* src = p + extraForInternal;
+                uint32_t leftSize = (keysInLeft + 1) << (3 + isInternal);
+                uint8_t* p = node + leftSize;
+                uint32_t skippedInternalKey = isInternal << 3;
+                uint8_t* src = p + skippedInternalKey;
                 uint8_t* dest = rightNode + 8;
-                size_t bytesToCopy = ((numberOfKeys - splitPos) << (3 + isInternal))
-                    + extraForInternal;
-                uint32_t rightNodeSize = bytesToCopy + 8;
-                Derived::initNode(rightNode, rightNodeSize, !isInternal);
+                size_t bytesToCopy = ((numberOfKeys - keysInLeft) << (3 + isInternal))
+                    - skippedInternalKey;
+                uint32_t rightSize = bytesToCopy + 8;
+                Derived::initNode(rightNode, rightSize, !isInternal);
                 std::memcpy(dest, src, bytesToCopy);
                 Key splitKey = *reinterpret_cast<Key*>(p);
 
                 // trim the left node
-                Derived::setNodeSize(node, splitPos << (3 + isInternal));
+                Derived::setNodeSize(node, leftSize);
 
                 // Now, insert the key & value
-                bool insertRight = pos > splitPos + 1;
+                bool insertRight = pos > keysInLeft + 1;
                 insertRaw(insertRight ? rightNode : node,
-                    insertRight ? (pos - splitPos - isInternal) : pos,
+                    insertRight ? (pos - keysInLeft - isInternal) : pos,
                     key, ptr);
                     // If inserting in the rightNode, we need to shift
                     // the position by 1 slot more if the node is an internal
@@ -493,14 +494,13 @@ public:
                             // becomes the node's first key
                             *reinterpret_cast<Key*>(node+16) =
                                 *reinterpret_cast<Key*>(pParentSlot);
-                                *(pParentSlot-1);
                         }
                         else
                         {
                             *reinterpret_cast<Key*>(node+8) = borrowedKey;
                         }
                         // rightmost key of the left sibling
-                        // becomes the parent's new sparator key
+                        // becomes the parent's new separator key
                         *reinterpret_cast<Key*>(pParentSlot) = borrowedKey;
 
                         // Adjust node sizes
@@ -674,7 +674,7 @@ protected:
     ///
     static bool isLeaf(const uint8_t* node) // CRTP virtual
     {
-        return *reinterpret_cast<const uint32_t*>(node + 4) == 0;
+        return *reinterpret_cast<const uint32_t*>(node + 4) == 1;
     }
 
     /// @brief Returns the actual size (including header) of
@@ -720,10 +720,8 @@ protected:
 
     static void initNode(uint8_t* node, uint32_t nodeSize, bool isLeaf)
     {
-        *reinterpret_cast<uint64_t*>(node) =
-            static_cast<uint64_t>(nodeSize - 4) |
-                (isLeaf ? 0x1'0000'0000ULL : 0);
-            // Set node size and leaf-node flag
+        *reinterpret_cast<uint32_t*>(node) = nodeSize - 4;
+        *reinterpret_cast<uint32_t*>(node + 4) = isLeaf;
     }
 
     /// @brief Returns the number of entries in an inner node

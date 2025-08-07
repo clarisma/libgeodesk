@@ -357,6 +357,8 @@ public:
 
                 // Now, insert the key & value
                 bool insertRight = pos > splitPos + 1;
+                    // TODO: is this correct? should be pos > splitPos??
+                    //  Ok, looks like splitPos is 0-based??
                 Derived::insertRaw(insertRight ? rightNode : node ,
                     insertRight ? (pos - splitPos - !leafFlag) : pos, key, value);
                     // If inserting in the rightNode, we need to shift
