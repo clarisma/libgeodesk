@@ -256,5 +256,26 @@ uint64_t File::allocatedSize() const
     // TODO: verify if true
 }
 
+bool File::tryLock(uint64_t ofs, uint64_t length, bool shared)
+{
+    struct flock fl;
+    fl.l_type = shared ? F_RDLCK : F_WRLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start = ofs;
+    fl.l_len = length;
+    return fcntl(fileHandle_, F_SETLK, &fl) >= 0;
+}
+
+
+bool File::tryUnlock(uint64_t ofs, uint64_t length)
+{
+    struct flock fl;
+    fl.l_type = F_UNLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start = ofs;
+    fl.l_len = length;
+    return fcntl(fileHandle_, F_SETLK, &fl) >= 0;
+}
+
 
 } // namespace clarisma

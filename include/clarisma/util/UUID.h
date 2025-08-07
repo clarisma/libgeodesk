@@ -38,6 +38,14 @@ public:
         return !(*this == other);
     }
 
+    uint32_t stub() const
+    {
+        return static_cast<uint32_t>(guid_[0]) << 24
+            | static_cast<uint32_t>(guid_[1]) << 16
+            | static_cast<uint32_t>(guid_[2]) << 8
+            | static_cast<uint32_t>(guid_[3]);
+    }
+
     static UUID create();
 
     char* format(char* buf) const;
