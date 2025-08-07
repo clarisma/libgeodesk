@@ -17,30 +17,24 @@ namespace clarisma {
 
 template<
     typename Derived,
-    typename Transaction,
-    typename Key,
-    typename NodeRef,
-    NodeRef NULL_REF,
     size_t MAX_HEIGHT>
 class BTree
 {
 public:
-    using NodeRef = uint32_t;
+    using Key = uint64_t;
+    using Pointer = uint64_t;
 
     struct Level
     {
         uint8_t* node;
         int pos;
-        // Value value;
     };
 
     class Cursor
     {
     public:
-        Cursor(Transaction* tx, NodeRef* root) :
-            transaction_(tx), root_(root),
-            maxNodeSize_(Derived::maxNodeSize(tx)),
-            innerKeysOfs_(Derived::innerKeysOfs(tx)),
+        Cursor(Derived* tree) :
+            tree_(tree),
             leaf_(nullptr) {}
 
         Cursor(const Cursor& other)
@@ -223,6 +217,85 @@ public:
             }
         }
 
+        static uint8_t* getChildNode(Level* level)
+        {
+            return Derived::unwrapPointerAt(level->node + level->pos * 16 + 4);
+        }
+
+        /// @brief Returns a pointer to the child node value in
+        /// the given inner node.
+        ///
+        /// @return A pointer to the child node pointer where `key`
+        /// can be found (or would be inserted)
+        ///
+        /// This default implementation assumes internal nodes
+        /// have this layout (all items are uint32_t):
+        ///   payload_length (in bytes, excluding this header word)
+        ///   leftmost_child
+        ///   key0
+        ///   child0
+        ///   ...
+        ///   key_n
+        ///   child_n
+        ///
+        static int findInnerNodeEntry(uint8_t* node, Key key)
+        {
+            assert(!Derived::isLeaf(node));     // node must be an inner node
+            size_t count = Derived::innerNodeEntryCount(node);
+            size_t left = 1;
+            size_t right = count + 1;
+            while (left < right)
+            {
+                size_t mid = left + (right - left) / 2;
+                if (*reinterpret_cast<Key*>(node + mid * 16) <= key)
+                {
+                    left = mid + 1;
+                }
+                else
+                {
+                    right = mid;
+                }
+            }
+            return left - 1;
+        }
+
+        /// @brief Returns a pointer to the value in the given
+        /// leaf node whose key is the lowest key that is >= the
+        /// search key; if all keys are lower, the returned pointer
+        /// points beyond the entries (in that case, the address may
+        /// not be valid if the node is full)
+        ///
+        /// This default implementation assumes internal nodes
+        /// have this layout (all items are uint32_t):
+        ///   payload_length (in bytes, excluding this header word)
+        ///   always 0 (to distinguish from inner nodes)
+        ///   key0
+        ///   value0
+        ///   ...
+        ///   key_n
+        ///   value_n
+        ///
+        static int findLeafNodeEntry(uint8_t* node, Key key)
+        {
+            assert(Derived::isLeaf(node));     // node must be leaf
+            size_t count = Derived::leafNodeEntryCount(node);
+            size_t left = 1;
+            size_t right = count + 1;
+            while (left < right)
+            {
+                size_t mid = left + (right - left) / 2;
+                if (*reinterpret_cast<Key*>(node + mid * 8) < key)
+                {
+                    left = mid + 1;
+                }
+                else
+                {
+                    right = mid;
+                }
+            }
+            return left;
+        }
+
         /// @brief Inserts the key and value. The cursor
         /// position is irrelevant prior
         /// to the call, and left indeterminate afterward.
@@ -245,107 +318,86 @@ public:
             insertAtCurrent(key);
         }
 
-        void insertRaw(uint8_t* node, int pos, Key key, NodeRef ref)
+        void insertRaw(uint8_t* node, int pos, Key key, Pointer ptr)
         {
-            bool isLeaf = ref == NULL_REF;
+            bool isInternal = ptr != 0;
+            uint32_t entrySize = 8 << isInternal;
             uint32_t nodeSize = Derived::nodeSize(node);
-            Derived::setNodeSize(node, nodeSize + sizeof(Key));
-
-            Key* start = reinterpret_cast<Key*>(node + nodeSize);
-            Key* p = reinterpret_cast<Key*>(node
-                + (isLeaf ? Derived::leafKeysOfs() : innerKeysOfs_)
-                + sizeof(Key) * pos);
-                // p points to the rightmost dest slot
-                // start points to the leftmost dest slot
-            while (p > start)
-            {
-                *p = *(p-1);
-                --p;
-            }
-            if (!isLeaf)    [[unlikely]]
-            {
-                uint32_t keyCount = nodeSize - innerKeysOfs_;
-                NodeRef* startPtr = reinterpret_cast<NodeRef*>(node +
-                    Derived::pointersOfs() + keyCount * sizeof(NodeRef));
-                NodeRef* pPtr = reinterpret_cast<NodeRef*>(
-                    node + Derived::pointersOfs() + sizeof(NodeRef) * pos);
-                    // p points to the rightmost dest slot
-                    // start points to the leftmost dest slot
-                while (pPtr > startPtr)
-                {
-                    *pPtr = *(pPtr-1);
-                    --pPtr;
-                }
-            }
+            uint8_t* p = node + (pos << (3 + isInternal));
+            uint8_t* end = node + nodeSize;
+            memmove(p + entrySize, p, (end - p));
+            *reinterpret_cast<Pointer*>(p + entrySize - 8) = ptr;
+            *reinterpret_cast<Key*>(p) = key;
+                // assumes key and pointer ar same type,
+                // otherwise violates aliasing
+            Derived::setNodeSize(node, nodeSize + entrySize);
+            return;
         }
 
+        // TODO: update parent key if insert at 0
+        // TODO: masking of separator keys
 
         void insertAtCurrent(Key key, Key keyMask)
         {
             Level* level = leaf_;
             assert(Derived::isLeaf(leaf_));
-            NodeRef ref = NULL_REF;
+            Pointer ptr = 0;
+            int maxNodeSize = Derived::maxNodeSize();
+            bool isInternal = false;
 
             for (;;)
             {
                 uint8_t* node = level->node;
                 int pos = level->pos;
-                uint32_t nodeSize = nodeSize(node);
-                if(nodeSize + sizeof(key) <= maxNodeSize_)
+                uint32_t nodeSize = Derived::nodeSize(node);
+                int entrySize = 8 << isInternal;
+                if(nodeSize + entrySize <= maxNodeSize)
                 {
                     // There's enough room in the node
-                    insertRaw(node, pos, key, ref);
+                    insertRaw(p, pos, key, ptr);
+                        // If ptr==0, we're inserting into a leaf
+                    // TODO: if pos 0, update parrent separator key
                     return;
                 }
                 // We need to split the node
-                bool isLeaf = ref == NULL_REF;
-                auto [rightRef, rightNode] = Derived::allocNode(transaction_);
-                uint32_t keysOfs = isLeaf ? Derived::leafKeysOfs() : innerKeysOfs_;
-                const Key* keys = reinterpret_cast<const Key*>(node + keysOfs);
-                uint32_t numberOfKeys = (nodeSize - keysOfs) / sizeof(Key);
-                uint32_t splitPos = numberOfKeys / 2;
 
-                // copy keys into the new right node
+                int numberOfKeys = keyCount(node, isLeaf);
+                int splitPos = numberOfKeys / 2;
+                uint8_t* rightNode = Derived::allocNode();
+
+                // copy entries into the new right node
                 // For leaf nodes, we copy everything starting
                 // with the split key; for internal nodes, we skip
-                // the split key
+                // the split key, and instead copy its pointer value
+                // into the slot for the leftmost pointer
 
-                Key* pDest = reinterpret_cast<Key*>(rightNode + keysOfs);
-                Key* pSrc = reinterpret_cast<Key*>(node + keysOfs +
-                    (splitPos + !isLeaf) * sizeof(Key));
-                Key* pSrcEnd = reinterpret_cast<Key*>(node + nodeSize);
-                while (pSrc < pSrcEnd)
-                {
-                    *pDest++ = pSrc++;
-                }
-
-                uint8_t* src = node + splitPos * 8 + (leafFlag ? 8 : 12);
-                uint8_t* dest = rightNode + 4 + leafFlag * 4;
-                size_t rightPayloadSize = (numberOfKeys - splitPos - !leafFlag) * 8 + 4;
-                size_t bytesToCopy = rightPayloadSize - (leafFlag ? 4 : 0);
-                *reinterpret_cast<uint64_t*>(rightNode) = rightPayloadSize;
-                    // This sets word 1 to 0, indicating a leaf
-                    // copying an internal node will overwrite this with
-                    // the leftmost pointer
+                uint8_t* p = node + (splitPos << (3 + isInternal));
+                uint32_t extraForInternal = isInternal << 3;
+                uint8_t* src = p + extraForInternal;
+                uint8_t* dest = rightNode + 8;
+                size_t bytesToCopy = ((numberOfKeys - splitPos) << (3 + isInternal))
+                    + extraForInternal;
+                uint32_t rightNodeSize = bytesToCopy + 8;
+                Derived::initNode(rightNodeSize, !isInternal);
                 std::memcpy(dest, src, bytesToCopy);
-
-                uint32_t splitKey = *reinterpret_cast<uint32_t*>(
-                    node + (splitPos + 1) * 8);
+                Key splitKey = *reinterpret_cast<Key*>(p);
 
                 // trim the left node
-                *reinterpret_cast<uint32_t*>(node) = splitPos * 8 + 4;
+                Derived::setNodeSize(node, splitPos << (3 + isInternal));
 
                 // Now, insert the key & value
                 bool insertRight = pos > splitPos + 1;
-                Derived::insertRaw(insertRight ? rightNode : node ,
-                    insertRight ? (pos - splitPos - !leafFlag) : pos, key, value);
+                insertRaw(insertRight ? rightNode : node,
+                    insertRight ? (pos - splitPos - isInternal) : pos,
+                    key, ptr);
                     // If inserting in the rightNode, we need to shift
                     // the position by 1 slot more if the node is an internal
                     // node, to account for the fact that the middle key
                     // is moved to the parent
 
                 key = splitKey;
-                value = rightRef;
+                ptr = Derived::wrapPointer(rightNode);
+                isInternal = true;
 
                 if (level == levels_) break;
                 --level;
@@ -354,18 +406,191 @@ public:
 
             // Create a new root level
 
-            auto [rootRef, rootNode] = Derived::allocNode(transaction_);
-            uint32_t* pInt = reinterpret_cast<uint32_t*>(rootNode);
-            pInt[0] = 12;
-            pInt[1] = *root_;
-            pInt[2] = static_cast<uint32_t>(key);
-            pInt[3] = value;
-            *root_ = rootRef;
+            uint8_t* rootNode = Derived::allocNode();
+            Derived::initNode(rootNode, false);
+            uint64_t* pWord = reinterpret_cast<uint64_t*>(rootNode);
+            pWord[1] = Derived::wrapPointer(tree_->root());
+            pWord[2] = key;
+            pWord[3] = Derived::wrapPointer(ptr);
+            tree_->setRoot(rootNode);
         }
 
+        // TODO: masking of separator keys
+        // TODO: If removing first key in a leaf node,
+        //  may need to update the parent node's separator key
         void remove()
         {
-            Derived::remove(*this);
+            auto minSize = Derived::minNodeSize(tx);
+            Level* level = leaf_;
+            assert(Derived::isLeaf(leaf_));
+            bool isInternal = false;
+
+            for (;;)
+            {
+                uint8_t* node = level->node;
+                int pos = level->pos;
+                auto nodeSize = Derived::nodeSize(node);
+                uint32_t entrySize = 8 << isInternal;
+                uint8_t* p = node + (pos << (3 + isInternal));
+                uint8_t* end = node + nodeSize;
+                uint8_t* pSrc = p + entrySize;
+                std::memmove(p, pSrc, end - pSrc);
+                nodeSize -= entrySize;
+                Derived::setNodeSize(node, nodeSize);
+                if (nodeSize >= minSize) return;
+
+                if (level == cursor.levels())
+                {
+                    // We're at the root
+
+                    if (isInternal && nodeSize == 16)
+                    {
+                        // If the root is an internal node and
+                        // has one remaining pointer (the leftmost),
+                        // delete this root and set the child as the new root
+                        Pointer childNode = *reinterpret_cast<Pointer*>(node + 8);
+                        Derived::freeNode(childNode);
+                        tree_->setRoot(childNode);
+                    }
+                    return;
+                }
+
+                uint8_t* leftNode = nullptr;
+                uint8_t* rightNode = nullptr;
+                uint32_t leftSize;
+                uint32_t rightSize;
+                --level;
+                uint8_t* parentNode = level->node;
+                uint8_t* pParentSlot = parentNode + level->pos * 16);
+                if (pParentSlot > node)
+                {
+                    // child node has a left sibling
+                    leftNode = Derived::unwrapPointerAt(pParentSlot-8));
+                    leftSize = Derived::nodeSize(leftNode);
+                    if (leftSize > minSize)
+                    {
+                        // can borrow from left sibling
+                        Key borrowedKey = *reinterpret_cast<Key*>(
+                            leftNode + leftSize - entrySize);
+                        std::memmove(node + entrySize * 2, node + entrySize,
+                            nodeSize - entrySize);
+                        if(isInternal)
+                        {
+                            // rightmost pointer of left sibling
+                            // becomes the leftmost pointer of the
+                            // current node
+                            *reinterpret_cast<Pointer*>(node+8) =
+                                *reinterpret_cast<Pointer*>(leftNode + leftSize-8);
+                            // the separator key of the internal node's parent
+                            // becomes the node's first key
+                            *reinterpret_cast<Key*>(node+16) =
+                                *reinterpret_cast<Key*>(pParentSlot);
+                                *(pParentSlot-1);
+                        }
+                        else
+                        {
+                            *reinterpret_cast<Key*>(node+8) = borrowedKey;
+                        }
+                        // rightmost key of the left sibling
+                        // becomes the parent's new sparator key
+                        *reinterpret_cast<Key*>(pParentSlot) = borrowedKey;
+
+                        // Adjust node sizes
+                        Derived::setNodeSize(node, nodeSize + entrySize);
+                        Derived::setNodeSize(leftNode, leftSize - entrySize);
+                        return;
+                    }
+                }
+
+                auto parentSize = Derived::nodeSize(parentNode);
+                if (pParentSlot < parentNode + parentSize - 16)
+                {
+                    // child node has a right sibling
+
+                    rightNode = Derived::unwrapPointerAt(pParentSlot+8));
+                    rightSize = Derived::nodeSize(rightNode);
+                    if (rightSize > minSize)
+                    {
+                        // can borrow from right sibling
+                        uint8_t* pDest = rightNode + entrySize;
+                        Key borrowedKey = *reinterpret_cast<Key*>(pDest);
+                        // For both leaf and internal, the right sibling's
+                        // key or leftmost pointer becomes the node's
+                        // rightmost element
+                        reinterpret_cast<Pointer*>(node+nodeSize-8) =
+                            reinterpret_cast<Pointer*>(rightNode + 8);
+
+                        if(isInternal)
+                        {
+                            // For an internal node, its parent's
+                            // separator key becomes the node's new
+                            // rightmost key
+                            reinterpret_cast<Key*>(node+nodeSize-16) =
+                                reinterpret_cast<Key*>(pParentSlot);
+                            // and the leftmost key of the right sibling
+                            // becomes the parent's new separator key
+                            *reinterpret_cast<Key*>(pParentSlot) = borrowedKey;
+                        }
+                        else
+                        {
+                            // For a leaf, we've already copied the right
+                            // sibling's leftmost key to the end of the node
+                            // Now we just set the parent's separator key
+                            // to the new leftmost key of the right sibling
+                            // (remember, we haven't shifted yet)
+                            *reinterpret_cast<Key*>(pParentSlot) =
+                                reinterpret_cast<Pointer*>(rightNode + 16);
+                        }
+
+                        // adjust node sizes
+                        Derived::setNodeSize(node, nodeSize + entrySize);
+                        rightSize -= entrySize;
+                        Derived::setNodeSize(rightNode, rightSize);
+                        // Now, shift the right sibling's entries
+                        // (remember, for internal nodes, we also shift the
+                        // former first key's pointer into the position of
+                        // the leftmost pointer)
+                        std::memmove(rightNode + 8, rightNode + entrySize * 2,
+                            rightSize - 8);
+                        return;
+                    }
+                }
+
+                // merge nodes (right into left)
+
+                uint8_t* nodeToDelete;
+                if (leftNode)
+                {
+                    rightNode = node;
+                    rightSize = nodeSize;
+                    nodeToDelete = node;
+                }
+                else
+                {
+                    assert(rightNode);
+                    leftNode = node;
+                    leftSize = nodeSize;
+                    ++level->pos;
+                    pParentSlot += 16;        // This is a uint8_t pointer
+                    nodeToDelete = rightNode;
+                }
+
+                // for an internal node, the parent's separator key
+                // migrated up into the point where the left and right
+                // nodes are joined
+
+                if (isInternal)
+                {
+                    *reinterpret_cast<Key*>(leftNode+leftSize) =
+                        reinterpret_cast<Key*>(pParentSlot);
+                    leftSize += 8;
+                }
+                memcpy(leftNode + leftSize + (isInternal << 3),
+                    rightNode+8, rightSize-8);
+                setNodeSize(leftNode, leftSize + rightSize - 8);
+                Derived::freeNode(nodeToDelete);
+                isInternal = true;
+            }
         }
 
         bool remove(Key k, Value v)
@@ -395,10 +620,7 @@ public:
             return Derived::getNode(transaction_, ref);
         }
 
-        Transaction* transaction_;
-        NodeRef* root_;
-        uint32_t maxNodeSize_;
-        uint32_t innerKeysOfs_;
+        Derived* tree_;
         Level* leaf_;
         Level levels_[MaxHeight];
     };
@@ -465,12 +687,12 @@ protected:
         return *reinterpret_cast<const uint32_t*>(node) + 4;
     }
 
-    static bool isEmpty(const uint8_t* node)
+    static bool isEmpty(const uint8_t* node)    // CRTP virtual
     {
         return *reinterpret_cast<const uint32_t*>(node) == 8;
     }
 
-    static size_t maxNodeSize(Transaction* tx)
+    size_t maxNodeSize()  // CRTP virtual
     {
         return 4096;
     }
@@ -487,28 +709,29 @@ protected:
 
     /// @brief The number of keys in the given node
     ///
-    static size_t keyCount(const uint8_t* node) // CRTP virtual
+    static size_t keyCount(const uint8_t* node, bool isLeaf) // CRTP virtual
     {
-        return *reinterpret_cast<const uint32_t*>(node) / 8;
+        return *reinterpret_cast<const uint32_t*>(node) >> (4 - isLeaf);
     }
 
-    /// @brief The pointer to the given entry
-    ///
-    static uint8_t* ptrOfEntry(uint8_t* node, int pos)
+    static void initNode(uint8_t* node, uint32_t nodeSize, bool isLeaf)
     {
-        return node + pos * 8;
+        *reinterpret_cast<uint64_t*>(node) =
+            static_cast<uint64_t>(nodeSize - 4) |
+                (isInternal ? 0 0x1'0000'0000ULL);
+            // Set node size and leaf-node flag
     }
 
     /// @brief Returns the number of entries in an inner node
     ///
-    static size_t innerNodeEntryCount(const uint8_t* node)
+    static size_t innerNodeKeyCount(const uint8_t* node)  // CRTP virtual
     {
-        return Derived::nodeSize(node) / 8 - 1;
+        return Derived::nodeSize(node) / 16 - 1;
     }
 
     /// @brief Returns the number of entries in a leaf node
     ///
-    static size_t leafNodeEntryCount(const uint8_t* node)
+    static size_t leafNodeKeyCount(const uint8_t* node)  // CRTP virtual
     {
         return Derived::nodeSize(node) / 8 - 1;
     }
@@ -517,91 +740,13 @@ protected:
     /// (e.g. the number of the page that holds the node for a disk-based
     /// implementation)
     ///
-    static uint8_t* getNode(Transaction* tx, NodeRef ref);    // CRTP override
+    static uint8_t* getNode(Transaction* tx, NodeRef ref);    // CRTP virtual
 
-    static std::pair<NodeRef,uint8_t*> allocNode(Transaction* tx);     // CRTP override
+    static std::pair<NodeRef,uint8_t*> allocNode(Transaction* tx);     // CRTP virtual
 
-    static void freeNode(Transaction* tx, NodeRef ref);     // CRTP override
+    static void freeNode(Transaction* tx, NodeRef ref);     // CRTP virtual
 
-    static uint8_t* getChildNode(Transaction* tx, Level* level)
-    {
-        return Derived::getNode(tx, *reinterpret_cast<NodeRef*>(
-            level->node + level->pos * 8 + 4));
-    }
 
-    /// @brief Returns a pointer to the child node value in
-    /// the given inner node.
-    ///
-    /// @return A pointer to the child node pointer where `key`
-    /// can be found (or would be inserted)
-    ///
-    /// This default implementation assumes internal nodes
-    /// have this layout (all items are uint32_t):
-    ///   payload_length (in bytes, excluding this header word)
-    ///   leftmost_child
-    ///   key0
-    ///   child0
-    ///   ...
-    ///   key_n
-    ///   child_n
-    ///
-    static int findInnerNodeEntry(uint8_t* node, Key key)
-    {
-        assert(!Derived::isLeaf(node));     // node must be an inner node
-        size_t count = Derived::innerNodeEntryCount(node);
-        size_t left = 1;
-        size_t right = count + 1;
-        while (left < right)
-        {
-            size_t mid = left + (right - left) / 2;
-            if (*reinterpret_cast<uint32_t*>(node + mid * 8) <= key)
-            {
-                left = mid + 1;
-            }
-            else
-            {
-                right = mid;
-            }
-        }
-        return left - 1;
-    }
-
-    /// @brief Returns a pointer to the value in the given
-    /// leaf node whose key is the lowest key that is >= the
-    /// search key; if all keys are lower, the returned pointer
-    /// points beyond the entries (in that case, the address may
-    /// not be valid if the node is full)
-    ///
-    /// This default implementation assumes internal nodes
-    /// have this layout (all items are uint32_t):
-    ///   payload_length (in bytes, excluding this header word)
-    ///   always 0 (to distinguish from inner nodes)
-    ///   key0
-    ///   value0
-    ///   ...
-    ///   key_n
-    ///   value_n
-    ///
-    static int findLeafNodeEntry(uint8_t* node, Key key)
-    {
-        assert(Derived::isLeaf(node));     // node must be leaf
-        size_t count = Derived::leafNodeEntryCount(node);
-        size_t left = 1;
-        size_t right = count + 1;
-        while (left < right)
-        {
-            size_t mid = left + (right - left) / 2;
-            if (*reinterpret_cast<uint32_t*>(node + mid * 8) < key)
-            {
-                left = mid + 1;
-            }
-            else
-            {
-                right = mid;
-            }
-        }
-        return left;
-    }
 
     /// @brief Inserts a key/value pair into a node. This method
     /// assumes that the node has sufficient room.
@@ -620,156 +765,18 @@ protected:
     }
 
 
-    /// @brief Deletes a key/value pair from a node, without
-    /// attempting to simplify the tree.
-    ///
-    static void removeRaw(uint8_t* node, int pos)
-    {
-        uint8_t* p = Derived::ptrOfEntry(node, pos+1);
-        uint8_t* end = node + Derived::nodeSize(node);
-        if(p < end)
-        {
-            std::memmove(p - 8, p, end - p);
-        }
-        *reinterpret_cast<uint32_t*>(node) -= 8;
-    }
-
-    // TODO: If removing first key in a leaf node,
-    //  may need to update the parent node's separator key
-    static void remove(Cursor& cursor)
-    {
-        Transaction* tx = cursor.transaction();
-        auto minSize = Derived::minNodeSize(tx);
-        Level* level = cursor.leaf();
-        for (;;)
-        {
-            uint8_t* node = level->node;
-            removeRaw(node, level->pos);
-            auto nodeSize = Derived::nodeSize(node);
-            if (nodeSize >= minSize) return;
-
-            bool isLeaf = Derived::isLeaf(node);
-            if (level == cursor.levels())
-            {
-                // We're at the root
-
-                if (!isLeaf && nodeSize == 8)
-                {
-                    // If the root is an internal node and
-                    // has one remaining pointer (the leftmost),
-                    // delete this root and set the child as the new root
-                    uint32_t child = *reinterpret_cast<uint32_t*>(node + 4);
-                    Derived::freeNode(tx, cursor.root());
-                    cursor.setRoot(child);
-                }
-                return;
-            }
-
-
-            uint8_t* leftNode = nullptr;
-            uint8_t* rightNode = nullptr;
-            size_t leftSize;
-            size_t rightSize;
-            --level;
-            uint32_t* pParentSlot = reinterpret_cast<uint32_t*>(
-                 level->node + level->pos * 8 + 4);
-            if (reinterpret_cast<uint8_t*>(pParentSlot) > level->node + 4)
-            {
-                // child node has a left sibling
-                leftNode = Derived::getNode(tx, *(pParentSlot-2));
-                leftSize = Derived::nodeSize(leftNode);
-                if (leftSize > minSize)
-                {
-                    // can borrow from left sibling
-                    uint32_t borrowedKey = *reinterpret_cast<uint32_t*>(
-                        leftNode + leftSize - 8);
-                    uint32_t borrowedValue = *reinterpret_cast<uint32_t*>(
-                        leftNode + leftSize - 4);
-                    *reinterpret_cast<uint32_t*>(leftNode) -= 8;
-                    if (isLeaf)
-                    {
-                        Derived::insertRaw(node, 1, borrowedKey, borrowedValue);
-                    }
-                    else
-                    {
-                        std::memmove(node+12, node+4, nodeSize-4);
-                        *reinterpret_cast<uint32_t*>(node+4) = borrowedValue;
-                        *reinterpret_cast<uint32_t*>(node+8) = *(pParentSlot-1);
-                        *reinterpret_cast<uint32_t*>(node) += 8;
-                    }
-                    *(pParentSlot-1) = borrowedKey;
-                    return;
-                }
-            }
-
-            if (reinterpret_cast<uint8_t*>(pParentSlot) < level->node + Derived::nodeSize(level->node) - 4)
-            {
-                // child node has a right sibling
-
-                rightNode = Derived::getNode(tx, *(pParentSlot+2));
-                rightSize = Derived::nodeSize(rightNode);
-                if (rightSize > minSize)
-                {
-                    // can borrow from right sibling
-                    uint32_t borrowedKey = *reinterpret_cast<uint32_t*>(
-                        rightNode + 8);
-                    uint8_t* pDest = rightNode + (isLeaf ? 8 : 4);
-                    uint32_t borrowedValue = *reinterpret_cast<uint32_t*>(pDest + (isLeaf ? 4 : 0));
-                    memmove(pDest, pDest + 8, rightSize - (isLeaf ? 16 : 12));
-                    *reinterpret_cast<uint32_t*>(rightNode) -= 8;
-
-                    if (isLeaf)
-                    {
-                        *reinterpret_cast<uint32_t*>(node + nodeSize) = borrowedKey;
-                        *(pParentSlot+1) = *reinterpret_cast<uint32_t*>(rightNode + 8);
-                    }
-                    else
-                    {
-                        *reinterpret_cast<uint32_t*>(node + nodeSize) = *(pParentSlot+1);
-                        *(pParentSlot+1) = borrowedKey;
-                    }
-                    *reinterpret_cast<uint32_t*>(node + nodeSize + 4) = borrowedValue;
-                    *reinterpret_cast<uint32_t*>(node) += 8;
-                    return;
-                }
-            }
-
-            if (leftNode)
-            {
-                rightNode = node;
-                rightSize = nodeSize;
-            }
-            else
-            {
-                assert(rightNode);
-                leftNode = node;
-                leftSize = nodeSize;
-                ++level->pos;
-                pParentSlot += 2;        // This is a uint32_t pointer
-            }
-
-            if (isLeaf)
-            {
-                memcpy(leftNode+leftSize, rightNode+8, rightSize-8);
-                *reinterpret_cast<uint32_t*>(leftNode) = leftSize + rightSize - 12;
-            }
-            else
-            {
-                memcpy(leftNode+leftSize+4, rightNode+4, rightSize-4);
-                *reinterpret_cast<uint32_t*>(leftNode+leftSize) = *(pParentSlot-1);
-                *reinterpret_cast<uint32_t*>(leftNode) = leftSize + rightSize - 4;
-            }
-            Derived::freeNode(tx, *pParentSlot);
-        }
-    }
-
 public:
+    uint8_t* root() const { return root_; }
+    void setRoot(uint8_t* root) { root_ = root; }
+
+    /*
     static void init(Transaction* tx, NodeRef* root)
     {
         auto [ref, node] = Derived::allocNode(tx);
         *reinterpret_cast<uint64_t*>(node) = 4;
         *root = ref;
     }
+    */
 
     /*
     Error verifyNode(Transaction* tx, uint8_t* node, Key minKey, Key maxKey)
@@ -777,6 +784,10 @@ public:
 
     }
     */
+
+
+private:
+    uint8_t* root_;
 };
 
 } // namespace clarisma
