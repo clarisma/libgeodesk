@@ -108,6 +108,7 @@ TEST_CASE("Random KeyTree")
         uint32_t k = dist(rng);
         // std::cout << "Inserting # << " << i << ": " << k << std::endl;
         tree.insert(k);
+        tree.check();
         hash ^= k;
     }
 
