@@ -457,6 +457,9 @@ public:
                 uint8_t* node = level->node;
                 int pos = level->pos;
                 assert(pos > 0);
+                printf("Deleting at pos %d\n", pos);
+                fflush(stdout);
+
                 auto nodeSize = Derived::nodeSize(node);
                 uint32_t entrySize = 8 << isInternal;
                 uint8_t* p = node + (pos << (3 + isInternal));
@@ -470,14 +473,14 @@ public:
                 if (level == levels())
                 {
                     // We're at the root
-
+                    assert(node == tree_->root());
                     if (isInternal && nodeSize == 16)
                     {
                         // If the root is an internal node and
                         // has one remaining pointer (the leftmost),
                         // delete this root and set the child as the new root
-                        uint8_t* childNode = unwrapPointerAt(node + 8);
-                        tree_->freeNode(childNode);
+                        uint8_t* childNode = unwrapPointerAt(node + HEADER_SIZE);
+                        tree_->freeNode(node);
                         tree_->setRoot(childNode);
                     }
                     return;
@@ -500,8 +503,8 @@ public:
                         // can borrow from left sibling
                         Key borrowedKey = *reinterpret_cast<Key*>(
                             leftNode + leftSize - entrySize);
-                        std::memmove(node + entrySize * 2, node + entrySize,
-                            nodeSize - entrySize);
+                        std::memmove(node + entrySize + HEADER_SIZE,
+                            node + HEADER_SIZE, nodeSize - HEADER_SIZE);
                         if(isInternal)
                         {
                             // rightmost pointer of left sibling
@@ -525,6 +528,8 @@ public:
                         // Adjust node sizes
                         Derived::setNodeSize(node, nodeSize + entrySize);
                         Derived::setNodeSize(leftNode, leftSize - entrySize);
+                        printf("Borrowed from left sibling\n");
+                        fflush(stdout);
                         return;
                     }
                 }
@@ -585,6 +590,8 @@ public:
                         std::memmove(rightNode + HEADER_SIZE,
                             rightNode + entrySize + HEADER_SIZE,
                             rightSize - HEADER_SIZE);
+                        printf("Borrowed from right sibling\n");
+                        fflush(stdout);
                         return;
                     }
                 }
@@ -595,6 +602,8 @@ public:
                 {
                     rightNode = node;
                     rightSize = nodeSize;
+                    printf("Merging into left\n");
+                    fflush(stdout);
                 }
                 else
                 {
@@ -603,6 +612,8 @@ public:
                     leftSize = nodeSize;
                     ++level->pos;
                     pParentSlot += ENTRY_SIZE_INNER;   // This is a uint8_t pointer
+                    printf("Merging into right\n");
+                    fflush(stdout);
                 }
 
                 // for an internal node, the parent's separator key
@@ -618,9 +629,9 @@ public:
                 }
                 memcpy(leftNode + leftSize,
                     rightNode + HEADER_SIZE, rightSize - HEADER_SIZE);
-                setNodeSize(leftNode, leftSize + rightSize - HEADER_SIZE);
+                Derived::setNodeSize(leftNode, leftSize + rightSize - HEADER_SIZE);
                 assert(leftSize + rightSize - HEADER_SIZE <= tree_->maxNodeSize());
-                tree_->freeNode(rightNode);  
+                tree_->freeNode(rightNode);
                 isInternal = true;
             }
         }
@@ -829,6 +840,18 @@ public:
     void check()
     {
         checkNode(root_, 0, std::numeric_limits<uint64_t>::max());
+    }
+
+    size_t size()
+    {
+        size_t count = 0;
+        auto it = iter();
+        while (it.hasNext())
+        {
+            it.next();
+            count++;
+        }
+        return count;
     }
 
 

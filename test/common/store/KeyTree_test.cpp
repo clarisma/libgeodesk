@@ -100,7 +100,7 @@ TEST_CASE("Random KeyTree")
     std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
     std::uniform_int_distribution<uint64_t> dist(1, 2'000'000'000); // inclusive bounds
 
-    int targetAttemptCount = 1000000;
+    int targetAttemptCount = 10000;
     int targetCount = 0;
     uint32_t hash = 0;
 
@@ -110,7 +110,7 @@ TEST_CASE("Random KeyTree")
         // std::cout << "Inserting # << " << i << ": " << k << std::endl;
         bool inserted = tree.insert(k);
         targetCount += inserted;
-        // tree.check();
+        tree.check();
         hash ^= inserted ? k : 0;
     }
 
@@ -139,6 +139,11 @@ TEST_CASE("Random KeyTree")
             REQUIRE(ek >= k);
             hash ^= ek;
             --targetCount;
+            size_t currentCount = tree.size();
+            printf("Items in tree: %zu\n", currentCount);
+            REQUIRE(currentCount == targetCount);
+            fflush(stdout);
+            tree.check();
         }
     }
 
