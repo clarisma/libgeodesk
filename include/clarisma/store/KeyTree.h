@@ -456,6 +456,7 @@ public:
             {
                 uint8_t* node = level->node;
                 int pos = level->pos;
+                assert(pos > 0);
                 auto nodeSize = Derived::nodeSize(node);
                 uint32_t entrySize = 8 << isInternal;
                 uint8_t* p = node + (pos << (3 + isInternal));
@@ -540,36 +541,36 @@ public:
                         // can borrow from right sibling
                         uint8_t* pDest = rightNode + entrySize;
                         Key borrowedKey = *reinterpret_cast<Key*>(pDest);
-                        // For both leaf and internal, the right sibling's
-                        // key or leftmost pointer becomes the node's
-                        // rightmost element
-                        *reinterpret_cast<Pointer*>(node+nodeSize-8) =
-                            *reinterpret_cast<Pointer*>(rightNode + 8);
 
-                        // Remember, here we need to update the parent
+                        // Remember, here we need to work with the parent
                         // slot of the right node (not the parent slot
                         // of the current node), so pParentSlot+16
+                        pParentSlot += ENTRY_SIZE_INNER;
 
                         if(isInternal)
                         {
                             // For an internal node, its parent's
                             // separator key becomes the node's new
                             // rightmost key
-                            *reinterpret_cast<Key*>(node+nodeSize-16) =
+                            *reinterpret_cast<Key*>(node+nodeSize) =
                                 *reinterpret_cast<Key*>(pParentSlot);
+                            *reinterpret_cast<Pointer*>(node+nodeSize+sizeof(Key)) =
+                                *reinterpret_cast<Pointer*>(rightNode + HEADER_SIZE);
                             // and the leftmost key of the right sibling
                             // becomes the parent's new separator key
-                            *reinterpret_cast<Key*>(pParentSlot+16) = borrowedKey;
+                            *reinterpret_cast<Key*>(pParentSlot) = borrowedKey;
                         }
                         else
                         {
-                            // For a leaf, we've already copied the right
-                            // sibling's leftmost key to the end of the node
+                            // For a leaf, the right sibling's leftmost key
+                            // becomes the node's rightmost key
+                            *reinterpret_cast<Key*>(node+nodeSize) = borrowedKey;
+
                             // Now we just set the parent's separator key
                             // to the new leftmost key of the right sibling
                             // (remember, we haven't shifted yet)
-                            *reinterpret_cast<Key*>(pParentSlot+16) =
-                                *reinterpret_cast<Pointer*>(rightNode + 16);
+                            *reinterpret_cast<Key*>(pParentSlot) =
+                                *reinterpret_cast<Key*>(rightNode + 16);
                         }
 
                         // adjust node sizes
@@ -580,20 +581,20 @@ public:
                         // (remember, for internal nodes, we also shift the
                         // former first key's pointer into the position of
                         // the leftmost pointer)
-                        std::memmove(rightNode + 8, rightNode + entrySize * 2,
-                            rightSize - 8);
+                        // rightsize is already decreased to post-remove size
+                        std::memmove(rightNode + HEADER_SIZE,
+                            rightNode + entrySize + HEADER_SIZE,
+                            rightSize - HEADER_SIZE);
                         return;
                     }
                 }
 
                 // merge nodes (right into left)
 
-                uint8_t* nodeToDelete;
                 if (leftNode)
                 {
                     rightNode = node;
                     rightSize = nodeSize;
-                    nodeToDelete = node;
                 }
                 else
                 {
@@ -601,8 +602,7 @@ public:
                     leftNode = node;
                     leftSize = nodeSize;
                     ++level->pos;
-                    pParentSlot += 16;        // This is a uint8_t pointer
-                    nodeToDelete = rightNode;
+                    pParentSlot += ENTRY_SIZE_INNER;   // This is a uint8_t pointer
                 }
 
                 // for an internal node, the parent's separator key
@@ -614,11 +614,13 @@ public:
                     *reinterpret_cast<Key*>(leftNode+leftSize) =
                         *reinterpret_cast<Key*>(pParentSlot);
                     leftSize += 8;
+                        // because we insert the parent's separator key
                 }
-                memcpy(leftNode + leftSize + (isInternal << 3),
-                    rightNode+8, rightSize-8);
-                setNodeSize(leftNode, leftSize + rightSize - 8);
-                tree_->freeNode(nodeToDelete);
+                memcpy(leftNode + leftSize,
+                    rightNode + HEADER_SIZE, rightSize - HEADER_SIZE);
+                setNodeSize(leftNode, leftSize + rightSize - HEADER_SIZE);
+                assert(leftSize + rightSize - HEADER_SIZE <= tree_->maxNodeSize());
+                tree_->freeNode(rightNode);  
                 isInternal = true;
             }
         }

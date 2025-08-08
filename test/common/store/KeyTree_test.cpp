@@ -152,6 +152,7 @@ TEST_CASE("Random KeyTree")
         actualHash ^= k;
     }
 
+    tree.check();
     REQUIRE(actualCount == targetCount);
     REQUIRE(actualHash == hash);
 
