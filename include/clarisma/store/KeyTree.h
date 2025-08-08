@@ -370,18 +370,43 @@ public:
             int maxNodeSize = Derived::maxNodeSize();
             bool isInternal = false;
 
+            if (level->pos == 1) [[unlikely]]
+            {
+                if (level > &levels_[0])
+                {
+                    // If pos 1 and leaf is not root,
+                    // update the parent separator key
+                    // (We can do this before attempting
+                    // the actual insert, since splitting
+                    // won't shift pos 1
+                    // (We have to convert the leaf key
+                    // to an internal key later, so we're
+                    // not replacing the proper parent key)
+                    // make this more explicit
+
+                    Level* parentLevel = level-1;
+                    uint8_t* parentNode = parentLevel->node;
+                    *reinterpret_cast<Key*>(parentNode +
+                        parentLevel->pos * ENTRY_SIZE_INNER)
+                        = self()->asInternalKey(key);
+                    self()->onNodeDirty(parentNode);
+                }
+            }
+
             for (;;)
             {
                 uint8_t* node = level->node;
                 int pos = level->pos;
+                assert(pos > 0);
                 uint32_t nodeSize = Derived::nodeSize(node);
+                self()->onNodeDirty(node);
+
                 int entrySize = 8 << isInternal;
                 if(nodeSize + entrySize <= maxNodeSize)
                 {
                     // There's enough room in the node
                     insertRaw(node, pos, key, ptr);
                         // If ptr==0, we're inserting into a leaf
-                    // TODO: if pos 0, update parent separator key
                     return;
                 }
                 // We need to split the node
@@ -422,7 +447,10 @@ public:
                     // node, to account for the fact that the middle key
                     // is moved to the parent
 
-                key = splitKey;
+                self()->onNodeModified(node);
+                self()->onNodeModified(rightNode);
+
+                key = self()->asInternalKey(splitKey);
                 ptr = Derived::wrapPointer(rightNode);
                 isInternal = true;
 
@@ -440,11 +468,11 @@ public:
             pWord[2] = key;
             pWord[3] = ptr;
             tree_->setRoot(rootNode);
+            self()->onNodeDirty(rootNode);
+                // TODO: initNode should already mark the node
+                //  as dirty
         }
 
-        // TODO: masking of separator keys
-        // TODO: If removing first key in a leaf node,
-        //  may need to update the parent node's separator key
         void remove()
         {
             auto minSize = tree_->minNodeSize();
@@ -452,13 +480,29 @@ public:
             assert(Derived::isLeaf(leaf_->node));
             bool isInternal = false;
 
+            if (level->pos == 1) [[unlikely]]
+            {
+                if (level > &levels_[0])
+                {
+                    // If pos 1 and leaf is not root,
+                    // update the parent separator key
+
+                    Level* parentLevel = level-1;
+                    uint8_t* parentNode = parentLevel->node;
+                    *reinterpret_cast<Key*>(parentNode +
+                        parentLevel->pos * ENTRY_SIZE_INNER)
+                        = self()->asInternalKey(
+                        *reinterpret_cast<Key*>(
+                            level->node + HEADER_SIZE));
+                    self()->onNodeDirty(parentNode);
+                }
+            }
+
             for (;;)
             {
                 uint8_t* node = level->node;
                 int pos = level->pos;
                 assert(pos > 0);
-                //printf("Deleting at pos %d\n", pos);
-                //fflush(stdout);
 
                 auto nodeSize = Derived::nodeSize(node);
                 uint32_t entrySize = 8 << isInternal;
@@ -468,6 +512,11 @@ public:
                 std::memmove(p, pSrc, end - pSrc);
                 nodeSize -= entrySize;
                 Derived::setNodeSize(node, nodeSize);
+                self()->onNodeDirty(node);
+                    // (If node is a parent, we'll have marked it dirty
+                    // at this point -- but it's a cheap idempotent op,
+                    // so no worries if we perform it multiple times)
+
                 if (nodeSize >= minSize) return;
 
                 if (level == levels())
@@ -490,9 +539,14 @@ public:
                 uint8_t* rightNode = nullptr;
                 uint32_t leftSize;
                 uint32_t rightSize;
+
                 --level;
                 uint8_t* parentNode = level->node;
                 uint8_t* pParentSlot = parentNode + level->pos * 16;
+                self()->onNodeDirty(parentNode);
+                    // we need to borrow from sibling or merge with sibling;
+                    // either op will render the parent dirty
+
                 if (pParentSlot > parentNode)
                 {
                     // child node has a left sibling
@@ -523,13 +577,13 @@ public:
                         }
                         // rightmost key of the left sibling
                         // becomes the parent's new separator key
-                        *reinterpret_cast<Key*>(pParentSlot) = borrowedKey;
+                        *reinterpret_cast<Key*>(pParentSlot) =
+                            self()->asInternalKey(borrowedKey);
 
                         // Adjust node sizes
                         Derived::setNodeSize(node, nodeSize + entrySize);
                         Derived::setNodeSize(leftNode, leftSize - entrySize);
-                        //printf("Borrowed from left sibling\n");
-                        //fflush(stdout);
+                        self()->onNodeDirty(leftNode);
                         return;
                     }
                 }
@@ -575,7 +629,8 @@ public:
                             // to the new leftmost key of the right sibling
                             // (remember, we haven't shifted yet)
                             *reinterpret_cast<Key*>(pParentSlot) =
-                                *reinterpret_cast<Key*>(rightNode + 16);
+                                self()->asInternalKey(
+                                    *reinterpret_cast<Key*>(rightNode + 16));
                         }
 
                         // adjust node sizes
@@ -590,8 +645,7 @@ public:
                         std::memmove(rightNode + HEADER_SIZE,
                             rightNode + entrySize + HEADER_SIZE,
                             rightSize - HEADER_SIZE);
-                        //printf("Borrowed from right sibling\n");
-                        //fflush(stdout);
+                        self()->onNodeDirty(rightNode);
                         return;
                     }
                 }
@@ -602,8 +656,7 @@ public:
                 {
                     rightNode = node;
                     rightSize = nodeSize;
-                    //printf("Merging into left\n");
-                    //fflush(stdout);
+                    self()->onNodeDirty(leftNode);
                 }
                 else
                 {
@@ -612,8 +665,6 @@ public:
                     leftSize = nodeSize;
                     ++level->pos;
                     pParentSlot += ENTRY_SIZE_INNER;   // This is a uint8_t pointer
-                    //printf("Merging into right\n");
-                    //fflush(stdout);
                 }
 
                 // for an internal node, the parent's separator key
@@ -778,8 +829,32 @@ protected:
     Derived* self() { return static_cast<Derived*>(this); }
     const Derived* self() const { return static_cast<const Derived*>(this); }
 
-    uint8_t* allocNode();             // CRTP virtual
-    void freeNode(uint8_t* node);     // CRTP virtual
+    static uint8_t* allocNode()             // CRTP virtual
+    {
+        throw std::runtime_error("Must be implemented");
+    }
+
+    static void freeNode(uint8_t* node)     // CRTP virtual
+    {
+        throw std::runtime_error("Must be implemented");
+    }
+
+    /// @brief Called whenever a node has been changed
+    /// (or is about to be changed). This method may be
+    /// called even if the node is already dirty.
+    ///
+    static void onNodeDirty(uint8_t* node) {}
+
+    // @brief Transforms a key so it can be used as a separator key
+    // in a parent node. This is useful to strip off extra data in the
+    // lower bits of the key that ar enot intended to affect key order
+    // (such as flags). Can also be used to transform a 64-bit key
+    // into a key/value pair.
+    //
+    static Key asInternalKey(Key k)        // CRTP virtual
+    {
+        return k;
+    }
 
     static uint8_t* unwrapPointerAt(uint8_t* p)    // CRTP virtual
     {
