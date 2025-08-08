@@ -312,10 +312,23 @@ public:
         /// position is irrelevant prior
         /// to the call, and left indeterminate afterward.
         ///
-        void insert(Key key)
+        bool insert(Key k)
         {
-            moveToLowerBound(key);
-            insertAtCurrent(key);
+            moveToLowerBound(k);
+            if (!isAfterLast() && key() == k) return false;
+            insertAtCurrent(k);
+            return true;
+        }
+
+        /// @brief Inserts the key and value. The cursor
+        /// position is irrelevant prior
+        /// to the call, and left indeterminate afterward.
+        ///
+        void insertUnique(Key k)
+        {
+            moveToLowerBound(k);
+            assert(isAfterLast() || key() != k);
+            insertAtCurrent(k);
         }
 
         /// @brief Inserts an item after the current cursor
@@ -476,7 +489,7 @@ public:
                 --level;
                 uint8_t* parentNode = level->node;
                 uint8_t* pParentSlot = parentNode + level->pos * 16;
-                if (pParentSlot > node)
+                if (pParentSlot > parentNode)
                 {
                     // child node has a left sibling
                     leftNode = Derived::unwrapPointerAt(pParentSlot-8);
@@ -520,7 +533,7 @@ public:
                 {
                     // child node has a right sibling
 
-                    rightNode = Derived::unwrapPointerAt(pParentSlot+8);
+                    rightNode = Derived::unwrapPointerAt(pParentSlot+24);
                     rightSize = Derived::nodeSize(rightNode);
                     if (rightSize > minSize)
                     {
@@ -533,6 +546,10 @@ public:
                         *reinterpret_cast<Pointer*>(node+nodeSize-8) =
                             *reinterpret_cast<Pointer*>(rightNode + 8);
 
+                        // Remember, here we need to update the parent
+                        // slot of the right node (not the parent slot
+                        // of the current node), so pParentSlot+16
+
                         if(isInternal)
                         {
                             // For an internal node, its parent's
@@ -542,7 +559,7 @@ public:
                                 *reinterpret_cast<Key*>(pParentSlot);
                             // and the leftmost key of the right sibling
                             // becomes the parent's new separator key
-                            *reinterpret_cast<Key*>(pParentSlot) = borrowedKey;
+                            *reinterpret_cast<Key*>(pParentSlot+16) = borrowedKey;
                         }
                         else
                         {
@@ -551,7 +568,7 @@ public:
                             // Now we just set the parent's separator key
                             // to the new leftmost key of the right sibling
                             // (remember, we haven't shifted yet)
-                            *reinterpret_cast<Key*>(pParentSlot) =
+                            *reinterpret_cast<Key*>(pParentSlot+16) =
                                 *reinterpret_cast<Pointer*>(rightNode + 16);
                         }
 
@@ -766,7 +783,7 @@ protected:
     {
         bool isLeaf = Derived::isLeaf(node);
         uint64_t prev = min==0 ? min : min-1;
-        uint8_t* p = node;
+        uint8_t* p = node + 8;
         uint8_t* end = node + Derived::nodeSize(node);
         if (!isLeaf)
         {
@@ -801,18 +818,17 @@ public:
         return Iterator(self());
     }
 
-    void insert(Key key)
+    bool insert(Key k)
     {
         Cursor cursor(self());
-        cursor.moveToLowerBound(key);
-        cursor.insertAtCurrent(key);
+        return cursor.insert(k);
     }
 
     void check()
     {
         checkNode(root_, 0, std::numeric_limits<uint64_t>::max());
     }
-    
+
 
 private:
     uint8_t* root_;

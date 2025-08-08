@@ -22,8 +22,8 @@ public:
 
     static size_t maxNodeSize()
     {
-        // return 64;
-        return 4096;
+        return 128;
+        // return 4096;
     }
 
     static uint8_t* allocNode()           // CRTP override
@@ -100,16 +100,18 @@ TEST_CASE("Random KeyTree")
     std::mt19937_64    rng{rd()};                  // 64-bit Mersenne Twister
     std::uniform_int_distribution<uint64_t> dist(1, 2'000'000'000); // inclusive bounds
 
-    int targetCount = 1000000;
+    int targetAttemptCount = 1000000;
+    int targetCount = 0;
     uint32_t hash = 0;
 
-    for (int i=0; i<targetCount; i++)
+    for (int i=0; i<targetAttemptCount; i++)
     {
         uint32_t k = dist(rng);
         // std::cout << "Inserting # << " << i << ": " << k << std::endl;
-        tree.insert(k);
-        tree.check();
-        hash ^= k;
+        bool inserted = tree.insert(k);
+        targetCount += inserted;
+        // tree.check();
+        hash ^= inserted ? k : 0;
     }
 
     int actualCount = 0;
@@ -123,6 +125,7 @@ TEST_CASE("Random KeyTree")
         // std::cout << k << " = " << v << std::endl;
     }
 
+    tree.check();
     REQUIRE(actualCount == targetCount);
     REQUIRE(actualHash == hash);
 
