@@ -457,8 +457,8 @@ public:
                 uint8_t* node = level->node;
                 int pos = level->pos;
                 assert(pos > 0);
-                printf("Deleting at pos %d\n", pos);
-                fflush(stdout);
+                //printf("Deleting at pos %d\n", pos);
+                //fflush(stdout);
 
                 auto nodeSize = Derived::nodeSize(node);
                 uint32_t entrySize = 8 << isInternal;
@@ -528,8 +528,8 @@ public:
                         // Adjust node sizes
                         Derived::setNodeSize(node, nodeSize + entrySize);
                         Derived::setNodeSize(leftNode, leftSize - entrySize);
-                        printf("Borrowed from left sibling\n");
-                        fflush(stdout);
+                        //printf("Borrowed from left sibling\n");
+                        //fflush(stdout);
                         return;
                     }
                 }
@@ -590,8 +590,8 @@ public:
                         std::memmove(rightNode + HEADER_SIZE,
                             rightNode + entrySize + HEADER_SIZE,
                             rightSize - HEADER_SIZE);
-                        printf("Borrowed from right sibling\n");
-                        fflush(stdout);
+                        //printf("Borrowed from right sibling\n");
+                        //fflush(stdout);
                         return;
                     }
                 }
@@ -602,8 +602,8 @@ public:
                 {
                     rightNode = node;
                     rightSize = nodeSize;
-                    printf("Merging into left\n");
-                    fflush(stdout);
+                    //printf("Merging into left\n");
+                    //fflush(stdout);
                 }
                 else
                 {
@@ -612,8 +612,8 @@ public:
                     leftSize = nodeSize;
                     ++level->pos;
                     pParentSlot += ENTRY_SIZE_INNER;   // This is a uint8_t pointer
-                    printf("Merging into right\n");
-                    fflush(stdout);
+                    //printf("Merging into right\n");
+                    //fflush(stdout);
                 }
 
                 // for an internal node, the parent's separator key
