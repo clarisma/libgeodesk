@@ -35,40 +35,6 @@ public:
     {
         delete[] node;
     }
-
-    /*
-    Iterator iter(MockTransaction* tx)
-    {
-        return Iterator(tx, &root_);
-    }
-
-    void insert(MockTransaction* tx, uint32_t key, uint32_t value)
-    {
-        Cursor cursor(tx, &root_);
-        cursor.insert(key, value);
-    }
-
-    void removeFirst(MockTransaction* tx)
-    {
-        Cursor cursor(tx, &root_);
-        cursor.moveToFirst();
-        remove(cursor);
-    }
-
-    void removeLast(MockTransaction* tx)
-    {
-        Cursor cursor(tx, &root_);
-        cursor.moveToLast();
-        remove(cursor);
-    }
-
-    Entry takeLowerBound(MockTransaction* tx, uint32_t x)
-    {
-        return BTree::takeLowerBound(tx, &root_, x);
-    }
-
-    NodeRef root_;
-    */
 };
 
 
