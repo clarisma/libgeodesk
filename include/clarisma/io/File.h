@@ -76,6 +76,7 @@ public:
     void open(const std::filesystem::path& path, int /* OpenMode */ mode)
     {
         open(path.string().c_str(), mode);
+        // TODO: check this, this may not be safe as it operates on a temp object!
     }
 
     void close();
