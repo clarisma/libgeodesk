@@ -48,23 +48,54 @@ TEST_CASE("Decimal")
 	d = Decimal("01", false);
 	REQUIRE(d == 1);
 
+	d = Decimal("08135", false);
+	REQUIRE(d == 8135);
+
+	d = Decimal("08135", true);
+	REQUIRE(!d.isValid());
+
+	d = Decimal("0.0", false);
+	REQUIRE(d == 0);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.0");
+
 	d = Decimal("0.0", true);
 	REQUIRE(d == 0);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.0");
+
+	d = Decimal("0.00", false);
+	REQUIRE(d == 0);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.00");
 
 	d = Decimal("0.00", true);
 	REQUIRE(d == 0);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.00");
 
 	d = Decimal("0.500", false);
 	REQUIRE(d == .5);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.500");
 
 	d = Decimal("0.500", true);
 	REQUIRE(d == .5);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.500");
+
+	d = Decimal("00.500", false);
+	REQUIRE(d == 0.5);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.500");
 
 	d = Decimal("00.500", true);
 	REQUIRE(!d.isValid());
 
 	d = Decimal("0.", false);
 	REQUIRE(d == 0);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0");
 
 	d = Decimal("0.", true);
 	REQUIRE(!d.isValid());
@@ -74,18 +105,24 @@ TEST_CASE("Decimal")
 
 	d = Decimal(".25", false);
 	REQUIRE(d == .25);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.25");
 
 	d = Decimal(".25", true);
 	REQUIRE(!d.isValid());
 
 	d = Decimal("-0.0000", false);
 	REQUIRE(d == 0);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "0.0000");
 
 	d = Decimal("-0.0000", true);
 	REQUIRE(!d.isValid());
 
 	d = Decimal("4.25.", false);
 	REQUIRE(d == 4.25);
+	d.format(buf);
+	REQUIRE(std::string(buf) == "4.25");
 
 	d = Decimal("4.25.", true);
 	REQUIRE(!d.isValid());
