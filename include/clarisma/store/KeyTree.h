@@ -388,8 +388,8 @@ public:
                     uint8_t* parentNode = parentLevel->node;
                     *reinterpret_cast<Key*>(parentNode +
                         parentLevel->pos * ENTRY_SIZE_INNER)
-                        = self()->asInternalKey(key);
-                    self()->onNodeDirty(parentNode);
+                        = tree_->asInternalKey(key);
+                    tree_->onNodeDirty(parentNode);
                 }
             }
 
@@ -399,7 +399,7 @@ public:
                 int pos = level->pos;
                 assert(pos > 0);
                 uint32_t nodeSize = Derived::nodeSize(node);
-                self()->onNodeDirty(node);
+                tree_->onNodeDirty(node);
 
                 int entrySize = 8 << isInternal;
                 if(nodeSize + entrySize <= maxNodeSize)
@@ -447,10 +447,10 @@ public:
                     // node, to account for the fact that the middle key
                     // is moved to the parent
 
-                self()->onNodeModified(node);
-                self()->onNodeModified(rightNode);
+                tree_->onNodeDirty(node);
+                tree_->onNodeDirty(rightNode);
 
-                key = self()->asInternalKey(splitKey);
+                key = tree_->asInternalKey(splitKey);
                 ptr = Derived::wrapPointer(rightNode);
                 isInternal = true;
 
@@ -468,7 +468,7 @@ public:
             pWord[2] = key;
             pWord[3] = ptr;
             tree_->setRoot(rootNode);
-            self()->onNodeDirty(rootNode);
+            tree_->onNodeDirty(rootNode);
                 // TODO: initNode should already mark the node
                 //  as dirty
         }
@@ -491,10 +491,10 @@ public:
                     uint8_t* parentNode = parentLevel->node;
                     *reinterpret_cast<Key*>(parentNode +
                         parentLevel->pos * ENTRY_SIZE_INNER)
-                        = self()->asInternalKey(
+                        = tree_->asInternalKey(
                         *reinterpret_cast<Key*>(
                             level->node + HEADER_SIZE));
-                    self()->onNodeDirty(parentNode);
+                    tree_->onNodeDirty(parentNode);
                 }
             }
 
@@ -512,7 +512,7 @@ public:
                 std::memmove(p, pSrc, end - pSrc);
                 nodeSize -= entrySize;
                 Derived::setNodeSize(node, nodeSize);
-                self()->onNodeDirty(node);
+                tree_->onNodeDirty(node);
                     // (If node is a parent, we'll have marked it dirty
                     // at this point -- but it's a cheap idempotent op,
                     // so no worries if we perform it multiple times)
@@ -543,7 +543,7 @@ public:
                 --level;
                 uint8_t* parentNode = level->node;
                 uint8_t* pParentSlot = parentNode + level->pos * 16;
-                self()->onNodeDirty(parentNode);
+                tree_->onNodeDirty(parentNode);
                     // we need to borrow from sibling or merge with sibling;
                     // either op will render the parent dirty
 
@@ -578,12 +578,12 @@ public:
                         // rightmost key of the left sibling
                         // becomes the parent's new separator key
                         *reinterpret_cast<Key*>(pParentSlot) =
-                            self()->asInternalKey(borrowedKey);
+                            tree_->asInternalKey(borrowedKey);
 
                         // Adjust node sizes
                         Derived::setNodeSize(node, nodeSize + entrySize);
                         Derived::setNodeSize(leftNode, leftSize - entrySize);
-                        self()->onNodeDirty(leftNode);
+                        tree_->onNodeDirty(leftNode);
                         return;
                     }
                 }
@@ -629,7 +629,7 @@ public:
                             // to the new leftmost key of the right sibling
                             // (remember, we haven't shifted yet)
                             *reinterpret_cast<Key*>(pParentSlot) =
-                                self()->asInternalKey(
+                                tree_->asInternalKey(
                                     *reinterpret_cast<Key*>(rightNode + 16));
                         }
 
@@ -645,7 +645,7 @@ public:
                         std::memmove(rightNode + HEADER_SIZE,
                             rightNode + entrySize + HEADER_SIZE,
                             rightSize - HEADER_SIZE);
-                        self()->onNodeDirty(rightNode);
+                        tree_->onNodeDirty(rightNode);
                         return;
                     }
                 }
@@ -656,7 +656,7 @@ public:
                 {
                     rightNode = node;
                     rightSize = nodeSize;
-                    self()->onNodeDirty(leftNode);
+                    tree_->onNodeDirty(leftNode);
                 }
                 else
                 {
