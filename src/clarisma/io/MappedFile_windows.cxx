@@ -29,6 +29,7 @@ void* MappedFile::map(uint64_t offset, uint64_t length, int mode)
         (mode & MappingMode::WRITE) ? FILE_MAP_ALL_ACCESS : FILE_MAP_READ,
         (DWORD)((offset >> 32) & 0xFFFFFFFF), (DWORD)(offset & 0xFFFFFFFF), length);
     CloseHandle(mappingHandle);
+        // TODO: Check if it's legal to close this prior to unmapping views!
 
     if (!mappedAddress)
     {

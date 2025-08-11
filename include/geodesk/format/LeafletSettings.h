@@ -1,0 +1,24 @@
+// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#pragma once
+
+#include "FeatureFormatter.h"
+#include <geodesk/geom/polygon/Polygonizer.h>
+#include <geodesk/geom/polygon/Ring.h>
+
+namespace geodesk {
+
+struct LeafletSettings
+{
+    const char* basemapUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+    const char* attribution = "Map data &copy; <a href=\"http://openstreetmap.org\">OpenStreetMap</a> contributors";
+    const char* leafletUrl = "https://unpkg.com/leaflet@{leaflet_version}/dist/leaflet.js";
+    const char* leafletStylesheetUrl = "https://unpkg.com/leaflet@{leaflet_version}/dist/leaflet.css";
+    const char* leafletVersion = "1.8.0";
+    // std::string_view defaultMarkerStyle_;
+    int minZoom = 0;
+    int maxZoom = 19;
+};
+
+} // namespace geodesk

@@ -76,6 +76,7 @@ public:
     void open(const std::filesystem::path& path, int /* OpenMode */ mode)
     {
         open(path.string().c_str(), mode);
+        // TODO: check this, this may not be safe as it operates on a temp object!
     }
 
     void close();
@@ -159,6 +160,17 @@ public:
     {
         writeAll(path.string().c_str(), span);
     }
+
+    bool tryLock(uint64_t ofs, uint64_t length, bool shared = false);
+    bool tryLockShared(uint64_t ofs, uint64_t length)
+    {
+        return tryLock(ofs, length, true);
+    }
+    bool tryLockExclusive(uint64_t ofs, uint64_t length)
+    {
+        return tryLock(ofs, length, false);
+    }
+    bool tryUnlock(uint64_t ofs, uint64_t length);
     
 protected:
 #if defined(_WIN32) // Windows
