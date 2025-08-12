@@ -162,11 +162,24 @@ size_t File::read(uint64_t ofs, void* buf, size_t length)
 size_t File::write(const void* buf, size_t length)
 {
     DWORD bytesWritten;
-    if (!WriteFile(fileHandle_, buf, static_cast<DWORD>(length), &bytesWritten, NULL))
+    assert(length <= MAXDWORD);
+
+    if (!WriteFile(fileHandle_, buf, static_cast<DWORD>(length), &bytesWritten, nullptr))
     {
         IOException::checkAndThrow();
     }
     return bytesWritten;
+}
+
+size_t File::tryWriteAt(uint64_t ofs, const void* buf, size_t length)
+{
+    DWORD bytesWritten;
+    OVERLAPPED ovl;
+    ovl.Offset     = static_cast<DWORD>(ofs & 0xFFFFFFFFull);
+    ovl.OffsetHigh = static_cast<DWORD>((ofs >> 32) & 0xFFFFFFFFull);
+    bool res = WriteFile(fileHandle_, buf, static_cast<DWORD>(length),
+        &bytesWritten, &ovl);
+    return res ? bytesWritten : 0;
 }
 
 

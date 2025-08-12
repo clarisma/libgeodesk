@@ -145,6 +145,11 @@ size_t File::write(const void* buf, size_t length)
     return bytesWritten;
 }
 
+size_t File::tryWriteAt(uint64_t ofs, const void* buf, size_t length)
+{
+    ssize_t n = ::pwrite(fileHandle_, buf, length, static_cast<off_t>(ofs));
+    return n < 0 ? 0 : static_cast<size_t>(n);
+}
 
 std::string File::fileName() const
 {

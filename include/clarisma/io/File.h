@@ -92,7 +92,13 @@ public:
     size_t read(void* buf, size_t length);
     size_t read(uint64_t ofs, void* buf, size_t length);
     ByteBlock readBlock(size_t length);
+
+    /// @param length (must not exceed 4 GB)
     size_t write(const void* buf, size_t length);
+    size_t tryWriteAt(uint64_t ofs, const void* buf, size_t length);
+    size_t writeAt(uint64_t ofs, const void* buf, size_t length);
+        // TODO: write ops may require loop to write all bytes,
+        //  partial writes may be considered "success" by os!
 
     template <typename Container>
     size_t write(const Container& container)
