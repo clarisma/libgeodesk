@@ -82,7 +82,8 @@ void Store::open(const char* filename, int requestedMode)
     openMode_ = requestedMode;
     for (;;)
     {
-        ExpandableMappedFile::open(filename, (openMode_ & ~OpenMode::EXCLUSIVE) |
+        ExpandableMappedFile::open(filename,
+            static_cast<File::OpenMode>(openMode_ & ~OpenMode::EXCLUSIVE) |
             File::OpenMode::READ);
         // Don't pass EXCLUSIVE to base because it has no meaning
 
@@ -95,7 +96,7 @@ void Store::open(const char* filename, int requestedMode)
         if (journal_.exists())
         {
             // Need write access to process journal
-            if (openMode_ & File::OpenMode::WRITE)
+            if (openMode_ & static_cast<int>(File::OpenMode::WRITE))
             {
                 processJournal();
                 if (openMode_ == requestedMode) break;
@@ -199,7 +200,7 @@ uint32_t Store::Journal::readInstruction()
     assert(isOpen());
     seek(0);
     uint32_t instruction = 0;
-    read(&instruction, 4);
+    FileHandle::readAll(&instruction, 4);
     return instruction;
 }
 
@@ -256,14 +257,14 @@ void Store::processJournal()
 ///
 bool Store::Journal::isValid(DateTime storeCreationTimestamp)
 {
-    uint64_t journalSize = size();
+    uint64_t journalSize = getSize();
     if (journalSize < 24 || (journalSize & 3) != 0) return false;
 
     // TODO: Here, we assume Little-Endian byte order, which differs from Java
 
     uint64_t timestamp;
     seek(4);
-    read(&timestamp, 8);
+    FileHandle::readAll(&timestamp, 8);
     if (timestamp != storeCreationTimestamp) return false;
 
     Crc32 crc;  // Initialize the CRC
@@ -271,17 +272,17 @@ bool Store::Journal::isValid(DateTime storeCreationTimestamp)
     while (patchWordsRemaining)
     {
         uint32_t patchWord;
-        read(&patchWord, 4);
+        FileHandle::readAll(&patchWord, 4);
         crc.update(&patchWord, 4);
         patchWordsRemaining--;
     }
 
     uint64_t endMarker;
-    read(&endMarker, 8);
+    FileHandle::readAll(&endMarker, 8);
     if (endMarker != JOURNAL_END_MARKER) return false;
 
     uint32_t journalCrc;
-    read(&journalCrc, 4);
+    FileHandle::readAll(&journalCrc, 4);
     return journalCrc == crc.get();
 }
 
@@ -292,7 +293,7 @@ void Store::Journal::apply(byte* storeData, size_t storeSize)
     for (;;)
     {
         uint64_t patch;
-        read(&patch, 8);
+        FileHandle::readAll(&patch, 8);
         if (patch == JOURNAL_END_MARKER) break;
         uint64_t pos = (patch >> 10) << 2;
         uint32_t len = ((patch & 0x3ff) + 1) * 4;
@@ -301,10 +302,13 @@ void Store::Journal::apply(byte* storeData, size_t storeSize)
         {
             throw IOException("Cannot restore from journal, store modified outside transaction");
         }
-        if (read(storeData + pos, len) != len)
+        FileHandle::readAll(storeData + pos, len);
+        /*
+        if (FileHandle::readAll(storeData + pos, len) != len)
         {
             throw IOException("Failed to apply patch from journal");
         }
+        */
     }
 }
 
@@ -448,9 +452,9 @@ void Store::Journal::save(DateTime timestamp, const JournaledBlocks& blocks)
     }
     seek(0);
     uint32_t command = 1;
-    write(&command, 4);
+    FileHandle::writeAll(&command, 4);
     int64_t ts = timestamp;
-    write(&ts, 8);
+    FileHandle::writeAll(&ts, 8);
     Crc32 crc;  // Initialize the CRC
     for (const auto& it: blocks)
     {
@@ -472,8 +476,8 @@ void Store::Journal::save(DateTime timestamp, const JournaledBlocks& blocks)
                 }
                 int patchLen = n - start;
                 uint64_t patch = ((baseWordAddress + start) << 10) | (patchLen - 1);
-                write(&patch, 8);
-                write(&original[start], patchLen * 4);
+                FileHandle::writeAll(&patch, 8);
+                FileHandle::writeAll(&original[start], patchLen * 4);
                 crc.update(&patch, 8);
                 crc.update(&original[start], patchLen * 4);
             }
@@ -481,10 +485,10 @@ void Store::Journal::save(DateTime timestamp, const JournaledBlocks& blocks)
         }
     }
     uint64_t trailer = JOURNAL_END_MARKER;
-    write(&trailer, 8);
+    FileHandle::writeAll(&trailer, 8);
     uint32_t checksum = crc.get();
-    write(&checksum, 4);
-    force();
+    FileHandle::writeAll(&checksum, 4);
+    sync();
 }
 
 /*
@@ -539,9 +543,9 @@ void Store::Journal::clear()
 {
     seek(0);
     uint32_t command = 0;
-    write(&command, 4);
+    FileHandle::writeAll(&command, 4);
     setSize(4);   // TODO: just trim to 0 instead?
-    force();
+    sync();
 }
 
 bool Store::isBlank() const

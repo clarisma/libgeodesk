@@ -50,7 +50,7 @@ inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
     return handle_ != INVALID;
 }
 
-void FileHandle::close()
+inline void FileHandle::close()
 {
     if (handle_ != INVALID)
     {

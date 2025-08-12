@@ -15,55 +15,7 @@
 namespace clarisma
 {
 
-inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
-{
-    static DWORD ACCESS_MODES[] =
-    {
-        GENERIC_READ,                   // none (default to READ)
-        GENERIC_READ,                   // READ
-        GENERIC_WRITE,                  // WRITE
-        GENERIC_READ | GENERIC_WRITE    // READ + WRITE
-    };
-
-    // Access mode: use bits 0 & 1 of OpenMode
-    DWORD access = ACCESS_MODES[static_cast<int>(mode) & 3];
-
-    static DWORD CREATE_MODES[] =
-    {
-        OPEN_EXISTING,      // none (default: open if exists)
-        OPEN_ALWAYS,        // CREATE
-        CREATE_ALWAYS,      // REPLACE_EXISTING (implies CREATE)
-        CREATE_ALWAYS,      // CREATE + REPLACE_EXISTING
-    };
-
-    // Create disposition: use bits 4 & 5 of OpenMode
-    DWORD creationDisposition = CREATE_MODES[
-        (static_cast<int>(mode) >> 2) & 3];
-
-    static DWORD ATTRIBUTE_FLAGS[] =
-    {
-        FILE_ATTRIBUTE_NORMAL,
-        FILE_ATTRIBUTE_TEMPORARY,
-        FILE_FLAG_DELETE_ON_CLOSE,
-        FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE
-    };
-
-    // Create disposition: use bits 4 & 5 of OpenMode
-    DWORD attributes = ATTRIBUTE_FLAGS[
-        (static_cast<int>(mode) >> 4) & 3];
-
-    // TODO: Decide whether to support SPARSE
-
-    handle_ = CreateFileA(fileName, access,
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL, creationDisposition,
-        attributes, NULL);
-
-    return handle_ != INVALID;
-}
-
-
-void FileHandle::close()
+inline void FileHandle::close()
 {
     if (handle_ != INVALID)
     {
@@ -483,12 +435,38 @@ inline void FileHandle::sync()
     syncData();
 }
 
-std::string FileHandle::fileName() const
+inline void FileHandle::deallocate(uint64_t ofs, size_t length)
+{
+    zeroFill(ofs, length);
+}
+
+
+
+inline std::string FileHandle::fileName() const
 {
     TCHAR buf[MAX_PATH];
     DWORD res = GetFinalPathNameByHandle(handle_, buf, MAX_PATH, FILE_NAME_NORMALIZED);
     return std::string(res > 0 ? buf : "<invalid file>");
 }
+
+/*
+inline void FileHandle::makeSparse()
+{
+    DWORD bytesReturned = 0;
+    if(!DeviceIoControl(
+        handle_,          // Handle to the file obtained with CreateFile
+        FSCTL_SET_SPARSE,     // Control code for setting the file as sparse
+        NULL,                 // No input buffer required
+        0,                    // Input buffer size is zero since no input buffer
+        NULL,                 // No output buffer required
+        0,                    // Output buffer size is zero since no output buffer
+        &bytesReturned,       // Bytes returned
+        NULL))                // Not using overlapped I/O
+    {
+        IOException::checkAndThrow();
+    }
+}
+*/
 
 
 } // namespace clarisma

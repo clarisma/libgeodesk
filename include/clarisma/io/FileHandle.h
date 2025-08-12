@@ -46,13 +46,19 @@ public:
         WRITE = 2,
         CREATE = 4,                 // Creation
         REPLACE_EXISTING = 8,
-        TEMPORARY = 16,             // Special
-        DELETE_ON_CLOSE = 32
+        TEMPORARY = 16,             // Flags for Windows
+        DELETE_ON_CLOSE = 32,
+        SPARSE = 64                 // Special action for Windows
+
+        // TODO: If adding more flags, modify Store::OpenMode !!!
     };
 
+    FileHandle handle() const noexcept { return handle_; }
     Native native() const noexcept { return handle_; }
 
     bool tryOpen(const char* fileName, OpenMode mode);
+    void open(const char* fileName, OpenMode mode);
+
     void close();
     bool isOpen() const { return handle_ != INVALID; };
 
@@ -81,7 +87,7 @@ public:
     /// pointer to a heap-allocated buffer, otherwise throws IOException.
     ///
     template<typename T>
-    [[nodiscard]] std::unique_ptr<T[]> readAll(size_t length)
+    [[nodiscard]] std::unique_ptr<T[]> readAllAs(size_t length)
     {
         static_assert(std::is_trivially_copyable_v<T>,
         "T must be trivially copyable for binary I/O.");
@@ -97,7 +103,7 @@ public:
     /// allocated buffer, otherwise throws IOException.
     ///
     template<typename T>
-    [[nodiscard]] std::unique_ptr<T[]> readAllAt(uint64_t ofs, size_t length)
+    [[nodiscard]] std::unique_ptr<T[]> readAllAtAs(uint64_t ofs, size_t length)
     {
         static_assert(std::is_trivially_copyable_v<T>,
         "T must be trivially copyable for binary I/O.");
@@ -150,13 +156,18 @@ public:
 
     std::string fileName() const;
 
+    void makeSparse();
+    void allocate(uint64_t ofs, size_t length);
+    void deallocate(uint64_t ofs, size_t length);
+    void zeroFill(uint64_t ofs, size_t length);
+
 protected:
     Native handle_ = INVALID;
 };
 
-} // namespace clarisma
-
 CLARISMA_ENUM_FLAGS(FileHandle::OpenMode)
+
+} // namespace clarisma
 
 #if defined(_WIN32)
 #include "detail/FileHandle_win.inl"

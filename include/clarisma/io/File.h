@@ -42,11 +42,6 @@ public:
 
     ByteBlock readBlock(size_t length);
 
-    void makeSparse();
-    void allocate(uint64_t ofs, size_t length);
-    void deallocate(uint64_t ofs, size_t length);
-    void zeroFill(uint64_t ofs, size_t length);
-
     static bool exists(const char* fileName);
     static void remove(const char* fileName);
     static void rename(const char* from, const char* to);

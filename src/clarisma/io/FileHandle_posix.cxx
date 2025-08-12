@@ -12,6 +12,15 @@
 
 namespace clarisma {
 
+void FileHandle::open(const char* fileName, OpenMode mode)
+{
+    if (!tryOpen(fileName, mode))
+    {
+        if(errno == ENOENT) throw FileNotFoundException(fileName);
+        IOException::checkAndThrow();
+    }
+}
+
 std::string FileHandle::fileName() const
 {
     char fdPath[1024];
@@ -41,13 +50,13 @@ void File::allocate(uint64_t ofs, size_t length)
 #endif
 }
 
-void File::deallocate(uint64_t ofs, size_t length)
+void FileHandle::deallocate(uint64_t ofs, size_t length)
 {
     // TODO: do nothing for now
 }
 
 
-void File::zeroFill(uint64_t ofs, size_t length)
+void FileHandle::zeroFill(uint64_t ofs, size_t length)
 {
     // TODO: do nothing for now
 }

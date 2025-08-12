@@ -3,38 +3,82 @@
 
 #include <clarisma/io/FileHandle.h>
 #include <stdexcept>
+#include <winioctl.h>   // For FSCTL_SET_SPARSE
 
 namespace clarisma {
 
-void File::makeSparse()
+bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
 {
-    DWORD bytesReturned = 0;
-    if(!DeviceIoControl(
-        fileHandle_,          // Handle to the file obtained with CreateFile
-        FSCTL_SET_SPARSE,     // Control code for setting the file as sparse
-        NULL,                 // No input buffer required
-        0,                    // Input buffer size is zero since no input buffer
-        NULL,                 // No output buffer required
-        0,                    // Output buffer size is zero since no output buffer
-        &bytesReturned,       // Bytes returned
-        NULL))                // Not using overlapped I/O
+    static DWORD ACCESS_MODES[] =
     {
+        GENERIC_READ,                   // none (default to READ)
+        GENERIC_READ,                   // READ
+        GENERIC_WRITE,                  // WRITE
+        GENERIC_READ | GENERIC_WRITE    // READ + WRITE
+    };
+
+    // Access mode: use bits 0 & 1 of OpenMode
+    DWORD access = ACCESS_MODES[static_cast<int>(mode) & 3];
+
+    static DWORD CREATE_MODES[] =
+    {
+        OPEN_EXISTING,      // none (default: open if exists)
+        OPEN_ALWAYS,        // CREATE
+        CREATE_ALWAYS,      // REPLACE_EXISTING (implies CREATE)
+        CREATE_ALWAYS,      // CREATE + REPLACE_EXISTING
+    };
+
+    // Create disposition: use bits 4 & 5 of OpenMode
+    DWORD creationDisposition = CREATE_MODES[
+        (static_cast<int>(mode) >> 2) & 3];
+
+    static DWORD ATTRIBUTE_FLAGS[] =
+    {
+        FILE_ATTRIBUTE_NORMAL,
+        FILE_ATTRIBUTE_TEMPORARY,
+        FILE_FLAG_DELETE_ON_CLOSE,
+        FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE
+    };
+
+    // Create disposition: use bits 4 & 5 of OpenMode
+    DWORD attributes = ATTRIBUTE_FLAGS[
+        (static_cast<int>(mode) >> 4) & 3];
+
+    // TODO: Decide whether to support SPARSE
+
+    handle_ = CreateFileA(fileName, access,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL, creationDisposition,
+        attributes, NULL);
+
+    // TODO: only do this if file did not exist
+    if (has(mode, OpenMode::SPARSE))
+    {
+        if (handle_ != INVALID)
+        {
+            DWORD bytesReturned;
+            DeviceIoControl(handle_, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &bytesReturned, NULL);
+        }
+    }
+
+    return handle_ != INVALID;
+}
+
+
+void FileHandle::open(const char* fileName, OpenMode mode)
+{
+    if (!tryOpen(fileName, mode))
+    {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND)
+        {
+            throw FileNotFoundException(fileName);
+        }
         IOException::checkAndThrow();
     }
 }
 
-void File::allocate(uint64_t ofs, size_t length)
-{
-    // TODO: does not really exist on Windows
-}
 
-void File::deallocate(uint64_t ofs, size_t length)
-{
-    zeroFill(ofs, length);
-}
-
-
-void File::zeroFill(uint64_t ofs, size_t length)
+void FileHandle::zeroFill(uint64_t ofs, size_t length)
 {
     FILE_ZERO_DATA_INFORMATION zeroDataInfo;
     zeroDataInfo.FileOffset.QuadPart = ofs;
@@ -42,7 +86,7 @@ void File::zeroFill(uint64_t ofs, size_t length)
 
     DWORD bytesReturned = 0;
     if (!DeviceIoControl(
-        fileHandle_,                 // handle to file
+        handle_,                 // handle to file
         FSCTL_SET_ZERO_DATA,         // dwIoControlCode
         &zeroDataInfo,               // input buffer
         sizeof(zeroDataInfo),        // size of input buffer
@@ -54,6 +98,20 @@ void File::zeroFill(uint64_t ofs, size_t length)
         IOException::checkAndThrow();
     }
 }
+
+
+
+/*
+void File::allocate(uint64_t ofs, size_t length)
+{
+    // TODO: does not really exist on Windows
+}
+
+void File::deallocate(uint64_t ofs, size_t length)
+{
+    zeroFill(ofs, length);
+}
+
 
 
 bool File::exists(const char* fileName)
@@ -96,16 +154,8 @@ std::string File::path(FileHandle handle)
     return std::string(buf, res);
 }
 
-uint64_t File::allocatedSize() const
-{
-    FILE_STANDARD_INFO fileInfo;
-    if (!GetFileInformationByHandleEx(fileHandle_, FileStandardInfo,
-        &fileInfo, sizeof(fileInfo)))
-    {
-        IOException::checkAndThrow();
-    }
-    return fileInfo.AllocationSize.QuadPart;
-}
+*/
+
 
 /*
 bool File::tryLock(uint64_t ofs, uint64_t length, bool shared)

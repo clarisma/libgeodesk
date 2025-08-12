@@ -16,7 +16,7 @@ void* MappedFile::map(uint64_t offset, uint64_t length, int mode)
     // to grow the file to that size in case we're mapping beyond the
     // current file size
     uint64_t maxSize = offset + length;
-    HANDLE mappingHandle = CreateFileMappingA(fileHandle_, NULL, protect, 
+    HANDLE mappingHandle = CreateFileMappingA(handle_, NULL, protect,
         static_cast<DWORD>(maxSize >> 32), static_cast<DWORD>(maxSize), NULL);
     // TODO: Use SEC_RESERVE ?
     if (!mappingHandle)
@@ -47,7 +47,7 @@ void MappedFile::unmap(void* mappedAddress, uint64_t /* length */)
 void MappedFile::sync(const void* address, uint64_t length)
 {
     if (!FlushViewOfFile(address, length)) IOException::checkAndThrow();
-    if (!FlushFileBuffers(handle())) IOException::checkAndThrow();
+    if (!FlushFileBuffers(handle_)) IOException::checkAndThrow();
 }
 
 void MappedFile::prefetch(void* address, uint64_t length)
