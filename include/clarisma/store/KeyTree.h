@@ -385,11 +385,18 @@ public:
                     // make this more explicit
 
                     Level* parentLevel = level-1;
-                    uint8_t* parentNode = parentLevel->node;
-                    *reinterpret_cast<Key*>(parentNode +
-                        parentLevel->pos * ENTRY_SIZE_INNER)
-                        = tree_->asInternalKey(key);
-                    tree_->onNodeDirty(parentNode);
+                    if (parentLevel->pos > 0)
+                    {
+                        // (If parentLevel->pos == 0, this means
+                        // the leaf is the leftmost leaf, which
+                        // means it has no parent key)
+
+                        uint8_t* parentNode = parentLevel->node;
+                        *reinterpret_cast<Key*>(parentNode +
+                            parentLevel->pos * ENTRY_SIZE_INNER)
+                            = tree_->asInternalKey(key);
+                        tree_->onNodeDirty(parentNode);
+                    }
                 }
             }
 
@@ -488,13 +495,20 @@ public:
                     // update the parent separator key
 
                     Level* parentLevel = level-1;
-                    uint8_t* parentNode = parentLevel->node;
-                    *reinterpret_cast<Key*>(parentNode +
-                        parentLevel->pos * ENTRY_SIZE_INNER)
-                        = tree_->asInternalKey(
-                        *reinterpret_cast<Key*>(
-                            level->node + HEADER_SIZE));
-                    tree_->onNodeDirty(parentNode);
+                    if (parentLevel->pos > 0)
+                    {
+                        // (If parentLevel->pos == 0, this means
+                        // the leaf is the leftmost leaf, which
+                        // means it has no parent key)
+
+                        uint8_t* parentNode = parentLevel->node;
+                        *reinterpret_cast<Key*>(parentNode +
+                            parentLevel->pos * ENTRY_SIZE_INNER)
+                            = tree_->asInternalKey(
+                            *reinterpret_cast<Key*>(
+                                level->node + HEADER_SIZE));
+                        tree_->onNodeDirty(parentNode);
+                    }
                 }
             }
 

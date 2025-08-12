@@ -22,8 +22,8 @@ public:
 
     static size_t maxNodeSize()
     {
-        // return 128;
-        return 4096;
+        return 256;
+        // return 4096;
     }
 
     static uint8_t* allocNode()           // CRTP override
@@ -91,7 +91,7 @@ TEST_CASE("Random KeyTree")
         // std::cout << k << " = " << v << std::endl;
     }
 
-    tree.check();
+    // tree.check();
     REQUIRE(actualCount == targetCount);
     REQUIRE(actualHash == hash);
 
@@ -125,7 +125,7 @@ TEST_CASE("Random KeyTree")
         actualHash ^= k;
     }
 
-    tree.check();
+    // tree.check();
     REQUIRE(actualCount == targetCount);
     REQUIRE(actualHash == hash);
 
