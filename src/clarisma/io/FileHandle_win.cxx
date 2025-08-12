@@ -57,8 +57,10 @@ bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
         if (handle_ != INVALID)
         {
             DWORD bytesReturned;
-            return DeviceIoControl(handle_, FSCTL_SET_SPARSE,
+            /* return */ DeviceIoControl(handle_, FSCTL_SET_SPARSE,
                 NULL, 0, NULL, 0, &bytesReturned, NULL);
+            // TODO: Fix this, does not always succeed
+
         }
     }
 
