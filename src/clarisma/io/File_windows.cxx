@@ -6,6 +6,7 @@
 
 namespace clarisma {
 
+/*
 void File::open(const char* filename, int mode)
 {
     DWORD access = 0;
@@ -181,7 +182,7 @@ size_t File::tryWriteAt(uint64_t ofs, const void* buf, size_t length)
         &bytesWritten, &ovl);
     return res ? bytesWritten : 0;
 }
-
+*/
 
 std::string File::fileName() const
 {

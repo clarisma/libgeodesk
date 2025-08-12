@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <memory>
+#include <string>
 
 #include "clarisma/util/enum.h"
 #if defined(_WIN32)
@@ -31,6 +33,13 @@ public:
     static constexpr Native INVALID = -1;
 #endif
 
+    FileHandle() = default;
+    FileHandle(Native native) : handle_(native) {}
+
+    // Keep the values of READ,WRITE and CREATE stable for
+    // use in other classes
+    // Bits 0-5 are used for value mapping in open(), keep values in sync
+
     enum class OpenMode
     {
         READ = 1,                   // Access
@@ -44,6 +53,8 @@ public:
     Native native() const noexcept { return handle_; }
 
     bool tryOpen(const char* fileName, OpenMode mode);
+    void close();
+    bool isOpen() const { return handle_ != INVALID; };
 
     [[nodiscard]] bool tryGetSize(uint64_t& size) const noexcept;
     uint64_t getSize() const;
@@ -65,19 +76,37 @@ public:
     [[nodiscard]] bool tryReadAllAt(uint64_t ofs, void* buf, size_t length) const noexcept;
     void readAllAt(uint64_t ofs, void* buf, size_t length) const;
 
-    /// @brief Reads the given number of bytes at `ofs`. If all bytes
-    /// were read successfully, returns a typed pointer to a heap-
-    /// allocated buffer, otherwise nullptr.
+    /// @brief Reads the given number of bytes from current offset.
+    /// If all bytes were read successfully, returns a typed
+    /// pointer to a heap-allocated buffer, otherwise throws IOException.
     ///
     template<typename T>
-    [[nodiscard]] std::unique_ptr<T[]> tryReadAllAt(uint64_t ofs, size_t length);
+    [[nodiscard]] std::unique_ptr<T[]> readAll(size_t length)
+    {
+        static_assert(std::is_trivially_copyable_v<T>,
+        "T must be trivially copyable for binary I/O.");
+        assert(length % sizeof(T) == 0);
+        const size_t count = length / sizeof(T);
+        auto buf = std::make_unique<T[]>(count);
+        readAll(static_cast<void*>(buf.get()), length);
+        return buf;
+    }
 
     /// @brief Reads the given number of bytes at `ofs`. If all bytes
     /// were read successfully, returns a typed pointer to a heap-
     /// allocated buffer, otherwise throws IOException.
     ///
     template<typename T>
-    [[nodiscard]] std::unique_ptr<T[]> readAllAt(uint64_t ofs, size_t length);
+    [[nodiscard]] std::unique_ptr<T[]> readAllAt(uint64_t ofs, size_t length)
+    {
+        static_assert(std::is_trivially_copyable_v<T>,
+        "T must be trivially copyable for binary I/O.");
+        assert(length % sizeof(T) == 0);
+        const size_t count = length / sizeof(T);
+        auto buf = std::make_unique<T[]>(count);
+        readAllAt(ofs, static_cast<void*>(buf.get()), length);
+        return buf;
+    }
 
     /// @brief Attempts to write `length` bytes from the given buffer.
     ///
@@ -118,6 +147,8 @@ public:
     void syncData();
     [[nodiscard]] bool trySync() noexcept;
     void sync();
+
+    std::string fileName() const;
 
 protected:
     Native handle_ = INVALID;

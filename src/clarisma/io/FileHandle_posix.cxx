@@ -12,163 +12,18 @@
 
 namespace clarisma {
 
-/*
-void File::open(const char* filename, int mode) 
-{
-    int flags = 0;
-
-    if ((mode & OpenMode::READ) && (mode & OpenMode::WRITE))
-    {
-        flags |= O_RDWR;
-    }
-    else if (mode & OpenMode::READ)
-    {
-        flags |= O_RDONLY;
-    }
-    else if (mode & OpenMode::WRITE)
-    {
-        flags |= O_WRONLY;
-    }
-    
-    if (mode & REPLACE_EXISTING)
-    {
-        flags |= O_TRUNC;
-    }
-    if (mode & OpenMode::CREATE)
-    {
-        flags |= O_CREAT;
-    }
-
-    fileHandle_ = ::open(filename, flags, 0666);
-
-    if (fileHandle_ == -1)
-    {
-        if(errno == ENOENT) throw FileNotFoundException(filename);
-        IOException::checkAndThrow();
-    }
-
-    // Sparse files are inherently supported on most UNIX filesystems. 
-    // You don't need to specify a special flag, just don't write to all parts of the file.
-}
-
-void File::close()
-{
-    if (fileHandle_ != -1)
-    {
-        ::close(fileHandle_);
-        fileHandle_ = -1;
-    }
-}
-
-
-
-uint64_t File::size() const
-{
-    struct stat fileInfo;
-    if (fstat(fileHandle_, &fileInfo) != 0)
-    {
-        IOException::checkAndThrow();
-    }
-    return fileInfo.st_size;
-}
-
-void File::setSize(uint64_t newSize)
-{
-    if (ftruncate(fileHandle_, newSize) != 0)
-    {
-        IOException::checkAndThrow();
-    }
-}
-
-void File::expand(uint64_t newSize)
-{
-    if (size() < newSize)
-    {
-        setSize(newSize);
-    }
-}
-
-void File::truncate(uint64_t newSize)
-{
-    if (size() > newSize)
-    {
-        setSize(newSize);
-    }
-}
-
-
-void File::force()
-{
-    if (fsync(fileHandle_) != 0)
-    {
-        IOException::checkAndThrow();
-    }
-}
-
-
-void File::seek(uint64_t posAbsolute)
-{
-    if (lseek(fileHandle_, static_cast<off_t>(posAbsolute), SEEK_SET) == -1)
-    {
-        IOException::checkAndThrow();
-    }
-}
-
-
-size_t File::read(void* buf, size_t length)
-{
-    ssize_t bytesRead = ::read(fileHandle_, buf, length);
-    if (bytesRead < 0)
-    {
-        IOException::checkAndThrow();
-    }
-    return bytesRead;
-}
-
-size_t File::read(uint64_t ofs, void* buf, size_t length)
-{
-    ssize_t bytesRead = pread(fileHandle_, buf, length, ofs);
-    if (bytesRead < 0)
-    {
-        IOException::checkAndThrow();
-    }
-    return bytesRead;
-}
-
-
-size_t File::write(const void* buf, size_t length)
-{
-    ssize_t bytesWritten = ::write(fileHandle_, buf, length);
-    if (bytesWritten < 0)
-    {
-        IOException::checkAndThrow();
-    }
-    return bytesWritten;
-}
-
-size_t File::tryWriteAt(uint64_t ofs, const void* buf, size_t length)
-{
-    ssize_t n = ::pwrite(fileHandle_, buf, length, static_cast<off_t>(ofs));
-    return n < 0 ? 0 : static_cast<size_t>(n);
-}
-
-*/
-
-std::string File::fileName() const
+std::string FileHandle::fileName() const
 {
     char fdPath[1024];
     char filePath[1024];
     snprintf(fdPath, sizeof(fdPath), "/proc/self/fd/%d", fileHandle_);
     ssize_t len = readlink(fdPath, filePath, sizeof(filePath) - 1);
-    if (len != -1) 
+    if (len != -1)
     {
         filePath[len] = '\0'; // Null-terminate the result
         return std::string(filePath);
     }
-    else 
-    {
-        return "<invalid file>";
-    }
+    return "<invalid file>";
 }
 
 

@@ -62,6 +62,16 @@ inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
     return handle_ != INVALID;
 }
 
+
+void FileHandle::close()
+{
+    if (handle_ != INVALID)
+    {
+        CloseHandle(handle_);
+        handle_ = INVALID;
+    }
+}
+
 /// @brief Get logical file size.
 /// @return true on success, false on error (no throw)
 inline bool FileHandle::tryGetSize(uint64_t& size) const noexcept
@@ -472,5 +482,13 @@ inline void FileHandle::sync()
 {
     syncData();
 }
+
+std::string FileHandle::fileName() const
+{
+    TCHAR buf[MAX_PATH];
+    DWORD res = GetFinalPathNameByHandle(handle_, buf, MAX_PATH, FILE_NAME_NORMALIZED);
+    return std::string(res > 0 ? buf : "<invalid file>");
+}
+
 
 } // namespace clarisma

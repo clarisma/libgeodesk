@@ -50,6 +50,15 @@ inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
     return handle_ != INVALID;
 }
 
+void FileHandle::close()
+{
+    if (handle_ != INVALID)
+    {
+        ::close(handle_);
+        fileHandle_ = INVALID;
+    }
+}
+
 /// @brief Get logical file size.
 /// @return true on success, false on error (no throw)
 inline bool FileHandle::tryGetSize(uint64_t& size) const noexcept
