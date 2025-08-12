@@ -5,6 +5,8 @@
 
 #include <cstdint>
 #include <memory>
+
+#include "clarisma/util/enum.h"
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -29,7 +31,19 @@ public:
     static constexpr Native INVALID = -1;
 #endif
 
+    enum class OpenMode
+    {
+        READ = 1,                   // Access
+        WRITE = 2,
+        CREATE = 4,                 // Creation
+        REPLACE_EXISTING = 8,
+        TEMPORARY = 16,             // Special
+        DELETE_ON_CLOSE = 32
+    };
+
     Native native() const noexcept { return handle_; }
+
+    bool tryOpen(const char* fileName, OpenMode mode);
 
     [[nodiscard]] bool tryGetSize(uint64_t& size) const noexcept;
     uint64_t getSize() const;
@@ -110,6 +124,8 @@ protected:
 };
 
 } // namespace clarisma
+
+CLARISMA_ENUM_FLAGS(FileHandle::OpenMode)
 
 #if defined(_WIN32)
 #include "detail/FileHandle_win.inl"

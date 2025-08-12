@@ -16,6 +16,40 @@ static_assert(sizeof(ssize_t) >= 8, "ssize_t must be 64-bit");
 namespace clarisma
 {
 
+inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
+{
+    static DWORD ACCESS_MODES[] =
+    {
+        O_RDONLY,         // none (default to READ)
+        O_RDONLY,         // READ
+        O_WRONLY,         // WRITE
+        O_RDWR            // READ + WRITE
+    };
+
+    // Access mode: use bits 0 & 1 of OpenMode
+    int flags = ACCESS_MODES[static_cast<int>(mode) & 3];
+
+    static DWORD CREATE_MODES[] =
+    {
+        0,                   // none (default: open if exists)
+        O_CREAT,             // CREATE
+        O_TRUNC,             // REPLACE_EXISTING (implies CREATE)
+        O_CREAT | O_TRUNC,   // CREATE + REPLACE_EXISTING
+    };
+
+    // Create disposition: use bits 4 & 5 of OpenMode
+    flags |= CREATE_MODES[(static_cast<int>(mode) >> 2) & 3];
+
+    // Ignore TEMPORARY flag (Windows only)
+    // TODO: Decide what to do with DELETE_ON_CLOSE
+
+    // Sparse files are inherently supported on most UNIX filesystems.
+    // You don't need to specify a special flag, just don't write to all parts of the file.
+
+    handle_ = ::open(fileName, flags, 0666);
+    return handle_ != INVALID;
+}
+
 /// @brief Get logical file size.
 /// @return true on success, false on error (no throw)
 inline bool FileHandle::tryGetSize(uint64_t& size) const noexcept
