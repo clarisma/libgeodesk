@@ -57,7 +57,8 @@ bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
         if (handle_ != INVALID)
         {
             DWORD bytesReturned;
-            DeviceIoControl(handle_, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &bytesReturned, NULL);
+            return DeviceIoControl(handle_, FSCTL_SET_SPARSE,
+                NULL, 0, NULL, 0, &bytesReturned, NULL);
         }
     }
 
@@ -77,6 +78,23 @@ void FileHandle::open(const char* fileName, OpenMode mode)
     }
 }
 
+
+void FileHandle::makeSparse()
+{
+    DWORD bytesReturned = 0;
+    if(!DeviceIoControl(
+        handle_,          // Handle to the file obtained with CreateFile
+        FSCTL_SET_SPARSE,     // Control code for setting the file as sparse
+        NULL,                 // No input buffer required
+        0,                    // Input buffer size is zero since no input buffer
+        NULL,                 // No output buffer required
+        0,                    // Output buffer size is zero since no output buffer
+        &bytesReturned,       // Bytes returned
+        NULL))                // Not using overlapped I/O
+    {
+        IOException::checkAndThrow();
+    }
+}
 
 void FileHandle::zeroFill(uint64_t ofs, size_t length)
 {

@@ -40,6 +40,9 @@ public:
 
     std::string fileName() const;
 
+    // TODO: deprecated
+    static std::string path(FileHandle h) { return h.fileName(); }
+
     ByteBlock readBlock(size_t length);
 
     static bool exists(const char* fileName);

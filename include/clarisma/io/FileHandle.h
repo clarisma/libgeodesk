@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -58,12 +59,18 @@ public:
 
     bool tryOpen(const char* fileName, OpenMode mode);
     void open(const char* fileName, OpenMode mode);
+    void open(const std::filesystem::path& path, OpenMode mode)
+    {
+        std::string pathStr = path.string();
+        open(pathStr.c_str(), mode);
+    }
 
     void close();
     bool isOpen() const { return handle_ != INVALID; };
 
     [[nodiscard]] bool tryGetSize(uint64_t& size) const noexcept;
     uint64_t getSize() const;
+    uint64_t size() const { return getSize(); }
     [[nodiscard]] bool trySetSize(uint64_t newSize) noexcept;
     void setSize(uint64_t newSize);
     void expand(uint64_t newSize);
@@ -148,6 +155,38 @@ public:
     {
         writeAllAt(ofs, c.data(), c.size() * sizeof(C::value_type));
     }
+
+    // TODO: Allow these forms for now for backward compatibility
+    size_t write(const void* buf, size_t length)
+    {
+        size_t written;
+        write(buf, length, written);
+        return written;
+    }
+
+    size_t read(void* buf, size_t length)
+    {
+        size_t bytesRead;
+        read(buf, length, bytesRead);
+        return bytesRead;
+    }
+
+    size_t read(uint64_t ofs, void* buf, size_t length)
+    {
+        size_t bytesRead;
+        readAt(ofs, buf, length, bytesRead);
+        return bytesRead;
+    }
+
+    template <typename C>
+    void write(const C& c)
+    {
+        return writeAll(c);
+    }
+
+    void force() { sync(); }
+
+    // ===== end compatibility =====
 
     [[nodiscard]] bool trySyncData() noexcept;
     void syncData();

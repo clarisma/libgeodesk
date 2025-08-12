@@ -23,7 +23,7 @@ public:
 		delete[] buf_;
 	}
 
-	void open(const char* filename, int /* OpenMode */ mode =
+	void open(const char* filename, File::OpenMode mode =
 		File::OpenMode::CREATE | File::OpenMode::WRITE | File::OpenMode::REPLACE_EXISTING)
 	{
 		file_.open(filename, mode);
