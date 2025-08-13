@@ -422,4 +422,21 @@ inline bool FileHandle::tryUnlock(uint64_t ofs, uint64_t length)
     return fcntl(handle_, F_SETLK, &fl) >= 0;
 }
 
+inline void* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
+{
+    int prot = writable ? (PROT_READ | PROT_WRITE) : PROT_READ;
+    void* mappedAddress = mmap(nullptr, length, prot, MAP_SHARED, fileHandle_, offset);
+    if (mappedAddress == MAP_FAILED)
+    {
+        IOException::checkAndThrow();
+    }
+    return mappedAddress;
+}
+
+inline void FileHandle::unmap(void* address, uint64_t /* length */)
+{
+    munmap(address, length);
+}
+
+
 } // namespace clarisma

@@ -511,4 +511,36 @@ inline bool FileHandle::tryUnlock(uint64_t ofs, uint64_t length)
     return UnlockFileEx(handle_, 0, length & 0xFFFFFFFF, length >> 32, &overlapped);
 }
 
+inline void* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
+{
+    DWORD protect = writable ? PAGE_READWRITE : PAGE_READONLY;
+
+    // We need to explicitly specify the maximum size to force Windows
+    // to grow the file to that size in case we're mapping beyond the
+    // current file size
+    uint64_t maxSize = offset + length;
+    HANDLE mappingHandle = CreateFileMappingA(handle_, NULL, protect,
+        static_cast<DWORD>(maxSize >> 32), static_cast<DWORD>(maxSize), NULL);
+    if (!mappingHandle)
+    {
+        IOException::checkAndThrow();
+    }
+
+    void* mappedAddress = MapViewOfFile(mappingHandle,
+        writable ? FILE_MAP_ALL_ACCESS : FILE_MAP_READ,
+        (DWORD)((offset >> 32) & 0xFFFFFFFF),
+        (DWORD)(offset & 0xFFFFFFFF), length);
+    CloseHandle(mappingHandle);
+    if (!mappedAddress)
+    {
+        IOException::checkAndThrow();
+    }
+    return mappedAddress;
+}
+
+inline void FileHandle::unmap(void* address, uint64_t /* length */)
+{
+    UnmapViewOfFile(address);
+}
+
 } // namespace clarisma

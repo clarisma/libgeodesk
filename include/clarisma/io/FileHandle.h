@@ -256,6 +256,9 @@ public:
     ///
     bool tryUnlock(uint64_t ofs, uint64_t length);
 
+    void* map(uint64_t offset, uint64_t length, bool writable = false);
+    static void unmap(void* address, uint64_t length);
+
 protected:
     Native handle_ = INVALID;
 };
