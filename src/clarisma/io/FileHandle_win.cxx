@@ -6,7 +6,7 @@
 
 namespace clarisma {
 
-bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
+bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
 {
     static DWORD ACCESS_MODES[] =
     {

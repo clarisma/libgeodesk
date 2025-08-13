@@ -16,7 +16,7 @@ static_assert(sizeof(ssize_t) >= 8, "ssize_t must be 64-bit");
 namespace clarisma
 {
 
-inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
+inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
 {
     static DWORD ACCESS_MODES[] =
     {
@@ -41,12 +41,26 @@ inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
     flags |= CREATE_MODES[(static_cast<int>(mode) >> 2) & 3];
 
     // Ignore TEMPORARY flag (Windows only)
-    // TODO: Decide what to do with DELETE_ON_CLOSE
 
     // Sparse files are inherently supported on most UNIX filesystems.
     // You don't need to specify a special flag, just don't write to all parts of the file.
 
     handle_ = ::open(fileName, flags, 0666);
+
+    if (has(mode, OpenMode::DELETE_ON_CLOSE))
+    {
+        if (handle_ != INVALID)
+        {
+            // Rare option, but no harm to conditionally call unlink,
+            // compiler should omit it from inline if open() is called
+            // with constexpr OpenMode and DELETE_ON_CLOSE is not set
+
+            ::unlink(fileName);
+            // DELETE_ON_CLOSE is on "best efforts" basis,
+            // so we'll allow it to fail silently
+            // TODO: review this
+        }
+    }
     return handle_ != INVALID;
 }
 
@@ -385,6 +399,27 @@ inline void FileHandle::sync()
     {
         IOException::checkAndThrow();
     }
+}
+
+inline bool FileHandle::tryLock(uint64_t ofs, uint64_t length, bool shared)
+{
+    struct flock fl;
+    fl.l_type = shared ? F_RDLCK : F_WRLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start = ofs;
+    fl.l_len = length;
+    return fcntl(handle_, F_SETLK, &fl) >= 0;
+}
+
+
+inline bool FileHandle::tryUnlock(uint64_t ofs, uint64_t length)
+{
+    struct flock fl;
+    fl.l_type = F_UNLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start = ofs;
+    fl.l_len = length;
+    return fcntl(handle_, F_SETLK, &fl) >= 0;
 }
 
 } // namespace clarisma

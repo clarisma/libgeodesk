@@ -494,5 +494,21 @@ inline void FileHandle::makeSparse()
 }
 */
 
+inline bool FileHandle::tryLock(uint64_t ofs, uint64_t length, bool shared)
+{
+    OVERLAPPED overlapped;
+    overlapped.Offset = ofs & 0xFFFFFFFF;
+    overlapped.OffsetHigh = ofs >> 32;
+    DWORD lockFlags = shared ? LOCKFILE_FAIL_IMMEDIATELY : LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY;
+    return LockFileEx(handle_, lockFlags, 0, length & 0xFFFFFFFF, length >> 32, &overlapped);
+}
+
+inline bool FileHandle::tryUnlock(uint64_t ofs, uint64_t length)
+{
+    OVERLAPPED overlapped;
+    overlapped.Offset = ofs & 0xFFFFFFFF;
+    overlapped.OffsetHigh = ofs >> 32;
+    return UnlockFileEx(handle_, 0, length & 0xFFFFFFFF, length >> 32, &overlapped);
+}
 
 } // namespace clarisma

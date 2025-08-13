@@ -264,6 +264,7 @@ uint64_t File::allocatedSize() const
     // TODO: verify if true
 }
 
+/*
 bool File::tryLock(uint64_t ofs, uint64_t length, bool shared)
 {
     struct flock fl;
@@ -284,6 +285,6 @@ bool File::tryUnlock(uint64_t ofs, uint64_t length)
     fl.l_len = length;
     return fcntl(fileHandle_, F_SETLK, &fl) >= 0;
 }
-
+*/
 
 } // namespace clarisma

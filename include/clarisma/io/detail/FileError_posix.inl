@@ -15,50 +15,50 @@ namespace clarisma
 ///          Windows cases may share the same errno here.
 enum class FileError : uint32_t
 {
+    // Success / unknown
     OK                      = 0,
+    UNKNOWN                 = EIO,          // generic I/O failure
 
-    // Not found variants map to the same errno
+    // --- Existence ----------------------------------------------------
     NOT_FOUND               = ENOENT,
-    PATH_NOT_FOUND          = ENOENT,
-
-    // Already exists variants map to the same errno
+    PATH_NOT_FOUND          = ENOENT,       // same errno as NOT_FOUND
     ALREADY_EXISTS          = EEXIST,
     FILE_EXISTS             = EEXIST,
 
-    // Permissions / access
-    PERMISSION_DENIED       = EACCES,   // EPERM also occurs; EACCES chosen
+    // --- Permissions / policy ----------------------------------------
+    PERMISSION_DENIED       = EACCES,       // EPERM also common
     READ_ONLY_FILESYSTEM    = EROFS,
+    NOT_SUPPORTED           = ENOTSUP,      // EOPNOTSUPP often same
 
-    // Path / name / handle
+    // --- Path / name / handle ----------------------------------------
     NAME_TOO_LONG           = ENAMETOOLONG,
-    INVALID_NAME            = EINVAL,   // best available analogue
+    INVALID_NAME            = EINVAL,       // closest analogue
+    INVALID_PATH            = EINVAL,
     INVALID_HANDLE          = EBADF,
     NOT_A_DIRECTORY         = ENOTDIR,
     IS_A_DIRECTORY          = EISDIR,
 
-    // Busy / locking / sharing
+    // --- Busy / locking / sharing ------------------------------------
     BUSY                    = EBUSY,
-    LOCK_VIOLATION          = EACCES,   // or EAGAIN on some fcntl locks
-    SHARING_VIOLATION       = EBUSY,    // closest analogue
+    WOULD_BLOCK             = EWOULDBLOCK,  // or EAGAIN
+    LOCK_VIOLATION          = EACCES,       // some use EAGAIN; choose EACCES
+    SHARING_VIOLATION       = EBUSY,        // closest analogue
+    NOT_LOCKED              = 0,            // POSIX: unlocking unlocked succeeds
 
-    // Storage / I/O
+    // --- Storage / I/O -----------------------------------------------
     DISK_FULL               = ENOSPC,
     FILE_TOO_LARGE          = EFBIG,
     IO_ERROR                = EIO,
-    IO_DEVICE_ERROR         = ENODEV,   // ENXIO also common; choose ENODEV
+    IO_DEVICE_ERROR         = ENODEV,       // ENXIO also common
+    END_OF_FILE             = 0,            // EOF is not an errno
 
-    // Cross-device / fs constraints
+    // --- Cross-filesystem / special ----------------------------------
     CROSS_DEVICE_LINK       = EXDEV,
-
-    // Timing / interruption
+    DIRECTORY_NOT_EMPTY     = ENOTEMPTY,
+    TEXT_FILE_BUSY          = ETXTBSY,
+    RESOURCE_LIMIT          = EMFILE,       // ENFILE also possible
     TIMED_OUT               = ETIMEDOUT,
-    INTERRUPTED             = EINTR,
-
-    // Capability
-    NOT_SUPPORTED           = ENOTSUP,  // EOPNOTSUPP often equal to ENOTSUP
-
-    // Misc that often arise in FS ops
-    DIRECTORY_NOT_EMPTY     = ENOTEMPTY
+    INTERRUPTED             = EINTR
 };
 
 } // namespace clarisma

@@ -232,6 +232,30 @@ public:
     void deallocate(uint64_t ofs, size_t length);
     void zeroFill(uint64_t ofs, size_t length);
 
+    /// @brief Attempts to lock the specified region without
+    /// blocking.
+    ///
+    /// @param ofs      start of the region
+    /// @param length   length of the region
+    /// @param shared   false for exclusive (write), true for shared (read)
+    ///
+    bool tryLock(uint64_t ofs, uint64_t length, bool shared = false);
+    bool tryLockShared(uint64_t ofs, uint64_t length)
+    {
+        return tryLock(ofs, length, true);
+    }
+    bool tryLockExclusive(uint64_t ofs, uint64_t length)
+    {
+        return tryLock(ofs, length, false);
+    }
+
+    /// @brief Unlocks the given region.
+    ///
+    /// On Windows, trying to unlock a region that hasn't been
+    /// locked results in ERROR_NOT_LOCKED.
+    ///
+    bool tryUnlock(uint64_t ofs, uint64_t length);
+
 protected:
     Native handle_ = INVALID;
 };

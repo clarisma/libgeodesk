@@ -20,50 +20,50 @@ namespace clarisma {
 /// \details Each enumerator equals a native Win32 error code (DWORD).
 enum class FileError : uint32_t
 {
+    // Success / unknown
     OK                      = ERROR_SUCCESS,
+    UNKNOWN                 = ERROR_GEN_FAILURE, // generic failure
 
-    // Not found variants
+    // --- Existence ----------------------------------------------------
     NOT_FOUND               = ERROR_FILE_NOT_FOUND,
     PATH_NOT_FOUND          = ERROR_PATH_NOT_FOUND,
-
-    // Already exists variants
     ALREADY_EXISTS          = ERROR_ALREADY_EXISTS,
     FILE_EXISTS             = ERROR_FILE_EXISTS,
 
-    // Permissions / access
+    // --- Permissions / policy ----------------------------------------
     PERMISSION_DENIED       = ERROR_ACCESS_DENIED,
     READ_ONLY_FILESYSTEM    = ERROR_WRITE_PROTECT,
-
-    // Path / name / handle
-    NAME_TOO_LONG           = ERROR_FILENAME_EXCED_RANGE,
-    INVALID_NAME            = ERROR_INVALID_NAME,
-    INVALID_HANDLE          = ERROR_INVALID_HANDLE,
-    NOT_A_DIRECTORY         = ERROR_DIRECTORY,         // used when dir expected
-    IS_A_DIRECTORY          = ERROR_DIRECTORY,         // same code on Windows
-
-    // Busy / locking / sharing
-    BUSY                    = ERROR_BUSY,
-    LOCK_VIOLATION          = ERROR_LOCK_VIOLATION,
-    SHARING_VIOLATION       = ERROR_SHARING_VIOLATION,
-
-    // Storage / I/O
-    DISK_FULL               = ERROR_DISK_FULL,
-    FILE_TOO_LARGE          = ERROR_DISK_FULL,         // closest Windows match
-    IO_ERROR                = ERROR_GEN_FAILURE,
-    IO_DEVICE_ERROR         = ERROR_IO_DEVICE,
-
-    // Cross-device / fs constraints
-    CROSS_DEVICE_LINK       = ERROR_NOT_SAME_DEVICE,
-
-    // Timing / interruption
-    TIMED_OUT               = WAIT_TIMEOUT,
-    INTERRUPTED             = ERROR_OPERATION_ABORTED,
-
-    // Capability
     NOT_SUPPORTED           = ERROR_NOT_SUPPORTED,
 
-    // Misc that often arise in FS ops
+    // --- Path / name / handle ----------------------------------------
+    NAME_TOO_LONG           = ERROR_FILENAME_EXCED_RANGE,
+    INVALID_NAME            = ERROR_INVALID_NAME,
+    INVALID_PATH            = ERROR_INVALID_NAME,     // closest analogue
+    INVALID_HANDLE          = ERROR_INVALID_HANDLE,
+    NOT_A_DIRECTORY         = ERROR_DIRECTORY,        // Win uses same code
+    IS_A_DIRECTORY          = ERROR_DIRECTORY,
+
+    // --- Busy / locking / sharing ------------------------------------
+    BUSY                    = ERROR_BUSY,
+    WOULD_BLOCK             = ERROR_BUSY,             // closest analogue
+    LOCK_VIOLATION          = ERROR_LOCK_VIOLATION,
+    SHARING_VIOLATION       = ERROR_SHARING_VIOLATION,
+    NOT_LOCKED              = ERROR_NOT_LOCKED,       // Windows-specific
+
+    // --- Storage / I/O -----------------------------------------------
+    DISK_FULL               = ERROR_DISK_FULL,
+    FILE_TOO_LARGE          = ERROR_DISK_FULL,        // no dedicated code
+    IO_ERROR                = ERROR_GEN_FAILURE,
+    IO_DEVICE_ERROR         = ERROR_IO_DEVICE,
+    END_OF_FILE             = ERROR_HANDLE_EOF,
+
+    // --- Cross-filesystem / special ----------------------------------
+    CROSS_DEVICE_LINK       = ERROR_NOT_SAME_DEVICE,
     DIRECTORY_NOT_EMPTY     = ERROR_DIR_NOT_EMPTY,
+    TEXT_FILE_BUSY          = ERROR_SUCCESS,          // no Win equivalent
+    RESOURCE_LIMIT          = ERROR_TOO_MANY_OPEN_FILES, // rough analogue
+    TIMED_OUT               = WAIT_TIMEOUT,
+    INTERRUPTED             = ERROR_OPERATION_ABORTED
 };
 
 } // namespace clarisma
