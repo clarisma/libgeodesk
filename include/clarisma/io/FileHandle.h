@@ -23,6 +23,20 @@
 
 namespace clarisma {
 
+/// @brief Lightweight wrapper for a native file handle on Windows,
+/// Linux and macOS.
+/// - try... methods will return true/false to indicate success or
+///   failure (Caller can then retrieve the last error). All others
+///   will throw IOException upon failure.
+/// - ...read/write...At methods are positional; on Windows, these
+///   methods are always synchronous (FileHandle::open does not
+///   support FILE_FLAG_OVERLAPPED)
+/// - ...readAll/writeAll... methods ensure all requested bytes are
+///   read/written unless EOF or an error occurs; regular read and
+///   write methods may read or write fewer bytes than requested,
+///   if no error occurred or EOF is reached
+///
+///
 class FileHandle
 {
 public:
@@ -43,13 +57,31 @@ public:
 
     enum class OpenMode
     {
+        /// @brief Open file for reading
         READ = 1,                   // Access
+
+        /// @brief Open file for writing
         WRITE = 2,
+
+        /// @brief Create file if it does not exist
         CREATE = 4,                 // Creation
+
+        /// @brief Truncate any existing file
+        /// (typically used with CREATE)
         REPLACE_EXISTING = 8,
+
+        /// @brief The file's lifetime (hint for caching;
+        /// only used by Windows, ignored by others)
         TEMPORARY = 16,             // Flags for Windows
+
+        /// @brief File is deleted once its last open
+        /// handle is closed
         DELETE_ON_CLOSE = 32,
-        SPARSE = 64                 // Special action for Windows
+
+        /// Create as sparse file. Only used by Windows
+        /// (Linux/MacOS ignores this flag since files
+        /// are sparse by default)
+        SPARSE = 64                 // Special action for Windows;
 
         // TODO: If adding more flags, modify Store::OpenMode !!!
     };
@@ -57,7 +89,7 @@ public:
     FileHandle handle() const noexcept { return handle_; }
     Native native() const noexcept { return handle_; }
 
-    bool tryOpen(const char* fileName, OpenMode mode);
+    bool tryOpen(const char* fileName, OpenMode mode) noexcept;
     void open(const char* fileName, OpenMode mode);
     void open(const std::filesystem::path& path, OpenMode mode)
     {
@@ -66,7 +98,7 @@ public:
     }
 
     void close();
-    bool isOpen() const { return handle_ != INVALID; };
+    bool isOpen() const noexcept { return handle_ != INVALID; };
 
     [[nodiscard]] bool tryGetSize(uint64_t& size) const noexcept;
     uint64_t getSize() const;
@@ -94,7 +126,7 @@ public:
     /// pointer to a heap-allocated buffer, otherwise throws IOException.
     ///
     template<typename T>
-    [[nodiscard]] std::unique_ptr<T[]> readAllAs(size_t length)
+    [[nodiscard]] std::unique_ptr<T[]> readAll(size_t length)
     {
         static_assert(std::is_trivially_copyable_v<T>,
         "T must be trivially copyable for binary I/O.");
@@ -110,7 +142,7 @@ public:
     /// allocated buffer, otherwise throws IOException.
     ///
     template<typename T>
-    [[nodiscard]] std::unique_ptr<T[]> readAllAtAs(uint64_t ofs, size_t length)
+    [[nodiscard]] std::unique_ptr<T[]> readAllAt(uint64_t ofs, size_t length)
     {
         static_assert(std::is_trivially_copyable_v<T>,
         "T must be trivially copyable for binary I/O.");

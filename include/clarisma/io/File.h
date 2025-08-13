@@ -54,6 +54,10 @@ public:
     std::string path() const { return path(fileHandle_); }
     */
 
+    // Needed because the readAll methods in File would otherwise
+    // hide the templated readAll methods in FileHandle
+    using FileHandle::readAll;
+
     static ByteBlock readAll(const char* filename);
     static ByteBlock readAll(const std::filesystem::path& path)
     {

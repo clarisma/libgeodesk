@@ -23,7 +23,7 @@ ByteBlock File::readAll(const char* filename)
     File file;
     file.open(filename, OpenMode::READ);
     uint64_t size = file.getSize();
-    return { file.readAllAs<uint8_t>(size), size };
+    return ByteBlock(file.readAll<uint8_t>(size), size);
 }
 
 

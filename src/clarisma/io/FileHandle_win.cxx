@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/io/FileHandle.h>
-#include <stdexcept>
 #include <winioctl.h>   // For FSCTL_SET_SPARSE
 
 namespace clarisma {
@@ -24,11 +23,11 @@ bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
     {
         OPEN_EXISTING,      // none (default: open if exists)
         OPEN_ALWAYS,        // CREATE
-        CREATE_ALWAYS,      // REPLACE_EXISTING (implies CREATE)
+        TRUNCATE_EXISTING,  // REPLACE_EXISTING (does not create)
         CREATE_ALWAYS,      // CREATE + REPLACE_EXISTING
     };
 
-    // Create disposition: use bits 4 & 5 of OpenMode
+    // Create disposition: use bits 2 & 3 of OpenMode
     DWORD creationDisposition = CREATE_MODES[
         (static_cast<int>(mode) >> 2) & 3];
 
@@ -40,11 +39,9 @@ bool FileHandle::tryOpen(const char* fileName, OpenMode mode)
         FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE
     };
 
-    // Create disposition: use bits 4 & 5 of OpenMode
+    // Other attribute flags: use bits 4 & 5 of OpenMode
     DWORD attributes = ATTRIBUTE_FLAGS[
         (static_cast<int>(mode) >> 4) & 3];
-
-    // TODO: Decide whether to support SPARSE
 
     handle_ = CreateFileA(fileName, access,
         FILE_SHARE_READ | FILE_SHARE_WRITE,

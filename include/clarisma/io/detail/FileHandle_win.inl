@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
-
+// TODO: outdated:
 // Precondition for *At() methods:
 // - Handle opened with FILE_FLAG_OVERLAPPED for true positional I/O.
 //   Passing OVERLAPPED to a non-overlapped file handle fails with
@@ -9,11 +9,12 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <clarisma/io/IOException.h>
 
-namespace clarisma
-{
+namespace clarisma {
 
 inline void FileHandle::close()
 {
@@ -179,8 +180,13 @@ inline bool FileHandle::tryReadAt(
     DWORD got = 0;
 
     BOOL ok = ::ReadFile(handle_, buf, toRead, &got, &ovl);
+    /*
     if (!ok)
     {
+        // TODO: Don't need this if file wasn't opened with
+        //  FILE_FLAG_OVERLAPPED (which FileHandle::open does
+        //  not support)
+
         DWORD err = ::GetLastError();
         if (err == ERROR_IO_PENDING)
         {
@@ -188,6 +194,7 @@ inline bool FileHandle::tryReadAt(
             ok = ::GetOverlappedResult(handle_, &ovl, &got, TRUE);
         }
     }
+    */
     bytesRead = static_cast<size_t>(got);
     return ok;
 }
@@ -222,6 +229,11 @@ inline bool FileHandle::tryReadAllAt(
         DWORD got = 0;
 
         BOOL ok = ::ReadFile(handle_, p + total, toRead, &got, &ovl);
+        if (!ok) return false;
+        /*
+        // TODO: Don't need this if file wasn't opened with
+        //  FILE_FLAG_OVERLAPPED (which FileHandle::open does
+        //  not support)
         if (!ok)
         {
             DWORD err = ::GetLastError();
@@ -237,6 +249,7 @@ inline bool FileHandle::tryReadAllAt(
                 return false;
             }
         }
+        */
 
         if (got == 0)
         {
@@ -329,6 +342,11 @@ inline bool FileHandle::tryWriteAt(
     DWORD wrote = 0;
 
     BOOL ok = ::WriteFile(handle_, buf, chunk, &wrote, &ovl);
+    /*
+    // TODO: Don't need this if file wasn't opened with
+    //  FILE_FLAG_OVERLAPPED (which FileHandle::open does
+    //  not support)
+
     if (!ok)
     {
         DWORD err = ::GetLastError();
@@ -337,6 +355,7 @@ inline bool FileHandle::tryWriteAt(
             ok = GetOverlappedResult(handle_, &ovl, &wrote, TRUE);
         }
     }
+    */
     bytesWritten = static_cast<size_t>(wrote);
     return ok;
 }
@@ -371,6 +390,12 @@ inline bool FileHandle::tryWriteAllAt(
         DWORD wrote = 0;
 
         BOOL ok = ::WriteFile(handle_, p + total, chunk, &wrote, &ovl);
+        if (!ok) return false;
+        /*
+        // TODO: Don't need this if file wasn't opened with
+        //  FILE_FLAG_OVERLAPPED (which FileHandle::open does
+        //  not support)
+
         if (!ok)
         {
             DWORD err = ::GetLastError();
@@ -388,6 +413,7 @@ inline bool FileHandle::tryWriteAllAt(
                 return false;
             }
         }
+        */
 
         if (wrote == 0 && chunk != 0)
         {
