@@ -5,7 +5,9 @@
 
 #include <cstddef>
 #include <cerrno>
+#include <fcntl.h>
 #include <unistd.h>       // read, write, pread, pwrite, ftruncate, fsync
+#include <sys/mman.h>     // mmap
 #include <sys/stat.h>     // fstat
 #include <sys/types.h>    // off_t
 #include <clarisma/io/IOException.h>
@@ -18,7 +20,7 @@ namespace clarisma
 
 inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
 {
-    static DWORD ACCESS_MODES[] =
+    static int ACCESS_MODES[] =
     {
         O_RDONLY,         // none (default to READ)
         O_RDONLY,         // READ
@@ -29,7 +31,7 @@ inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
     // Access mode: use bits 0 & 1 of OpenMode
     int flags = ACCESS_MODES[static_cast<int>(mode) & 3];
 
-    static DWORD CREATE_MODES[] =
+    static int CREATE_MODES[] =
     {
         0,                   // none (default: open if exists)
         O_CREAT,             // CREATE
@@ -69,7 +71,7 @@ inline void FileHandle::close()
     if (handle_ != INVALID)
     {
         ::close(handle_);
-        fileHandle_ = INVALID;
+        handle_ = INVALID;
     }
 }
 
@@ -425,7 +427,7 @@ inline bool FileHandle::tryUnlock(uint64_t ofs, uint64_t length)
 inline void* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
 {
     int prot = writable ? (PROT_READ | PROT_WRITE) : PROT_READ;
-    void* mappedAddress = mmap(nullptr, length, prot, MAP_SHARED, fileHandle_, offset);
+    void* mappedAddress = mmap(nullptr, length, prot, MAP_SHARED, handle_, offset);
     if (mappedAddress == MAP_FAILED)
     {
         IOException::checkAndThrow();
@@ -433,7 +435,7 @@ inline void* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
     return mappedAddress;
 }
 
-inline void FileHandle::unmap(void* address, uint64_t /* length */)
+inline void FileHandle::unmap(void* address, uint64_t length)
 {
     munmap(address, length);
 }

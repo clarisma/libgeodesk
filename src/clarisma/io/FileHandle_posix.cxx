@@ -25,7 +25,7 @@ std::string FileHandle::fileName() const
 {
     char fdPath[1024];
     char filePath[1024];
-    snprintf(fdPath, sizeof(fdPath), "/proc/self/fd/%d", fileHandle_);
+    snprintf(fdPath, sizeof(fdPath), "/proc/self/fd/%d", handle_);
     ssize_t len = readlink(fdPath, filePath, sizeof(filePath) - 1);
     if (len != -1)
     {
@@ -36,14 +36,14 @@ std::string FileHandle::fileName() const
 }
 
 
-void File::allocate(uint64_t ofs, size_t length)
+void FileHandle::allocate(uint64_t ofs, size_t length)
 {
 #ifdef __APPLE__
     // TODO: no native implementation of fallocate() on MacOS,
     //  do nothing for now
 #else
     // Could use posix_fallocate on Linux as well, buf fallocate is more efficient
-    if (fallocate(fileHandle_, 0, ofs, length) != 0)
+    if (fallocate(handle_, 0, ofs, length) != 0)
     {
         IOException::checkAndThrow();
     }
@@ -61,7 +61,7 @@ void FileHandle::zeroFill(uint64_t ofs, size_t length)
     // TODO: do nothing for now
 }
 
-
+/*
 bool File::exists(const char* fileName)
 {
     struct stat buffer;
@@ -85,7 +85,9 @@ void File::rename(const char* from, const char* to)
 {
     if(std::rename(from, to) != 0) IOException::checkAndThrow();
 }
+*/
 
+/*
 std::string File::path(int handle)
 {
 #if defined(__linux__)
@@ -113,11 +115,13 @@ std::string File::path(int handle)
     #error "Unsupported platform for File::path implementation"
 #endif
 }
+ */
 
-uint64_t File::allocatedSize() const
+/*
+uint64_t FileHandle::allocatedSize() const
 {
     struct stat fileStat;
-    if (fstat(fileHandle_, &fileStat) != 0)
+    if (fstat(handle_, &fileStat) != 0)
     {
         IOException::checkAndThrow();
     }
@@ -148,6 +152,7 @@ bool File::tryUnlock(uint64_t ofs, uint64_t length)
     fl.l_len = length;
     return fcntl(fileHandle_, F_SETLK, &fl) >= 0;
 }
+ */
 
 
 } // namespace clarisma

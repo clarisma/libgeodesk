@@ -30,7 +30,7 @@ void Console::initStream(int streamNo)
 
     FileHandle handle = (streamNo==0) ? STDOUT_FILENO : STDERR_FILENO;
     handle_[streamNo] = handle;
-    isTerminal_[streamNo] = isatty(handle);
+    isTerminal_[streamNo] = isatty(handle.native());
     if(!isTerminal_[streamNo])
     {
         hasColor_[streamNo] = false;
@@ -40,7 +40,7 @@ void Console::initStream(int streamNo)
 
     // Get console width
     struct winsize w;
-    if (ioctl(handle, TIOCGWINSZ, &w) == 0)
+    if (ioctl(handle.native(), TIOCGWINSZ, &w) == 0)
     {
         if(w.ws_col != 0) consoleWidth_ = w.ws_col;
     }
@@ -51,7 +51,7 @@ void Console::initStream(int streamNo)
 
     // Hide the cursor via ANSI control code
     // std::cout << "\033[?25l" << std::flush;
-    write(handle, "\033[?25l", 6);
+    write(handle.native(), "\033[?25l", 6);
 }
 
 void Console::restoreStream(int streamNo)
@@ -67,14 +67,14 @@ void Console::restoreStream(int streamNo)
 
     // Re-enable the cursor via ANSI control code
     // std::cout << "\033[?25h" << std::flush;
-    write(handle_[streamNo], "\033[?25h", 6);
+    write(handle_[streamNo].native(), "\033[?25h", 6);
 }
 
 void Console::print(Stream stream, const char* s, size_t len)
 {
     int streamNo = static_cast<int>(stream);
     // Directly write to STDOUT_FILENO
-    write(handle_[streamNo], s, len);
+    write(handle_[streamNo].native(), s, len);
 }
 
 char Console::readKeyPress()

@@ -101,13 +101,13 @@ public:
     bool isOpen() const noexcept { return handle_ != INVALID; };
 
     [[nodiscard]] bool tryGetSize(uint64_t& size) const noexcept;
-    uint64_t getSize() const;
-    uint64_t size() const { return getSize(); }
+    [[nodiscard]] uint64_t getSize() const;
+    [[nodiscard]] uint64_t size() const { return getSize(); }
     [[nodiscard]] bool trySetSize(uint64_t newSize) noexcept;
     void setSize(uint64_t newSize);
     void expand(uint64_t newSize);
     void truncate(uint64_t newSize);
-    uint64_t allocatedSize() const;
+    [[nodiscard]] uint64_t allocatedSize() const;
 
     [[nodiscard]] bool trySeek(uint64_t posAbsolute) noexcept;
     void seek(uint64_t posAbsolute);
@@ -173,13 +173,13 @@ public:
     template <typename C>
     void writeAll(const C& c)
     {
-        return writeAll(c.data(), c.size() * sizeof(C::value_type));
+        return writeAll(c.data(), c.size() * sizeof(typename C::value_type));
     }
 
     template <typename C>
     [[nodiscard]] bool tryWriteAllAt(uint64_t ofs, const C& c) noexcept
     {
-        return tryWriteAllAt(ofs, c.data(), c.size() * sizeof(C::value_type));
+        return tryWriteAllAt(ofs, c.data(), c.size() * sizeof(typename C::value_type));
     }
 
     template <typename C>

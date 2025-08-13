@@ -9,6 +9,8 @@
 #include <clarisma/util/DateTime.h>
 #include <clarisma/util/MutableDataPtr.h>
 
+// TODO: This macro clashes with the enum value in Store::LockLevel
+#undef LOCK_READ
 
 namespace clarisma {
 

@@ -13,7 +13,7 @@ namespace clarisma {
 void* MappedFile::map(uint64_t offset, uint64_t length, int mode)
 {
     int prot = (mode & MappingMode::WRITE) ? (PROT_READ | PROT_WRITE) : PROT_READ;
-    void* mappedAddress = mmap(nullptr, length, prot, MAP_SHARED, fileHandle_, offset);
+    void* mappedAddress = mmap(nullptr, length, prot, MAP_SHARED, handle_, offset);
     if (mappedAddress == MAP_FAILED)
     {
         // Error mapping file
