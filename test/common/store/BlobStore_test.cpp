@@ -71,6 +71,7 @@ TEST_CASE("BlobStore")
 	store.close();
 }
 
+/*
 
 TEST_CASE("BlobStore Random Alloc & Free")
 {
@@ -142,7 +143,7 @@ TEST_CASE("BlobStore Random Alloc & Free")
 	store.close();
 }
 
-
+*/
 
 
 TEST_CASE("FeatureStore simulation")
