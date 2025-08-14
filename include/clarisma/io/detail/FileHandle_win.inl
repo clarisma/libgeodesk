@@ -467,7 +467,6 @@ inline void FileHandle::deallocate(uint64_t ofs, size_t length)
 }
 
 
-
 inline std::string FileHandle::fileName() const
 {
     TCHAR buf[MAX_PATH];

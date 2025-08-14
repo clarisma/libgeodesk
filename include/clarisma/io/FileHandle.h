@@ -25,6 +25,7 @@ namespace clarisma {
 
 /// @brief Lightweight wrapper for a native file handle on Windows,
 /// Linux and macOS.
+///
 /// - try... methods will return true/false to indicate success or
 ///   failure (Caller can then retrieve the last error). All others
 ///   will throw IOException upon failure.
