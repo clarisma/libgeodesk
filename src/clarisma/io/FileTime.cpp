@@ -44,11 +44,11 @@ FileTime::FileTime(const char* filename)
 		IOException::checkAndThrow();
 	}
 
-	modified_ = DateTime(file_stat.st_mtime);
-	accessed_ = DateTime(file_stat.st_atime);
+	modified_ = DateTime(static_cast<int64_t>(file_stat.st_mtime));
+	accessed_ = DateTime(static_cast<int64_t>(file_stat.st_atime));
 
 #ifdef __APPLE__
-	created_ = DateTime(file_stat.st_birthtime);
+	created_ = DateTime(static_cast<int64_t>(file_stat.st_birthtime));
 #else
 	created_ = DateTime(file_stat.st_ctime);
 #endif
