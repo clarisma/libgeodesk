@@ -5,6 +5,8 @@
 #include <clarisma/util/Crc32.h>
 #include <cassert>
 
+#include "clarisma/io/MemoryMapping.h"
+
 namespace clarisma {
 
 void FreeStore::open(const char* fileName)
@@ -17,9 +19,10 @@ void FreeStore::open(const char* fileName)
     for (;;)
     {
         uint64_t txId = header.transactionId;
+        int snapshot;
         for (;;)
         {
-            int snapshot = txId & 1;
+            snapshot = txId & 1;
             if (!file.tryLockShared(snapshot << 1, 1))
             {
                 throw StoreException("Store locked for updates");
@@ -31,7 +34,9 @@ void FreeStore::open(const char* fileName)
         }
 
         std::string journalFileName = getJournalFileName();
-        int res = ensureIntegrity(file, &header, journalFileName.c_str(), false);
+        int res = ensureIntegrity(
+            fileName, file, &header,
+            journalFileName.c_str(), false);
         if (res == 0)  [[likely]]
         {
             break;
@@ -41,6 +46,13 @@ void FreeStore::open(const char* fileName)
             // TODO: delay
             file.readAllAt(0, &header, sizeof(BasicHeader));
         }
+        else
+        {
+            assert(res == 1);
+            if (header.transactionId == txId) break;
+            // Journal rollback may have changed snapshot
+        }
+        file.tryUnlock(snapshot << 1, 1);
     }
 }
 
@@ -104,12 +116,10 @@ bool FreeStore::verifyJournal(std::span<const byte> journal)
 // TODO: guard against over-read anyway
 // TODO: What if header is invalid, but journal does not contain header?
 // NOLINTNEXTLINE: not const
-void FreeStore::applyJournal(std::span<const byte> journal,
+void FreeStore::applyJournal(FileHandle writableStore,
+    std::span<const byte> journal,
     HeaderBlock* header, bool isHeaderValid)
 {
-    File writableStore;
-    writableStore.open(fileName_.c_str(), File::OpenMode::WRITE);
-
     const byte* p = journal.data() + 8;
 
     bool journalHasHeader = false;
@@ -143,8 +153,9 @@ void FreeStore::applyJournal(std::span<const byte> journal,
 }
 
 // need store file name
-int FreeStore::ensureIntegrity(FileHandle storeFile, HeaderBlock* header,
-    const char* journalFileName, bool isWriter)
+int FreeStore::ensureIntegrity(
+    const char* storeFileName, FileHandle storeHandle,
+    HeaderBlock* header, const char* journalFileName, bool isWriter)
 {
     bool isHeaderValid = verifyHeader(header);
     File journalFile;
@@ -165,11 +176,12 @@ int FreeStore::ensureIntegrity(FileHandle storeFile, HeaderBlock* header,
     uint64_t journalTransactionId;
     journalFile.readAll(&journalTransactionId, sizeof(journalTransactionId));
 
-    FileHandle writableStoreFile = storeFile;
+    File writableStoreFile;
+    FileHandle writableStoreHandle = storeHandle;
     if (!isWriter)
     {
         // Attempt to lock the store file for writing
-        if (!storeFile.tryLock(1,1))
+        if (!storeHandle.tryLock(1,1))
         {
             // TODO: handle other possible locking errors
             journalFile.close();
@@ -183,11 +195,25 @@ int FreeStore::ensureIntegrity(FileHandle storeFile, HeaderBlock* header,
                 // active, or another Reader is applying the Journal
                 // for a previous tx
         }
-        // writableStoreFile.open( = storeFile
+        writableStoreFile.open(storeFileName, FileHandle::OpenMode::WRITE);
+        writableStoreHandle = writableStoreFile;
     }
 
+    size_t journalSize = journalFile.size();
+    byte* mappedJournal = journalFile.map(0, journalSize);
+    MemoryMapping journal = { mappedJournal, journalSize };
+    if (verifyJournal(journal))
+    {
+        applyJournal(writableStoreHandle, journal, header, isHeaderValid);
+    }
 
-    // TODO
+    if (!isWriter)
+    {
+        storeHandle.tryUnlock(1,1);
+    }
+
+    // mapping & files are auto-closed
+    return 1;
 }
 
 

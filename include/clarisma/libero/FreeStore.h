@@ -76,10 +76,13 @@ protected:
 	// 0 = no journaling needed
 	// 1 = applied journal, txid may be different
 	// -1 = need to retry (other process applying journal)
-	static int ensureIntegrity(FileHandle storeFile, HeaderBlock* header,
+	static int ensureIntegrity(
+		const char* storeFileName, FileHandle storeHandle,
+		HeaderBlock* header,
 		const char* journalFileName, bool isWriter);
 	static bool verifyJournal(std::span<const byte> journal);
-	void applyJournal(std::span<const byte> journal,
+	static void applyJournal(FileHandle writableStore,
+		std::span<const byte> journal,
 		HeaderBlock* header, bool isHeaderValid);
 	static bool verifyHeader(HeaderBlock* header);
 	static void sealHeader(HeaderBlock* header);
