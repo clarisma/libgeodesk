@@ -8,8 +8,8 @@
 #include <filesystem>
 #include <memory>
 #include <string>
-
-#include "clarisma/util/enum.h"
+#include <clarisma/io/FileError.h>
+#include <clarisma/util/enum.h>
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -20,6 +20,8 @@
 #endif
 #include <windows.h>
 #endif 
+
+using std::byte;
 
 namespace clarisma {
 
@@ -51,6 +53,30 @@ public:
 
     FileHandle() = default;
     FileHandle(Native native) : handle_(native) {}
+
+    /// @brief Copyable: copies the same native handle (no ownership).
+    FileHandle(const FileHandle&) = default;
+
+    /// @brief Move-construct; steals the native handle and invalidates @p other.
+    FileHandle(FileHandle&& other) noexcept :
+        handle_(other.handle_)
+    {
+        other.handle_ = INVALID;
+    }
+
+    /// @brief Copy-assign: aliases the same native handle (no ownership).
+    FileHandle& operator=(const FileHandle&) = default;
+
+    /// @brief Move-assign; steals the native handle and invalidates @p other.
+    FileHandle& operator=(FileHandle&& other) noexcept
+    {
+        if (this != &other)
+        {
+            handle_ = other.handle_;
+            other.handle_ = INVALID;
+        }
+        return *this;
+    }
 
     // Keep the values of READ,WRITE and CREATE stable for
     // use in other classes
@@ -89,6 +115,8 @@ public:
 
     FileHandle handle() const noexcept { return handle_; }
     Native native() const noexcept { return handle_; }
+
+    static FileError error();
 
     bool tryOpen(const char* fileName, OpenMode mode) noexcept;
     void open(const char* fileName, OpenMode mode);
@@ -257,7 +285,7 @@ public:
     ///
     bool tryUnlock(uint64_t ofs, uint64_t length);
 
-    void* map(uint64_t offset, uint64_t length, bool writable = false);
+    byte* map(uint64_t offset, uint64_t length, bool writable = false);
     static void unmap(void* address, uint64_t length);
 
 protected:

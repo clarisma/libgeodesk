@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
@@ -22,6 +22,12 @@ public:
         other.handle_ = INVALID;
     }
 
+    explicit File(FileHandle&& other) noexcept :
+        FileHandle(std::move(other))
+    {
+        // Base move-ctor is expected to invalidate 'other'.
+    }
+
     ~File() 
     {
         close();
@@ -32,6 +38,7 @@ public:
     {
         if (this != &other)
         {
+            close();
             handle_ = other.handle_;
             other.handle_ = INVALID;
         }

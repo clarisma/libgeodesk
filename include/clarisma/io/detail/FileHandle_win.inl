@@ -16,6 +16,11 @@
 
 namespace clarisma {
 
+inline FileError FileHandle::error()
+{
+    return static_cast<FileError>(GetLastError());
+}
+
 inline void FileHandle::close()
 {
     if (handle_ != INVALID)
@@ -510,7 +515,7 @@ inline bool FileHandle::tryUnlock(uint64_t ofs, uint64_t length)
     return UnlockFileEx(handle_, 0, length & 0xFFFFFFFF, length >> 32, &overlapped);
 }
 
-inline void* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
+inline byte* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
 {
     DWORD protect = writable ? PAGE_READWRITE : PAGE_READONLY;
 
@@ -534,7 +539,7 @@ inline void* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
     {
         IOException::checkAndThrow();
     }
-    return mappedAddress;
+    return static_cast<byte*>(mappedAddress);
 }
 
 inline void FileHandle::unmap(void* address, uint64_t /* length */)

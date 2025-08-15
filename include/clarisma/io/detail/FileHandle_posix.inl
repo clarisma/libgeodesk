@@ -18,6 +18,11 @@ static_assert(sizeof(ssize_t) >= 8, "ssize_t must be 64-bit");
 namespace clarisma
 {
 
+inline FileError FileHandle::error()
+{
+    return static_cast<FileError>(errno);
+}
+
 inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
 {
     static int ACCESS_MODES[] =
@@ -424,7 +429,7 @@ inline bool FileHandle::tryUnlock(uint64_t ofs, uint64_t length)
     return fcntl(handle_, F_SETLK, &fl) >= 0;
 }
 
-inline void* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
+inline byte* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
 {
     int prot = writable ? (PROT_READ | PROT_WRITE) : PROT_READ;
     void* mappedAddress = mmap(nullptr, length, prot, MAP_SHARED, handle_, offset);
@@ -432,7 +437,7 @@ inline void* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
     {
         IOException::checkAndThrow();
     }
-    return mappedAddress;
+    return return static_cast<byte*>(mappedAddress);
 }
 
 inline void FileHandle::unmap(void* address, uint64_t length)
