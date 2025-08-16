@@ -126,6 +126,7 @@ public:
         open(pathStr.c_str(), mode);
     }
 
+    bool tryClose() noexcept;
     void close();
     bool isOpen() const noexcept { return handle_ != INVALID; };
 

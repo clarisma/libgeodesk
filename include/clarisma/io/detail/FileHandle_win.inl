@@ -21,12 +21,18 @@ inline FileError FileHandle::error()
     return static_cast<FileError>(GetLastError());
 }
 
+inline bool FileHandle::tryClose() noexcept
+{
+    bool res = CloseHandle(handle_);
+    handle_ = INVALID;
+    return res;
+}
+
 inline void FileHandle::close()
 {
-    if (handle_ != INVALID)
+    if (!tryClose())
     {
-        CloseHandle(handle_);
-        handle_ = INVALID;
+        IOException::checkAndThrow();
     }
 }
 

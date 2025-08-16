@@ -86,7 +86,10 @@ protected:
 		HeaderBlock* header, bool isHeaderValid);
 	static bool verifyHeader(HeaderBlock* header);
 	static void sealHeader(HeaderBlock* header);
-	std::string getJournalFileName();
+	std::string getJournalFileName() const
+	{
+		return fileName_ + ".journal";
+	}
 
 	class Transaction
 	{

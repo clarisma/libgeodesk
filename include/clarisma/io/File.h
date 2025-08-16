@@ -30,7 +30,7 @@ public:
 
     ~File() 
     {
-        close();
+        if (isOpen()) tryClose();
     }
 
     File& operator=(const File& other) = delete;

@@ -71,12 +71,18 @@ inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
     return handle_ != INVALID;
 }
 
+inline bool FileHandle::tryClose() noexcept
+{
+    int res = ::close(handle_);
+    handle_ = INVALID;
+    return res;
+}
+
 inline void FileHandle::close()
 {
-    if (handle_ != INVALID)
+    if (!tryClose())
     {
-        ::close(handle_);
-        handle_ = INVALID;
+        IOException::checkAndThrow();
     }
 }
 
