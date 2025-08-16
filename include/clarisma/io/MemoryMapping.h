@@ -13,12 +13,21 @@ using std::byte;
 
 namespace clarisma {
 
+/// @brief A memory-mapped portion of a file. Unmaps automatically
+/// upon destruction.
+///
 class MemoryMapping
 {
 public:
     MemoryMapping(byte* data, uint64_t size) :
         data_(data),
         size_(size) {}
+
+    MemoryMapping(FileHandle file, uint64_t ofs, size_t size) :
+        data_(file.map(ofs, size)),
+        size_(size)
+    {
+    }
 
     ~MemoryMapping()
     {
