@@ -1,0 +1,51 @@
+// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#pragma once
+
+#include <clarisma/libero/FreeStore.h>
+#include "clarisma/data/BTreeSet.h"
+#include "clarisma/data/HashSet.h"
+
+namespace clarisma {
+
+class FreeStore::Transaction
+{
+public:
+	Transaction(FreeStore& store);
+
+	void begin();
+
+	/// @brief Adds a 4 KB block to the Journal, so it can
+	/// be safely overwritten once save() has been called.
+	/// The block must be aligned at a 4 KB boundary.
+	/// If the block has been added to the Journal since
+	/// the last call to commit, this method does nothing.
+	///
+	/// @ofs     the offset of the block (must be 4-KB aligned)
+	/// @content the block's current content (must be 4 KB in length)
+	///
+	void stageBlock(uint64_t ofs, const void* content);
+	void save();
+	void commit();
+	void end();
+
+	uint32_t allocPages(uint32_t requestedPages);
+
+private:
+	void buildFreeRangeIndex();
+
+	FreeStore& store_;
+	File journalFile_;
+	FileBuffer3 journalBuffer_;
+	HashSet<uint64_t> stagedBlocks_;
+	BTreeSet<uint64_t> freeBySize_;
+	BTreeSet<uint64_t> freeByStart_;
+	uint32_t totalPageCount_;
+	uint32_t freeRangeCount_;
+	Crc32 journalChecksum_;
+	bool allocationChanged_ = false;
+	HeaderBlock header_;
+};
+
+} // namespace clarisma

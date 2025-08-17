@@ -216,35 +216,4 @@ int FreeStore::ensureIntegrity(
     return 1;
 }
 
-void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
-{
-    assert ((ofs & (BLOCK_SIZE - 1)) == 0);
-    assert (content);
-
-    auto [it, inserted] = stagedBlocks_.insert(ofs);
-    if (!inserted) return;
-
-    journalBuffer_.write(&ofs, sizeof(ofs));
-    journalBuffer_.write(content, BLOCK_SIZE);
-    journalChecksum_.update(&ofs, sizeof(ofs));
-    journalChecksum_.update(content, BLOCK_SIZE);
-}
-
-void FreeStore::Transaction::save()
-{
-    uint64_t trailer = JOURNAL_END_MARKER_FLAG;
-    // TODO: DAF
-    journalBuffer_.write(&trailer, sizeof(trailer));
-    journalChecksum_.update(&trailer, sizeof(trailer));
-    uint64_t checksum = journalChecksum_.get();
-    journalBuffer_.write(&checksum, sizeof(checksum));
-    journalBuffer_.flush();
-    journalBuffer_.fileHandle().syncData();
-    journalChecksum_ = Crc32();
-    stagedBlocks_.clear();
-
-    // TODO: write journal header here?
-    // TODO: what if client never calls commit() after save()?
-}
-
 } // namespace clarisma
