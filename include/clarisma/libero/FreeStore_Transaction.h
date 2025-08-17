@@ -31,9 +31,15 @@ public:
 	void end();
 
 	uint32_t allocPages(uint32_t requestedPages);
+	void freePages(uint32_t firstPage, uint32_t pages);
 
 private:
 	void buildFreeRangeIndex();
+
+	[[nodiscard]] bool isFirstPageOfSegment(uint32_t page) const
+	{
+		return (page & ((0x3fff'ffff) >> store_.pageSizeShift_)) == 0;
+	}
 
 	FreeStore& store_;
 	File journalFile_;

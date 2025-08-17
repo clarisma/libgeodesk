@@ -139,4 +139,91 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
     return firstPage;
 }
 
+
+void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
+{
+    assert(pages > 0);
+    assert(pages <= SEGMENT_LENGTH >> store_.pageSizeShift_);
+
+    // checkFreeTrees();
+    // LOGS << firstPage << ": Freeing " << pages << " pages\n";
+
+    if (firstPage + pages == totalPageCount_)
+    {
+        // Blob is at end -> trim the file
+        totalPageCount_ -= pages;
+        while (!freeByStart_.empty())
+        {
+            auto it = std::prev(freeByStart_.end());
+            uint32_t first = static_cast<uint32_t>(*it >> 32);
+            uint32_t size = static_cast<uint32_t>(*it) >> 1;
+            if (first + size != totalPageCount_) break;
+            totalPageCount_ = first;
+            uint64_t sizeKey =
+                (static_cast<uint64_t>(size) << 32) | first;
+            auto itSize = freeBySize_.lower_bound(sizeKey);
+            assert(itSize != freeBySize_.end() && *itSize == sizeKey);
+            freeBySize_.erase(itSize);
+            freeByStart_.erase(it);
+
+            // LOGS << first << ": Trimmed " << size << " from end";
+        }
+        return;
+    }
+
+    auto right = freeByStart_.lower_bound(
+    static_cast<uint64_t>(firstPage) << 32);
+    if (right != freeByStart_.end())
+    {
+        uint32_t rightStart = static_cast<uint32_t>(*right >> 32);
+        if (rightStart == firstPage + pages &&
+            !isFirstPageOfSegment(rightStart))
+        {
+            // coalesce with right neighbor
+            uint32_t rightSize = static_cast<uint32_t>(*right) >> 1;
+            pages += rightSize;
+            auto next = std::next(right);
+            freeByStart_.erase(right);
+            auto itSize = freeBySize_.lower_bound(
+                (static_cast<uint64_t>(rightSize) << 32) | rightStart);
+            if (itSize == freeBySize_.end() ||
+                (*itSize >> 32) != rightSize ||
+                static_cast<uint32_t>(*itSize) != rightStart)
+            {
+                assert(false);
+            }
+            freeBySize_.erase(itSize);
+            right = next;
+        }
+    }
+    if (!freeByStart_.empty() && right != freeByStart_.begin())
+    {
+        auto left = std::prev(right);
+        uint32_t leftStart = static_cast<uint32_t>(*left >> 32);
+        uint32_t leftSize = static_cast<uint32_t>(*left) >> 1;
+        if (leftStart + leftSize == firstPage &&
+            !isFirstPageOfSegment(firstPage))
+        {
+            // coalesce with left neighbor
+            firstPage = leftStart;
+            pages += leftSize;
+            freeByStart_.erase(left);
+            auto itSize = freeBySize_.lower_bound(
+                (static_cast<uint64_t>(leftSize) << 32) | leftStart);
+            if (itSize == freeBySize_.end() ||
+                (*itSize >> 32) != leftSize ||
+                static_cast<uint32_t>(*itSize) != leftStart)
+            {
+                assert(false);
+            }
+            freeBySize_.erase(itSize);
+        }
+    }
+    freeByStart_.insert(right,
+        (static_cast<uint64_t>(firstPage) << 32) |
+        (pages << 1) | 1);
+    freeBySize_.insert(
+        (static_cast<uint64_t>(pages) << 32) | firstPage);
+}
+
 } // namespace clarisma
