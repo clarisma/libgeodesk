@@ -4,7 +4,12 @@
 #pragma once
 
 #include <clarisma/io/File.h>
+#include <clarisma/io/FileBuffer3.h>
 #include <clarisma/util/DateTime.h>
+
+#include "clarisma/data/BTreeSet.h"
+#include "clarisma/data/HashSet.h"
+#include "clarisma/util/Crc32.h"
 
 namespace clarisma {
 
@@ -91,9 +96,42 @@ protected:
 		return fileName_ + ".journal";
 	}
 
+	virtual void gatherUsedRanges(std::vector<uint64_t>& ranges) = 0;
+
 	class Transaction
 	{
+	public:
+		Transaction(FreeStore& store);
+
+		void begin();
+
+		/// @brief Adds a 4 KB block to the Journal, so it can
+		/// be safely overwritten once save() has been called.
+		/// The block must be aligned at a 4 KB boundary.
+		/// If the block has been added to the Journal since
+		/// the last call to commit, this method does nothing.
+		///
+		/// @ofs     the offset of the block (must be 4-KB aligned)
+		/// @content the block's current content (must be 4 KB in length)
+		///
+		void stageBlock(uint64_t ofs, const void* content);
+		void save();
+		void commit();
+		void end();
+
 	private:
+		void buildFreeRangeIndex();
+
+		FreeStore& store_;
+		File journalFile_;
+		FileBuffer3 journalBuffer_;
+		HashSet<uint64_t> stagedBlocks_;
+		BTreeSet<uint64_t> freeBySize_;
+		BTreeSet<uint64_t> freeByStart_;
+		uint32_t totalPages_;
+		uint32_t freeRangeCount_;
+		Crc32 journalChecksum_;
+		bool allocationChanged_ = false;
 		HeaderBlock header_;
 	};
 

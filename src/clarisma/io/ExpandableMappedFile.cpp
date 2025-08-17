@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/io/ExpandableMappedFile.h>
+#include <algorithm>
 #include <cassert>
 #include <clarisma/cli/Console.h>
 #include <clarisma/util/Bits.h>

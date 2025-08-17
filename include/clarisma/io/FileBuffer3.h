@@ -81,6 +81,8 @@ public:
 		if (ownBuffer_) delete[] buf_;
 	}
 
+	FileHandle fileHandle() const { return file_; }
+
 	void open(const char* filename, File::OpenMode mode =
 		File::OpenMode::CREATE | File::OpenMode::WRITE | File::OpenMode::REPLACE_EXISTING)
 	{
@@ -101,7 +103,7 @@ public:
 
 	void flush(char* p) override
 	{
-		file_.write(buf_, p - buf_);
+		file_.writeAll(buf_, p - buf_);
 		p_ = buf_;
 	}
 

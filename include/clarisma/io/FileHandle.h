@@ -19,7 +19,7 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
-#endif 
+#endif
 
 using std::byte;
 
@@ -39,6 +39,9 @@ namespace clarisma {
 ///   write methods may read or write fewer bytes than requested,
 ///   if no error occurred or EOF is reached
 ///
+/// TODO: Support
+/// - FILE_FLAG_NO_BUFFERING
+/// - FILE_FLAG_RANDOM_ACCESS
 ///
 class FileHandle
 {
