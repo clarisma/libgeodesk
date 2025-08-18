@@ -96,6 +96,10 @@ protected:
 	}
 
 	virtual void gatherUsedRanges(std::vector<uint64_t>& ranges) = 0;
+	uint32_t pagesForBytes(uint32_t bytes) const
+	{
+		return (bytes + (1 << pageSizeShift_) - 1) >> pageSizeShift_;
+	}
 
 private:
 	File file_;

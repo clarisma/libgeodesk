@@ -80,6 +80,7 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
 
             // Perfect fit
             freeByStart_.erase(it);
+            --freeRangeCount_;
             return firstPage;
         }
 
@@ -121,6 +122,7 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
         freeByStart_.insert(
             (static_cast<uint64_t>(firstRemainingPage) << 32) |
             (remainingPages << 1));
+        ++freeRangeCount_;
 
         /*
         LOGS << "  Allocated virgin " << requestedPages << " pages at "
@@ -165,6 +167,7 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
             assert(itSize != freeBySize_.end() && *itSize == sizeKey);
             freeBySize_.erase(itSize);
             freeByStart_.erase(it);
+            --freeRangeCount_;
 
             // LOGS << first << ": Trimmed " << size << " from end";
         }
@@ -193,6 +196,7 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
                 assert(false);
             }
             freeBySize_.erase(itSize);
+            --freeRangeCount_;
             right = next;
         }
     }
@@ -217,6 +221,7 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
                 assert(false);
             }
             freeBySize_.erase(itSize);
+            --freeRangeCount_;
         }
     }
     freeByStart_.insert(right,
@@ -224,6 +229,44 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
         (pages << 1) | 1);
     freeBySize_.insert(
         (static_cast<uint64_t>(pages) << 32) | firstPage);
+    ++freeRangeCount_;
+}
+
+void FreeStore::Transaction::writeFreeRangeIndex()
+{
+    if (freeRangeCount_ == 0) [[unlikely]]
+    {
+        header_.freeRangeIndex = 0;
+        return;
+    }
+    uint32_t indexSize = (freeRangeCount_ + 1) * sizeof(uint64_t);
+    uint32_t indexSizeInPages = store_.pagesForBytes(indexSize);
+    auto it = freeBySize_.lower_bound(indexSizeInPages);
+    uint32_t indexPage;
+    if (it != freeBySize_.end()) [[likely]]
+    {
+        indexPage = static_cast<uint32_t>(*it >> 32);
+    }
+    else
+    {
+        indexPage = totalPageCount_;
+        totalPageCount_ += indexSizeInPages;
+        // TODO: clarify if the FRI is allowed to straddle
+        //  segment boundaries (it is not used by consumers
+        //  that may require segment-based mapping)
+    }
+    std::unique_ptr<uint64_t[]> index(new uint64_t[freeRangeCount_ + 1]);
+    uint64_t* p = index.get();
+    *p++ = (freeRangeCount_ * 8) + 4;
+    for (auto entry : freeByStart_)
+    {
+        *p++ = entry;
+    }
+    assert(p - index.get() == freeRangeCount_ + 1);
+
+    store_.file_.writeAllAt(indexPage << store_.pageSizeShift_,
+        index.get(), indexSize);
+    header_.freeRangeIndex = indexPage;
 }
 
 } // namespace clarisma

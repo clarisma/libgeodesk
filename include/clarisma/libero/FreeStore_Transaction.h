@@ -35,6 +35,7 @@ public:
 
 private:
 	void buildFreeRangeIndex();
+	void writeFreeRangeIndex();
 
 	[[nodiscard]] bool isFirstPageOfSegment(uint32_t page) const
 	{
