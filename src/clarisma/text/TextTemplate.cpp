@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <clarisma/text/Template.h>
+#include <clarisma/text/TextTemplate.h>
 #include <cassert>
 #include <cstring>
 #include <stdexcept>
@@ -11,7 +11,7 @@
 
 namespace clarisma {
 
-std::unique_ptr<Template> Template::compile(std::string_view text)
+std::unique_ptr<TextTemplate> TextTemplate::compile(std::string_view text)
 {
     struct Part
     {
@@ -92,7 +92,7 @@ std::unique_ptr<Template> Template::compile(std::string_view text)
     }
 
     char* bytes = new char[allocSize];
-    Template* t = new (bytes) Template();
+    TextTemplate* t = new (bytes) TextTemplate();
 
     uint32_t* pMeta = reinterpret_cast<uint32_t*>(bytes);
     char* pText = bytes + textOfs;
@@ -105,7 +105,7 @@ std::unique_ptr<Template> Template::compile(std::string_view text)
     }
     assert(reinterpret_cast<char*>(pMeta) == bytes + textOfs);
     assert(pText == bytes + allocSize);
-    return std::unique_ptr<Template>(t);
+    return std::unique_ptr<TextTemplate>(t);
 }
 
 } // namespace clarisma

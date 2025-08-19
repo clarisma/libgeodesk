@@ -9,7 +9,7 @@
 
 namespace clarisma {
 
-/// \class Template
+/// \class TextTemplate
 ///
 /// \brief Minimal template engine with arena layout.
 /// @details
@@ -28,7 +28,7 @@ namespace clarisma {
 /// Segments written as: literal "Hello ", param "fname",
 /// literal " ", param "lname"
 ///
-class Template
+class TextTemplate
 {
 public:
     /// \brief Compile a template string into a Template.
@@ -36,7 +36,7 @@ public:
     /// @param text Source template (UTF-8).
     /// @return Owning unique pointer.
     ///
-    static std::unique_ptr<Template> compile(std::string_view text);
+    static std::unique_ptr<TextTemplate> compile(std::string_view text);
 
     /// \brief Render into a buffer using a lookup callback
     ///
@@ -69,7 +69,7 @@ public:
     }
 
 private:
-    Template() noexcept = default;
+    TextTemplate() noexcept = default;
 
     /*
     /// \brief Private constructor; use compile().
