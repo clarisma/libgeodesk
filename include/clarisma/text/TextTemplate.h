@@ -31,12 +31,14 @@ namespace clarisma {
 class TextTemplate
 {
 public:
+    using Ptr = std::unique_ptr<const TextTemplate>;
+
     /// \brief Compile a template string into a Template.
     ///
     /// @param text Source template (UTF-8).
     /// @return Owning unique pointer.
     ///
-    static std::unique_ptr<TextTemplate> compile(std::string_view text);
+    static Ptr compile(std::string_view text);
 
     /// \brief Render into a buffer using a lookup callback
     ///

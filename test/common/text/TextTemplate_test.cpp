@@ -10,7 +10,7 @@ using namespace clarisma;
 
 TEST_CASE("Basic TextTemplate")
 {
-	std::unique_ptr<TextTemplate> t = TextTemplate::compile("Hello {fname}!");
+	TextTemplate::Ptr t = TextTemplate::compile("Hello {fname}!");
 	DynamicStackBuffer<1024> s;
 
 	t->write(s,
@@ -31,7 +31,7 @@ TEST_CASE("Basic TextTemplate")
 	REQUIRE(static_cast<std::string_view>(s) == "Hello !");
 
 	s.clear();
-	std::unique_ptr<TextTemplate> t2 = TextTemplate::compile("{monkey  }{ \trabbit  }");
+	TextTemplate::Ptr t2 = TextTemplate::compile("{monkey  }{ \trabbit  }");
 	t2->write(s,
 		[](std::string_view k) -> std::string_view
 		{

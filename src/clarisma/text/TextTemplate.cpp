@@ -11,7 +11,7 @@
 
 namespace clarisma {
 
-std::unique_ptr<TextTemplate> TextTemplate::compile(std::string_view text)
+TextTemplate::Ptr TextTemplate::compile(std::string_view text)
 {
     struct Part
     {
@@ -105,7 +105,7 @@ std::unique_ptr<TextTemplate> TextTemplate::compile(std::string_view text)
     }
     assert(reinterpret_cast<char*>(pMeta) == bytes + textOfs);
     assert(pText == bytes + allocSize);
-    return std::unique_ptr<TextTemplate>(t);
+    return Ptr(t);
 }
 
 } // namespace clarisma
