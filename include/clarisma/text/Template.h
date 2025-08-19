@@ -4,11 +4,8 @@
 #pragma once
 
 #include <cstdint>
-#include <cstddef>
 #include <memory>
 #include <string_view>
-
-using std::byte;
 
 namespace clarisma {
 
@@ -53,18 +50,21 @@ public:
     void write(Buf& buf, Lookup&& lookup) const
     {
         const uint32_t* p = reinterpret_cast<const uint32_t*>(arena_);
-        const char* pText = arena_ + *p;
+        const char* pTextStart = arena_ + *p;
+        const char* pText = pTextStart;
 
         ++p;
         for (;;)
         {
-            buf.write(pText, *p);
-            ++p;
-            if (reinterpret_cast<const char*>(p) == pText) break;
-            std::string_view name(pText, *p);
+            uint32_t len = *p++;
+            buf.write(pText, len);
+            pText += len;
+            if (reinterpret_cast<const char*>(p) == pTextStart) break;
+            len = *p++;
+            std::string_view name(pText, len);
+            pText += len;
             std::string_view value = lookup(name);
             buf.write(value.data(), value.size());
-            ++p;
         }
     }
 

@@ -78,26 +78,24 @@ std::unique_ptr<Template> Template::compile(std::string_view text)
     }
     len = p-literalStart;
     totalTextLen += len;
-    parts.emplace_back(p-start, len);
+    parts.emplace_back(literalStart-start, len);
 
     size_t textOfs =
         sizeof(uint32_t) +
         parts.size() * sizeof(uint32_t);
 
     size_t allocSize = textOfs + totalTextLen;
-    byte* bytes = new byte[allocSize];
-    byte* pMeta = bytes;
-    byte* pText = bytes + textOfs;
-    *reinterpret_cast<uint32_t*>(pMeta) = textOfs;
-    pMeta += sizeof(uint32_t);
-
-    for (auto [ofs,len] : parts)
+    char* bytes = new char[allocSize];
+    uint32_t* pMeta = reinterpret_cast<uint32_t*>(bytes);
+    char* pText = bytes + textOfs;
+    *pMeta++ = textOfs;
+    for (auto part : parts)
     {
-        *reinterpret_cast<uint32_t*>(pMeta) = len;
-        memcpy(pText, start+ofs, len);
-        pMeta += sizeof(uint32_t);
-        pText += len;
+        *pMeta++ = part.len;
+        memcpy(pText, start+part.ofs, part.len);
+        pText += part.len;
     }
+    assert(reinterpret_cast<char*>(pMeta) == bytes + textOfs);
     assert(pText == bytes + allocSize);
     return std::unique_ptr<Template>(reinterpret_cast<Template*>(bytes));
 }
