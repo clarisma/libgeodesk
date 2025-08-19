@@ -31,7 +31,7 @@ TEST_CASE("Template")
 	REQUIRE(static_cast<std::string_view>(s) == "Hello !");
 
 	s.clear();
-	std::unique_ptr<Template> t2 = Template::compile("{monkey}{rabbit}");
+	std::unique_ptr<Template> t2 = Template::compile("{monkey  }{ \trabbit  }");
 	t2->write(s,
 		[](std::string_view k) -> std::string_view
 		{

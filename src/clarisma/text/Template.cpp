@@ -59,7 +59,7 @@ std::unique_ptr<Template> Template::compile(std::string_view text)
 
             // Trim trailing whitespace before '}'.
             const char* paramEnd = p;
-            while (paramEnd > paramStart && *paramEnd <= 32)
+            while (paramEnd > paramStart && *(paramEnd-1) <= 32)
             {
                 --paramEnd;
             }
@@ -85,7 +85,15 @@ std::unique_ptr<Template> Template::compile(std::string_view text)
         parts.size() * sizeof(uint32_t);
 
     size_t allocSize = textOfs + totalTextLen;
+    if(textOfs > std::numeric_limits<uint32_t>::max() ||
+        allocSize > std::numeric_limits<uint32_t>::max())
+    {
+        throw std::runtime_error("Excessive template size");
+    }
+
     char* bytes = new char[allocSize];
+    Template* t = new (bytes) Template();
+
     uint32_t* pMeta = reinterpret_cast<uint32_t*>(bytes);
     char* pText = bytes + textOfs;
     *pMeta++ = textOfs;
@@ -97,7 +105,7 @@ std::unique_ptr<Template> Template::compile(std::string_view text)
     }
     assert(reinterpret_cast<char*>(pMeta) == bytes + textOfs);
     assert(pText == bytes + allocSize);
-    return std::unique_ptr<Template>(reinterpret_cast<Template*>(bytes));
+    return std::unique_ptr<Template>(t);
 }
 
 } // namespace clarisma

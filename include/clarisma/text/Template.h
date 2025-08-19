@@ -69,14 +69,18 @@ public:
     }
 
 private:
+    Template() noexcept = default;
+
+    /*
     /// \brief Private constructor; use compile().
     Template() noexcept
     {
         *reinterpret_cast<uint32_t*>(arena_) = 4;
         *reinterpret_cast<uint32_t*>(arena_ + 4) = 0;
     }
+    */
 
-    char arena_[2 * sizeof(uint32_t)];
+    alignas(uint32_t) char arena_[2 * sizeof(uint32_t)];
 };
 
 
