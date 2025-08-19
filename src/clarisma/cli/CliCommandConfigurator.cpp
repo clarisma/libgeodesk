@@ -68,8 +68,21 @@ bool CliCommandConfigurator::configure(char* argv[])
                     }
                     catch (const std::exception& ex)
                     {
+                        failed(name, ex.what());
+                        n++;
+                        continue;
+                    }
+                    failed(name, "Invalid option");
+                    continue;
+
+                    /*
+                    catch (const std::exception& ex)
+                    {
                         // If <value> is invalid, try if the option is accepted
                         // without value
+                        // TODO: This is problematic, value could be
+                        //  optional but invalid
+
                         try
                         {
                             accepted = command_.setOption(name, std::string_view(""));
@@ -87,6 +100,7 @@ bool CliCommandConfigurator::configure(char* argv[])
                     }
                     failed(name, "Invalid option");
                     continue;
+                    */
                 }
             }
             try
