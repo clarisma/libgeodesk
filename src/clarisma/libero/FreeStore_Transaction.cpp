@@ -6,8 +6,10 @@
 #include <cassert>
 
 #include "clarisma/io/MemoryMapping.h"
+#include "clarisma/util/log.h"
 
 namespace clarisma {
+
 
 void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
 {
@@ -267,6 +269,38 @@ void FreeStore::Transaction::writeFreeRangeIndex()
     store_.file_.writeAllAt(indexPage << store_.pageSizeShift_,
         index.get(), indexSize);
     header_.freeRangeIndex = indexPage;
+}
+
+void FreeStore::Transaction::dumpFreeRanges()
+{
+    size_t sizeSize = 0;
+    size_t sizeCount = 0;
+    LOGS << "Free pages by size:\n";
+    for (auto entry : freeBySize_)
+    {
+        uint32_t size = static_cast<uint32_t>(entry >> 32);
+        LOGS << "- " << static_cast<uint32_t>(entry) << ": " << size << '\n';
+        sizeCount++;
+        sizeSize += size;
+    }
+    LOGS << "  " << sizeCount << " entries with " << sizeSize << " total pages\n";
+
+    size_t startSize = 0;
+    size_t startCount = 0;
+
+    LOGS << "Free pages by location:\n";
+    for (auto entry : freeByStart_)
+    {
+        uint32_t size = static_cast<uint32_t>(entry) >> 1;
+        LOGS << "- " << static_cast<uint32_t>(entry >> 32) << ": " << size << '\n';
+        startCount++;
+        startSize += size;
+    }
+    LOGS << "  " << startCount << " entries with " << startSize << " total pages\n";
+    LOGS << totalPageCount_ << " total pages\n";
+    LOGS << "Free ratio: " << (static_cast<double>(startSize) / totalPageCount_) << "\n";
+    assert(startCount == sizeCount);
+    assert(startSize == sizeSize);
 }
 
 } // namespace clarisma

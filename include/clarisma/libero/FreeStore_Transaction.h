@@ -12,7 +12,11 @@ namespace clarisma {
 class FreeStore::Transaction
 {
 public:
-	Transaction(FreeStore& store);
+	Transaction(FreeStore& store) :
+		store_(store)
+	{
+	}
+
 
 	void begin();
 
@@ -36,6 +40,7 @@ public:
 private:
 	void buildFreeRangeIndex();
 	void writeFreeRangeIndex();
+	void dumpFreeRanges();
 
 	[[nodiscard]] bool isFirstPageOfSegment(uint32_t page) const
 	{
@@ -48,8 +53,8 @@ private:
 	HashSet<uint64_t> stagedBlocks_;
 	BTreeSet<uint64_t> freeBySize_;
 	BTreeSet<uint64_t> freeByStart_;
-	uint32_t totalPageCount_;
-	uint32_t freeRangeCount_;
+	uint32_t totalPageCount_ = 0;
+	uint32_t freeRangeCount_ = 0;
 	Crc32 journalChecksum_;
 	bool allocationChanged_ = false;
 	HeaderBlock header_;

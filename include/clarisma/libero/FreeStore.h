@@ -33,6 +33,8 @@ class FreeStore
 	class Transaction;
 
 public:
+	virtual ~FreeStore() {}
+
 	void open(const char* fileName);
 	void open(const char* fileName, Transaction* tx);
 
