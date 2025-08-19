@@ -121,6 +121,11 @@ public:
         return !(*this == other);
     }
 
+    bool operator<(const ShortVarString& other) const noexcept
+    {
+        return compare(this, &other);
+    }
+
     bool equals(const char* str, size_t len) const
     {
         if (length() != len) return false;

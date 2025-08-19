@@ -11,8 +11,8 @@ namespace geodesk {
 
 struct LeafletSettings
 {
-    const char* basemapUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-    const char* attribution = "Map data &copy; <a href=\"http://openstreetmap.org\">OpenStreetMap</a> contributors";
+    std::string_view basemapUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+    std::string_view attribution = "Map data &copy; <a href=\"http://openstreetmap.org\">OpenStreetMap</a> contributors";
     const char* leafletUrl = "https://unpkg.com/leaflet@{leaflet_version}/dist/leaflet.js";
     const char* leafletStylesheetUrl = "https://unpkg.com/leaflet@{leaflet_version}/dist/leaflet.css";
     const char* leafletVersion = "1.8.0";

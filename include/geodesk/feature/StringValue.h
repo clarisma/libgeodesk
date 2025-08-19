@@ -64,6 +64,11 @@ public:
         return *str_ != sv;
     }
 
+    bool operator<(const StringValue& other) const noexcept
+    {
+        return *str_ < *other.str_;
+    }
+
     operator bool() const noexcept { return !isEmpty(); }   // NOLINT implicit conversion
 
     /// @fn operator std::string_view() const noexcept

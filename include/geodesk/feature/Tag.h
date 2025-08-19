@@ -25,6 +25,7 @@ namespace geodesk {
 class /* GEODESK_API */ Tag
 {
 public:
+    Tag() = default;
     Tag(StringValue k, TagValue v) : key_(k), value_(v) {}
 
     /// @brief Returns this tag as a `std::pair`
@@ -50,6 +51,11 @@ public:
     bool operator!=(const Tag& other) const
     {
         return !(*this == other);
+    }
+
+    bool operator<(const Tag& other) const noexcept
+    {
+        return key_ < other.key_;
     }
 
     /// @brief The Tag's key.
