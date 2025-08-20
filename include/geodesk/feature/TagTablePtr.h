@@ -94,7 +94,7 @@ public:
 	PyObject* getValue(PyObject* key, StringTable& strings) const;
 	#endif
 
-	TagValue tagValue(TagBits value, StringTable& strings) const
+	TagValue tagValue(TagBits value, const StringTable& strings) const
 	{
 		// TODO: if strings were 0/2 instead of 1/3,
 		//  we would not need this check
@@ -164,7 +164,8 @@ private:
 	static int32_t narrowNumber(int64_t value) noexcept;
 	clarisma::Decimal wideNumber(TagBits value) const noexcept;
 
-	static const clarisma::ShortVarString* globalString(TagBits value, StringTable& strings) noexcept
+	static const clarisma::ShortVarString* globalString(
+		TagBits value, const StringTable& strings) noexcept
 	{
 		assert((value & 3) == TagValueType::GLOBAL_STRING);
 		return strings.getGlobalString(rawNarrowValue(value));

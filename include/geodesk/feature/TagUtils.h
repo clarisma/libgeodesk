@@ -25,19 +25,19 @@ public:
         TagWalker tw(tags, store->strings());
         while (tw.next())
         {
-            int col;
-            if(tw.keyCode() >= 0) [[likely]]
+            if (keys.columnCount())
             {
-                col = keys.columnOfGlobal(tw.keyCode());
+                if(tw.keyCode() >= 0) [[likely]]
+                {
+                    if (keys.columnOfGlobal(tw.keyCode()) <= 0) continue;
+                }
+                else
+                {
+                    auto k = tw.key()->toStringView();
+                    if (keys.columnOfLocal(k) <= 0) continue;
+                }
             }
-            else
-            {
-                col = keys.columnOfLocal(tw.key()->toStringView());
-            }
-            if (col > 0)
-            {
-                results.emplace_back(tw.key(), tw.value());
-            }
+            results.emplace_back(tw.key(), tw.value());
         }
     }
 };

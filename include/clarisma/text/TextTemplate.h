@@ -40,16 +40,17 @@ public:
     ///
     static Ptr compile(std::string_view text);
 
-    /// \brief Render into a buffer using a lookup callback
+    /// \brief Render into a buffer using a callback that
+    /// writes the actual parameter value into the buffer
     ///
     /// @tparam Buf Buffer with write(const char*, size_t).
-    /// @tparam Lookup Callable: std::string_view(std::string_view name).
+    /// @tparam Lookup Callable: void(Buf,std::string_view name).
     ///
     /// @param buf Output sink
-    /// @param lookup Parameter resolver
+    /// @param lookup Parameter writer
     ///
-    template <typename Buf, typename Lookup>
-    void write(Buf& buf, Lookup&& lookup) const
+    template <typename Buf, typename ValueWriter>
+    void write(Buf& buf, ValueWriter&& valueWriter) const
     {
         const uint32_t* p = reinterpret_cast<const uint32_t*>(arena_);
         const char* pTextStart = arena_ + *p;
@@ -65,8 +66,7 @@ public:
             len = *p++;
             std::string_view name(pText, len);
             pText += len;
-            std::string_view value = lookup(name);
-            buf.write(value.data(), value.size());
+            valueWriter(buf, name);
         }
     }
 

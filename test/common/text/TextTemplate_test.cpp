@@ -14,30 +14,39 @@ TEST_CASE("Basic TextTemplate")
 	DynamicStackBuffer<1024> s;
 
 	t->write(s,
-		[](std::string_view k) -> std::string_view
+		[](Buffer& out, std::string_view k)
 		{
-			if (k == "fname") return "George";
-			return {};
+			if (k == "fname") out.write("George");
 		});
 
 	REQUIRE(static_cast<std::string_view>(s) == "Hello George!");
 
 	s.clear();
 	t->write(s,
-		[](std::string_view k) -> std::string_view
+		[](Buffer& out, std::string_view k)
 		{
-			return {};
 		});
 	REQUIRE(static_cast<std::string_view>(s) == "Hello !");
 
 	s.clear();
 	TextTemplate::Ptr t2 = TextTemplate::compile("{monkey  }{ \trabbit  }");
 	t2->write(s,
-		[](std::string_view k) -> std::string_view
+		[](Buffer& out, std::string_view k)
 		{
-			if (k == "monkey") return "banana";
-			if (k == "rabbit") return "carrot";
-			return {};
+			std::string_view s;
+			if (k == "monkey")
+			{
+				s = "banana";
+			}
+			else if (k == "rabbit")
+			{
+				s = "carrot";
+			}
+			else
+			{
+				return;
+			}
+			out.write(s);
 		});
 	REQUIRE(static_cast<std::string_view>(s) == "bananacarrot");
 
