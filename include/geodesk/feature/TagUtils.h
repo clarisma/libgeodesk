@@ -29,12 +29,12 @@ public:
             {
                 if(tw.keyCode() >= 0) [[likely]]
                 {
-                    if (keys.columnOfGlobal(tw.keyCode()) <= 0) continue;
+                    if (keys.columnOfGlobal(tw.keyCode()) == 0) continue;
                 }
                 else
                 {
                     auto k = tw.key()->toStringView();
-                    if (keys.columnOfLocal(k) <= 0) continue;
+                    if (keys.columnOfLocal(k) == 0) continue;
                 }
             }
             results.emplace_back(tw.key(), tw.value());
