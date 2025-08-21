@@ -39,4 +39,31 @@ int TagValue::charCount() const noexcept
     }
 }
 
+// TODO: Needs Xml::writeEscaped() to change to Buffer
+/*
+void TagValue::writeXml(clarisma::Buffer& out)
+{
+    switch (type())
+    {
+    case 1:     // global string
+    case 3:     // local string (fall through)
+        clarisma::Xml::writeEscaped(out, stringValue_);
+        break;
+    case 0:     // narrow number
+    {
+        char buf[32];
+        char* end = clarisma::Format::integer(buf,
+            TagValues::intFromNarrowNumber(rawNumberValue()));
+        out.write(buf, end - buf);
+        break;
+    }
+    case 2:     // wide number
+        out << TagValues::decimalFromWideNumber(rawNumberValue());
+        break;
+    default:
+        UNREACHABLE_CASE
+    }
+}
+*/
+
 } // namespace geodesk

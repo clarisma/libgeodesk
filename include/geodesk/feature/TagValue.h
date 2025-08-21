@@ -9,6 +9,8 @@
 #include <geodesk/feature/StringValue.h>
 #include <geodesk/feature/TagValues.h>
 
+#include "clarisma/util/Xml.h"
+
 namespace geodesk {
 /// @brief The value of a Tag. Converts implicitly to `std::string`,
 /// `double`, `int` or `bool`.
@@ -279,6 +281,14 @@ public:
     /// empty string.
     ///
     StringValue storedString() const noexcept { return stringValue_; }
+
+    /// @brief Writes the tag value to the given Buffer,
+    /// XMl/HTML-encoded.
+    ///
+    /// @tparam out  a Buffer
+    ///
+    // void writeXml(clarisma::Buffer& out);
+        // TODO
 
 private:
     int type() const { return static_cast<int>(taggedNumberValue_) & 3; }
