@@ -94,6 +94,8 @@ public:
 	void flush(char* p) override;
 
 private:
+	static constexpr size_t BUFFER_SIZE = 64 * 1024;
+
   	void ensureNewlineUnsafe();
 
 	Console* console_;

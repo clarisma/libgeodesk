@@ -18,7 +18,9 @@ ConsoleBuffer::ConsoleBuffer(Console::Stream stream) :
 {
   	if(!isTerminal_)
   	{
-		buf_ = new char[64 * 1024];
+		buf_ = new char[BUFFER_SIZE];
+  		p_ = buf_;
+  		end_ = buf_ + BUFFER_SIZE;
   	}
 }
 
