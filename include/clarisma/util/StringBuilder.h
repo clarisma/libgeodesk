@@ -8,23 +8,13 @@
 
 namespace clarisma {
 
-// TODO: deprecate, or derive directly from DynamicStackBuffer
-class StringBuilder : public AbstractStreamWriter<StringBuilder>
+class StringBuilder : public DynamicStackBuffer<1024>
 {
 public:
-	explicit StringBuilder()
-	{
-		setBuffer(&buf_);
-	}
-
 	std::string toString()
 	{
-		flush();
-		return { buf_.data(), buf_.length() };
+		return { buf_, length() };
 	}
-
-private:
-	DynamicStackBuffer<1024> buf_;
 };
 
 } // namespace clarisma

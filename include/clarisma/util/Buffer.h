@@ -7,7 +7,9 @@
 #include <string_view>
 #include <type_traits>
 #include <clarisma/alloc/Block.h>
+#include <clarisma/data/Span.h>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/varint.h>
 
 namespace clarisma {
 
@@ -32,6 +34,7 @@ public:
 
 	virtual void filled(char *p) = 0;
 	virtual void flush(char* p) = 0;
+	void flush() { flush(p_); }
 
 	void write(const void* data, size_t len)
 	{
@@ -129,9 +132,33 @@ public:
 	}
 	*/
 
+	// TODO: Do we need these here?
+
+	void writeVarint(uint64_t v)
+	{
+		uint8_t buf[16];
+		uint8_t* p = buf;
+		clarisma::writeVarint(p, v);
+		write(buf, p - buf);
+	}
+
+	void writeSignedVarint(int64_t v)
+	{
+		uint8_t buf[16];
+		uint8_t* p = buf;
+		clarisma::writeSignedVarint(p, v);
+		write(buf, p - buf);
+	}
+
 	operator std::string_view() const
 	{
 		return std::string_view(buf_, length());
+	}
+
+	// TODO: change to std::span!
+	ByteSpan span() const
+	{
+		return ByteSpan(reinterpret_cast<const uint8_t*>(buf_), length());
 	}
 
 	void clear()
@@ -275,6 +302,13 @@ template<BufferLike B>
 B& operator<<(B& buf, int n)
 {
 	buf << static_cast<int64_t>(n);
+	return buf;
+}
+
+template<BufferLike B>
+B& operator<<(B& buf, uint32_t n)
+{
+	buf << static_cast<uint64_t>(n);
 	return buf;
 }
 

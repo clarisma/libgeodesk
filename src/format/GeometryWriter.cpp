@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef CLARISMA_KEEP_BUFFERWRITER
+
 #include <geodesk/format/GeometryWriter.h>
 #include <geodesk/geom/polygon/Polygonizer.h>
 #include <geodesk/geom/polygon/Ring.h>
@@ -173,3 +175,5 @@ void GeometryWriter::writePolygonizedCoordinates(const Polygonizer& polygonizer)
 }
 
 } // namespace geodesk
+
+#endif

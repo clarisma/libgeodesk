@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/geom/Tile.h>
-#include <clarisma/util/BufferWriter.h>
+#include <clarisma/util/Buffer.h>
 
 namespace geodesk {
 
@@ -18,12 +18,12 @@ char* Tile::formatReverse(char* end) const
 }
 
 
-void Tile::write(BufferWriter& out) const
+void Tile::write(Buffer& out) const
 {
 	char buf[32];
 	char* end = buf + sizeof(buf);
 	char* start = formatReverse(end);
-	out.writeBytes(start, end - start);
+	out.write(start, end - start);
 }
 
 

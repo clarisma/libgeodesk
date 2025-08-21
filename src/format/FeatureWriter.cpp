@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef CLARISMA_KEEP_BUFFERWRITER
+
 #include <geodesk/format/FeatureWriter.h>
 #include <clarisma/util/ShortVarString.h>
 #include <geodesk/feature/FeatureStore.h>
@@ -161,3 +163,5 @@ void FeatureWriter::writeId(FeatureStore* store, FeaturePtr feature)
 }
 
 } // namespace geodesk
+
+#endif

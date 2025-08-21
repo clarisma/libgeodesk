@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef CLARISMA_KEEP_BUFFERWRITER
+
 #include <geodesk/format/MapWriter.h>
 
 namespace geodesk {
@@ -463,3 +465,5 @@ void MapWriter::Schema::fill(const PyMap& map, const PyMap::Element* item)
  */
 
 } // namespace geodesk
+
+#endif

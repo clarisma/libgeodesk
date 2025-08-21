@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/text/Table.h>
-#include <clarisma/util/StreamWriter.h>
+#include <clarisma/util/Buffer.h>
 
 namespace clarisma {
 

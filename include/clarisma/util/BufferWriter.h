@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef CLARISMA_KEEP_BUFFERWRITER
+
 #pragma once
 
 #include <clarisma/util/Buffer.h>
@@ -319,3 +321,5 @@ protected:
 };
 
 } // namespace clarisma
+
+#endif

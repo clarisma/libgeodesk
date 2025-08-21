@@ -4,7 +4,7 @@
 #pragma once
 
 #include <cstdint>
-#include <clarisma/util/BufferWriter.h>
+#include <clarisma/util/Buffer.h>
 
 namespace geodesk {
 
@@ -13,7 +13,7 @@ class FeatureStore;
 class MatcherDecoder
 {
 public:
-	MatcherDecoder(FeatureStore* store, clarisma::BufferWriter& out, const uint16_t* pCode) :
+	MatcherDecoder(FeatureStore* store, clarisma::Buffer& out, const uint16_t* pCode) :
 		store_(store), out_(out), pCodeStart_(pCode), pLastInstruction_(pCode) {}
 
 	void decode();
@@ -25,7 +25,7 @@ private:
 
 	const uint16_t* pCodeStart_;
 	const uint16_t* pLastInstruction_;
-	clarisma::BufferWriter& out_;
+	clarisma::Buffer& out_;
 	FeatureStore* store_;
 };
 

@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef CLARISMA_KEEP_BUFFERWRITER
+
 #include <geodesk/format/WktWriter.h>
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/geom/polygon/Polygonizer.h>
@@ -104,3 +106,5 @@ void WktWriter::writeFooter()
 
 
 } // namespace geodesk
+
+#endif

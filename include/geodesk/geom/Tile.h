@@ -9,7 +9,7 @@
 
 namespace clarisma
 {
-class BufferWriter;
+class Buffer;
 }
 
 namespace geodesk {
@@ -142,7 +142,7 @@ public:
 	}
 
 	char* formatReverse(char* end) const;
-	void write(clarisma::BufferWriter& out) const;
+	void write(clarisma::Buffer& out) const;
 
 	// TODO: conform
 	void format(char* buf) const

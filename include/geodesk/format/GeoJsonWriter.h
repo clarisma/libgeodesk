@@ -8,6 +8,8 @@
 
 namespace geodesk {
 
+#ifdef CLARISMA_KEEP_BUFFERWRITER
+
 ///
 /// \cond lowlevel
 ///
@@ -42,3 +44,5 @@ protected:
 // \endcond
 
 } // namespace geodesk
+
+#endif

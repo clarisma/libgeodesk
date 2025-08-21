@@ -3,7 +3,7 @@
 
 #include <clarisma/util/Xml.h>
 #include <clarisma/text/Format.h>
-#include <clarisma/util/BufferWriter.h>
+#include <clarisma/util/Buffer.h>
 
 
 namespace clarisma {

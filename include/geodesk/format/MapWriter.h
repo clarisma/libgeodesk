@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef CLARISMA_KEEP_BUFFERWRITER
+
 #pragma once
 
 #include <geodesk/format/GeometryWriter.h>
@@ -46,3 +48,5 @@ private:
 };
 
 } // namespace geodesk
+
+#endif

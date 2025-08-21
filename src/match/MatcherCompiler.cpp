@@ -75,13 +75,12 @@ const MatcherHolder* MatcherCompiler::getMatcher(const char* query)
 	{
 		matcher = compileMatcher(parser.graph(), sel, indexBits);
 #ifdef _DEBUG
-		DynamicBuffer buf(1024);
-		BufferWriter out(&buf);
+		DynamicBuffer out(1024);
 		MatcherDecoder decoder(store_, out,
 			reinterpret_cast<const uint16_t*>(
 				reinterpret_cast<const uint8_t*>(&matcher->mainMatcher_) + sizeof(Matcher)));
 		decoder.decode();
-		LOG("%.*s\n", static_cast<int>(buf.length()), buf.data());
+		LOGS << out;
 #endif
 	}
 

@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef CLARISMA_KEEP_BUFFERWRITER
+
 #include <geodesk/format/GeoJsonWriter.h>
 #include <geodesk/version.h>
 #include <geodesk/feature/FeatureStore.h>
@@ -285,3 +287,5 @@ void GeoJsonWriter::writeAnonymousNodeNode(Coordinate point)
 }
 
 } // namespace geodesk
+
+#endif

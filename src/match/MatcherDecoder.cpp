@@ -46,7 +46,7 @@ void MatcherDecoder::decode()
 
 		case Opcode::RETURN:
 			writeOpcodeStub(p);
-			out_.writeString(flags ? " TRUE\n" : " FALSE\n");
+			out_ << (flags ? " TRUE\n" : " FALSE\n");
 			p++;
 			if (p > pLastInstruction_)
 			{
@@ -68,14 +68,13 @@ void MatcherDecoder::writeAddress(const uint16_t* p, bool padded)
 {
 	char buf[32];
 	Format::unsafe(buf, padded ? "%5d" : "%d", (p - pCodeStart_));
-	out_.writeString(buf);
+	out_ << buf;
 }
 
 void MatcherDecoder::writeOpcodeStub(const uint16_t* p)
 {
 	writeAddress(p, true);
-	out_.writeString("  ");
-	out_.writeString(OPCODE_NAMES[*p & 0xff]);
+	out_ << "  " << OPCODE_NAMES[*p & 0xff];
 }
 
 void MatcherDecoder::writeBranchingOp(const uint16_t* p)
@@ -83,8 +82,7 @@ void MatcherDecoder::writeBranchingOp(const uint16_t* p)
 	int opcode = *p & 0xff;
 	bool negated = (*p >> 8) & 1;
 	writeAddress(p, true);
-	out_.writeString(negated ? "  NOT " : "  ");
-	out_.writeString(OPCODE_NAMES[*p & 0xff]);
+	out_ << (negated ? "  NOT " : "  ") << OPCODE_NAMES[*p & 0xff];
 	p++;
 	switch (OPCODE_OPERAND_TYPES[opcode])
 	{
@@ -92,11 +90,7 @@ void MatcherDecoder::writeBranchingOp(const uint16_t* p)
 		{
 			uint16_t code = *p++;
 			const ShortVarString* str = store_->strings().getGlobalString(code);
-			out_.writeByte(' ');
-			out_.writeBytes(str->data(), str->length());
-			out_.writeString(" (");
-			out_.formatInt(code);
-			out_.writeByte(')');
+			out_ << ' ' << str << " (" << code << ')';
 		}
 		break;
 
@@ -105,8 +99,8 @@ void MatcherDecoder::writeBranchingOp(const uint16_t* p)
 			uint16_t ofs = *p;
 			const StringResource* pStr = reinterpret_cast<const StringResource*>(
 				reinterpret_cast<const uint8_t*>(p) - ofs);
-			out_.writeString(" \"");
-			out_.writeBytes(pStr->data, pStr->len);
+			out_ << " \"";
+			out_.write(pStr->data, pStr->len);
 			out_.writeByte('\"');
 			p++;
 		}
@@ -117,8 +111,7 @@ void MatcherDecoder::writeBranchingOp(const uint16_t* p)
 			uint16_t ofs = *p;
 			const double* pDouble = reinterpret_cast<const double*>(
 				reinterpret_cast<const uint8_t*>(p) - ofs);
-			out_.writeString(" ");
-			out_.formatDouble(*pDouble);
+			out_ << " " << *pDouble;
 			p++;
 		}
 		break;
@@ -128,14 +121,14 @@ void MatcherDecoder::writeBranchingOp(const uint16_t* p)
 			uint16_t ofs = *p;
 			const std::regex* pRegex = reinterpret_cast<const std::regex*>(
 				reinterpret_cast<const uint8_t*>(p) - ofs);
-			out_.writeString(" <regex>");
+			out_ << " <regex>";
 			p++;
 		}
 		break;
 
 		case OperandType::FEATURE_TYPES:
 		{
-			out_.writeString(" <TODO>");
+			out_ << " <TODO>";
 			p += 2;	// two-word argument
 		}
 		break;
@@ -147,7 +140,7 @@ void MatcherDecoder::writeBranchingOp(const uint16_t* p)
 	const uint16_t* pTarget = p + static_cast<int16_t>(*p) / 2;		// target offset uses bytes, not words
 	if (pTarget > pLastInstruction_) pLastInstruction_ = pTarget;
 
-	out_.writeString(" -> ");
+	out_ << " -> ";
 	writeAddress(pTarget, false);
 	out_.writeByte('\n');
 }

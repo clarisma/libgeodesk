@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef CLARISMA_KEEP_BUFFERWRITER
+
 #include <clarisma/util/BufferWriter.h>
 #include <cassert>
 #include <cstdio>
@@ -110,3 +112,5 @@ void BufferWriter::writeJsonEscapedString(const char* s, size_t len)
 
 
 } // namespace clarisma
+
+#endif
