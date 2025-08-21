@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/*
+ *
 #include <clarisma/cli/ConsoleWriter.h>
 #include <clarisma/cli/Console.h>
 
@@ -207,3 +209,5 @@ int ConsoleWriter::prompt(bool defaultYes)
 }
 
 } // namespace clarisma
+
+*/

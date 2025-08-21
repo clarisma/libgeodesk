@@ -19,7 +19,7 @@
 
 namespace clarisma {
 
-class ConsoleWriter;
+class ConsoleBuffer;
 
 /*
  * Console colors:
@@ -143,7 +143,7 @@ public:
 	/// @brief Stops the progress display and returns a ConsoleWriter
 	/// to write to stderr.
 	///
-	static ConsoleWriter end();
+	static ConsoleBuffer end();
 	void setTask(const char* task);
 	void setProgress(int percentage);
 	static void log(std::string_view msg);

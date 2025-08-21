@@ -64,6 +64,24 @@ public:
 		if (p_ == end_) filled(p_);
 	}
 
+	void writeRepeatedChar(int ch, size_t times)
+	{
+		for (;;)
+		{
+			size_t remainingCapacity = capacityRemaining();
+			if (times < remainingCapacity)
+			{
+				std::memset(p_, ch, times);
+				p_ += times;
+				return;
+			}
+			std::memset(p_, ch, remainingCapacity);
+			p_ += remainingCapacity;
+			filled(p_);
+			times -= remainingCapacity;
+		}
+	}
+
 	/*
 	Buffer& operator<<(std::string_view s)
 	{

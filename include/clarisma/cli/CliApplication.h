@@ -4,7 +4,7 @@
 #pragma once
 
 #include <clarisma/cli/Console.h>
-#include <clarisma/cli/ConsoleWriter.h>
+#include <clarisma/cli/ConsoleBuffer.h>
 
 namespace clarisma {
 
@@ -16,7 +16,7 @@ public:
 
 	void run(int argc, char* argv[]);
 
-	ConsoleWriter& out() { return out_; }
+	// ConsoleWriter& out() { return out_; }
 	static CliApplication* get() { return theApp_; }
 
 	void fail(std::string msg);
@@ -24,7 +24,7 @@ public:
 
 protected:
 	Console console_;
-	ConsoleWriter out_;		// TODO: not needed
+	// ConsoleWriter out_;		// TODO: not needed
 
 	static CliApplication* theApp_;
 };

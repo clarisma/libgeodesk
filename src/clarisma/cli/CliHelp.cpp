@@ -12,6 +12,12 @@ void CliHelp::command(const char* cmd, const char* description)
     *this << "\n\n" << description << "\n\n";
 }
 
+
+void CliHelp::indent(int chars)
+{
+
+}
+
 void CliHelp::subCommand(const char* name, const char* description)
 {
     *this << "  " << Console::GOLDEN_YELLOW << name << Console::DEFAULT;

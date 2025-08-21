@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <clarisma/cli/ConsoleWriter.h>
+#include <clarisma/cli/ConsoleBuffer.h>
 
 namespace clarisma {
 
-class CliHelp : public ConsoleWriter
+class CliHelp : public ConsoleBuffer
 {
 public:
     void command(const char* cmd, const char* description);
@@ -19,6 +19,7 @@ public:
 
 private:
     int formatOptionsAndParams(const char *str);
+    void indent(int chars);
 
     int commandIndent_ = 12;
     int optionIndent_ = 26;

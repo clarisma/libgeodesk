@@ -4,7 +4,7 @@
 #pragma once
 
 #include <stdio.h>
-#include <clarisma/cli/ConsoleWriter.h>
+#include <clarisma/cli/ConsoleBuffer.h>
 
 namespace clarisma {
 
@@ -17,9 +17,9 @@ namespace clarisma {
 #define FORCE_LOG(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
 
 #ifndef NDEBUG
-#define LOGS clarisma::ConsoleWriter(clarisma::Console::Stream::STDERR).timestamp()
+#define LOGS clarisma::ConsoleBuffer(clarisma::Console::Stream::STDERR).timestamp()
 #else
-#define LOGS if(false) clarisma::ConsoleWriter().timestamp()
+#define LOGS if(false) clarisma::ConsoleBuffer().timestamp()
 #endif
 
 

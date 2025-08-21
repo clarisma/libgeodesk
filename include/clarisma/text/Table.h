@@ -10,7 +10,7 @@
 
 namespace clarisma {
 
-class BufferWriter;
+class Buffer;
 
 class Table 
 {
@@ -72,8 +72,8 @@ public:
     }
 
     void distributeColumns(std::span<const Cell> cells, int maxCols, int maxWidth);
-    void writeTo(BufferWriter& out, int indent = 0) const;
-    static void writeTo(BufferWriter& out, const Column& col, const Cell& cell);
+    void writeTo(Buffer& out, int indent = 0) const;
+    static void writeTo(Buffer& out, const Column& col, const Cell& cell);
 
 private:
     std::vector<Column> columns_;

@@ -10,7 +10,7 @@
 
 namespace clarisma {
 
-class BufferWriter;
+class Buffer;
 
 class Xml
 {
@@ -22,7 +22,7 @@ public:
   	static char* unescapeInplace(char* s);
 
 	// TODO: change to Buffer
-	static void writeEscaped(BufferWriter& out, std::string_view s);
+	static void writeEscaped(Buffer& out, std::string_view s);
 };
 
 } // namespace clarisma

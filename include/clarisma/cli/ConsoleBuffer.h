@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
@@ -19,6 +19,56 @@ public:
 		// printf("\n\n%p\nLength = %lld\n\n", this, length());
 		if(length()) flush();
 		// printf("\n\nFlushed CW\n\n");
+	}
+
+	ConsoleBuffer& operator<<(std::string_view s)
+	{
+		write(s);
+		return *this;
+	}
+
+	ConsoleBuffer& operator<<(const char* s)
+	{
+		write(s, strlen(s));
+		return *this;
+	}
+
+	ConsoleBuffer& operator<<(char ch)
+	{
+		writeByte(ch);
+		return *this;
+	}
+
+	ConsoleBuffer& operator<<(uint32_t n)
+	{
+	   	return *this << static_cast<uint64_t>(n);
+	}
+
+	ConsoleBuffer& operator<<(int64_t n)
+	{
+		char buf[32];
+		char* end = buf + sizeof(buf);
+		char* start = Format::integerReverse(n, end);
+		write(start, end - start);
+		return *this;
+	}
+
+	ConsoleBuffer& operator<<(uint64_t n)
+	{
+		char buf[32];
+		char* end = buf + sizeof(buf);
+		char* start = Format::unsignedIntegerReverse(n, end);
+		write(start, end - start);
+		return *this;
+	}
+
+	ConsoleBuffer& operator<<(double d)
+	{
+		char buf[64];
+		char* end = buf + sizeof(buf);
+		char* start = Format::doubleReverse(&end, d);
+		write(start, end - start);
+		return *this;
 	}
 
 	ConsoleBuffer& blank();
@@ -47,7 +97,6 @@ private:
   	void ensureNewlineUnsafe();
 
 	Console* console_;
-	// uint16_t indent_;
 	uint8_t stream_;
 	bool isTerminal_;
 	bool hasColor_;

@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <cassert>
-#include <cstring>
-#include <clarisma/cli/ConsoleWriter.h>
+#include <clarisma/cli/ConsoleBuffer.h>
 #include <clarisma/thread/Threads.h>
 
 #if defined(_WIN32)
@@ -84,10 +83,9 @@ void Console::start(const char* task)
 
 void Console::log(std::string_view msg)
 {
-	ConsoleWriter out;
+	ConsoleBuffer out;
 	out.timestamp();
-	out.writeString(msg);
-	out.writeByte('\n');
+	out << msg << '\n';
 }
 
 
@@ -269,7 +267,7 @@ void Console::debug(const char* format, ...)
 }
 
 
-ConsoleWriter Console::end()
+ConsoleBuffer Console::end()
 {
 	Console* self = get();
 	self->consoleState_.store(
@@ -278,7 +276,7 @@ ConsoleWriter Console::end()
 		std::memory_order_release);
 	if(self->thread_.joinable()) self->thread_.detach();
 		// TODO: needed?
-	return ConsoleWriter(Stream::STDERR);
+	return ConsoleBuffer(Stream::STDERR);
 }
 
 

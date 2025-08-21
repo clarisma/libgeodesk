@@ -84,7 +84,7 @@ char* Xml::unescapeInplace(char* s)
     return write;
 }
 
-void Xml::writeEscaped(BufferWriter& out, std::string_view s)
+void Xml::writeEscaped(Buffer& out, std::string_view s)
 {
     const char* start = s.data();
     const char* end = start + s.size();

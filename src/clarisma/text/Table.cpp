@@ -56,14 +56,14 @@ void Table::distributeColumns(std::span<const Cell> data, int maxCols, int maxWi
     }
 }
 
-void Table::writeTo(BufferWriter& out, const Column& col, const Cell& cell)
+void Table::writeTo(Buffer& out, const Column& col, const Cell& cell)
 {
     int padding = col.width() - cell.width();
     out.write(cell.data(), cell.size());
     out.writeRepeatedChar(' ', padding);
 }
 
-void Table::writeTo(BufferWriter& out, int indent) const
+void Table::writeTo(Buffer& out, int indent) const
 {
     int col = 0;
     for(const Cell& cell : cells_)
@@ -74,7 +74,7 @@ void Table::writeTo(BufferWriter& out, int indent) const
         }
         else
         {
-            out.writeConstString(" | ");
+            out << " | ";
         }
         writeTo(out, columns_[col], cell);
         col++;
