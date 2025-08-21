@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/cli/ConsoleBuffer.h>
@@ -62,7 +62,7 @@ void ConsoleBuffer::flush(bool forceDisplay)
 			{
 				if(!forceDisplay) return;
 			}
-			if(p_ > buf_ && *(p_-1) != '\n') *p_++ = '\n';
+			if(p_ == buf_ || *(p_-1) != '\n') writeByte('\n');
 		}
 	}
 	console_->print(static_cast<Console::Stream>(stream_), data(), length());
@@ -161,7 +161,9 @@ ConsoleBuffer& ConsoleBuffer::failed()
 	if(isTerminal_) putStringUnsafe("\r\033[2K");	// clear current line
 	if(hasColor())
 	{
-		putStringUnsafe("\033[38;5;9m ─────── \033[0m");
+		// putStringUnsafe("\033[38;5;9m ─────── \033[0m");
+		putStringUnsafe("\033[38;5;15;48;5;1m ────── \033[0m ");
+		// 160 is brigher red
 	}
 	else
 	{
