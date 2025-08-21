@@ -60,7 +60,7 @@ void Table::writeTo(BufferWriter& out, const Column& col, const Cell& cell)
 {
     int padding = col.width() - cell.width();
     out.write(cell.data(), cell.size());
-    out.writeRepeatedChar(' ', padding);
+    out.writeRepeatedChar(' ', padding < 0 ? 0 : padding);
 }
 
 void Table::writeTo(BufferWriter& out, int indent) const
