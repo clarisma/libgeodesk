@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <clarisma/util/streamable.h> // for << operator support
 #include <clarisma/util/TaggedPtr.h>
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/feature/FeatureUtils.h>
@@ -29,8 +30,10 @@ class Nodes;
 template <typename T>
 class FeatureIterator;
 
+using clarisma::operator<<;
+
 ///
-/// Do not show this class.
+/// Do not show this class (We use api/Feature.h for documentation)
 ///
 template<typename T>
 class FeatureBase
@@ -528,6 +531,7 @@ private:
     friend class FeatureIteratorBase;
 };
 
+/*
 template<typename Stream,typename T>
 Stream& operator<<(Stream& out, const FeatureBase<T>& f)
 {
@@ -536,6 +540,7 @@ Stream& operator<<(Stream& out, const FeatureBase<T>& f)
     out.write(buf, p - buf);
     return out;
 }
+*/
 
 using Feature = FeatureBase<FeaturePtr>;
 using Node = FeatureBase<NodePtr>;

@@ -80,7 +80,7 @@ int main()
 int main()
 {
     // -85.3510756, -160.0000000
-    Features world(R"(c:\geodesk\tests\dexx.gol)");
+    Features world(R"(c:\geodesk\tests\dexxu.gol)");
     Features dams = world("w[waterway=dam]");
     for (auto dam : dams)
     {

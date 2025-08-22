@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
@@ -6,6 +6,7 @@
 #include <limits>
 #include <clarisma/math/Math.h>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace clarisma {
 
