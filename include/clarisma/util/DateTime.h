@@ -72,7 +72,16 @@ public:
 	operator int64_t() const { return timestamp_; }		// NOLINT: implicit conv ok
 	void format(char* buf, size_t bufSize, const char* format) const;
 	void format(char* buf) const;
-	
+
+	template<typename Stream>
+	void format(Stream& out) const
+	{
+		char buf[32];
+		format(buf);
+		std::string_view sv = buf;
+		out.write(sv.data(), sv.size());
+	}
+
 private:
 	int64_t timestamp_;
 };

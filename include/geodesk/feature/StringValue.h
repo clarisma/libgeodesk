@@ -92,6 +92,13 @@ public:
     ///
     const uint8_t* rawBytes() const noexcept { return str_->rawBytes(); }
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        std::string_view sv = str_->toStringView();
+        out.write(sv.data(), sv.size());
+    }
+
 private:
     const clarisma::ShortVarString* str_;
 };

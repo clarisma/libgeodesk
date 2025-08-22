@@ -25,6 +25,15 @@ struct ForeignFeatureRef
 		return clarisma::Format::integer(&buf[7], tex);
 	}
 
+	template<typename Stream>
+	void format(Stream& out) const
+	{
+		char buf[32];
+		char* p = format(buf);
+		assert(p - buf < sizeof(buf));
+		out.write(buf, p-buf);
+	}
+
 	std::string toString() const
 	{
 		char buf[32];

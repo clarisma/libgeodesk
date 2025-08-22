@@ -79,7 +79,7 @@ public:
     }
 
     template<typename Stream>
-    void writeTo(Stream& out) const
+    void format(Stream& out) const
     {
         if (isInlined())
         {
@@ -128,7 +128,7 @@ static_assert(sizeof(StringHolder) == 16, "StringHolder must be 16 bytes");
 template<typename Stream>
 Stream& operator<<(Stream& out, const StringHolder& v)
 {
-    v.writeTo(out);
+    v.format(out);
     return out;
 }
 

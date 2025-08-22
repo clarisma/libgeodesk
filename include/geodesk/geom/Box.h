@@ -318,6 +318,15 @@ public:
 	GEODESK_API void format(char* buf) const;
 	GEODESK_API std::string toString() const;
 
+	template<typename Stream>
+	void format(Stream& out) const
+	{
+		char buf[64];
+		format(buf);
+		std::string_view sv = buf;
+		out.write(sv.data(), sv.size());
+	}
+
 private:
 	/**
 	 * Overflow-safe subtraction

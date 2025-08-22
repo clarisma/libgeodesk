@@ -80,6 +80,14 @@ public:
         return buf;
     }
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        char buf[8];
+        format(buf);
+        out.write(buf, 6);
+    }
+
     std::string toString() const
     {
         char buf[8];

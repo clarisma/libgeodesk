@@ -17,7 +17,7 @@ char* Tile::formatReverse(char* end) const
 	return Format::unsignedIntegerReverse(static_cast<unsigned int>(zoom()), end);
 }
 
-
+/*
 void Tile::write(BufferWriter& out) const
 {
 	char buf[32];
@@ -25,6 +25,7 @@ void Tile::write(BufferWriter& out) const
 	char* start = formatReverse(end);
 	out.writeBytes(start, end - start);
 }
+*/
 
 
 Tile Tile::fromString(const char* s)

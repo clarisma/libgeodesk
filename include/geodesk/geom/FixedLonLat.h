@@ -51,6 +51,14 @@ public:
         return clarisma::Format::formatDouble(p, lat(), prec);
     }
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        char buf[32];
+        char* end = format(buf);
+        out.write(buf, end-buf);
+    }
+
     std::string toString() const
     {
         char buf[32];
@@ -69,9 +77,7 @@ private:
 template<typename Stream>
 Stream& operator<<(Stream& out, const FixedLonLat& lonlat)
 {
-    char buf[32];
-    lonlat.format(buf);
-    out.write(buf, std::strlen(buf));
+    lonlat.format(out);
     return out;
 }
 

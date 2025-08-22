@@ -88,6 +88,14 @@ public:
 
 	char* format(char* buf) const noexcept;
 
+	template<typename Stream>
+	void format(Stream& out) const
+	{
+		char buf[32];
+		char* p = format(buf);
+		out.write(buf, p - buf);
+	}
+
 	bool operator==(int val) const noexcept
 	{
 		return static_cast<int64_t>(*this) == val;

@@ -72,6 +72,12 @@ public:
     bool operator==(const Key&) const = default; // C++20
     bool operator!=(const Key&) const = default; // C++20
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        out.write(data(), size());
+    }
+
 private:
     // Can only be constructed by a FeatureStore
     Key(const char* data, int32_t size, int code) :

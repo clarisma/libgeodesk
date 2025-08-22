@@ -50,6 +50,14 @@ public:
 
     char* format(char* buf) const;
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        char buf[64];
+        char* p = format(buf);
+        out.write(buf, p - buf);
+    }
+
 private:
     uint8_t guid_[16];
 };

@@ -136,18 +136,21 @@ public:
 
 	std::string toString() const
 	{
-		char buf[80];
-		format(buf);
-		return {buf};
+		char buf[64];
+		buf[sizeof(buf) - 1] = '\0';
+		char* p = formatReverse(&buf[sizeof(buf) - 1]);
+		return {p};
 	}
 
 	char* formatReverse(char* end) const;
-	void write(clarisma::BufferWriter& out) const;
 
-	// TODO: conform
-	void format(char* buf) const
+	template<typename S>
+	void format(S& out) const
 	{
-		clarisma::Format::unsafe(buf, "%d/%d/%d", zoom(), column(), row());
+		char buf[64];
+		char* end = &buf[sizeof(buf)];
+		char* start = formatReverse(end);
+		out.write(start, end - start);
 	}
 
 	/**
@@ -233,10 +236,7 @@ protected:
 template<typename Stream>
 Stream& operator<<(Stream& out, Tile tile)
 {
-	char buf[64];
-	tile.format(buf);
-	std::string_view sv = buf;
-	out.write(sv.data(), sv.size());
+	tile.format(out);
 	return static_cast<Stream&>(out);
 }
 

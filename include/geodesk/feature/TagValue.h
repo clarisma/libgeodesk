@@ -290,6 +290,33 @@ public:
     // void writeXml(clarisma::Buffer& out);
         // TODO
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        switch (type())
+        {
+        case 1:     // global string
+        case 3:     // local string (fall through)
+            stringValue_.format(out);
+            break;
+        case 0:     // narrow number
+        {
+            // TODO: make more efficient by encoding in reverse
+            char buf[32];
+            char* end = clarisma::Format::integer(buf,
+                TagValues::intFromNarrowNumber(rawNumberValue()));
+            out.write(buf, end - buf);
+            break;
+        }
+        case 2:     // wide number
+            TagValues::decimalFromWideNumber(
+                rawNumberValue()).format(out);
+            break;
+        default:
+            UNREACHABLE_CASE
+        }
+    }
+
 private:
     int type() const { return static_cast<int>(taggedNumberValue_) & 3; }
     uint_fast32_t rawNumberValue() const
@@ -299,34 +326,12 @@ private:
 
     uint64_t taggedNumberValue_;
     StringValue stringValue_;
-
-    template<typename Stream>
-    friend Stream& operator<<(Stream& out, const TagValue& v);
 };
 
 template<typename Stream>
 Stream& operator<<(Stream& out, const TagValue& v)
 {
-    switch (v.type())
-    {
-    case 1:     // global string
-    case 3:     // local string (fall through)
-        out << v.stringValue_;
-        break;
-    case 0:     // narrow number
-    {
-        char buf[32];
-        char* end = clarisma::Format::integer(buf,
-            TagValues::intFromNarrowNumber(v.rawNumberValue()));
-        out.write(buf, end - buf);
-        break;
-    }
-    case 2:     // wide number
-        out << TagValues::decimalFromWideNumber(v.rawNumberValue());
-        break;
-    default:
-        UNREACHABLE_CASE
-    }
+    v.format(out);
     return out;
 }
 

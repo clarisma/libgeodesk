@@ -203,6 +203,14 @@ public:
         return FeatureUtils::format(buf, typeName(), id());
     }
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        char buf[32];
+        const char *p = format(buf);
+        out.write(buf, p - buf);
+    }
+
     [[nodiscard]] std::string toString() const
     {
         char buf[32];

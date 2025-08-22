@@ -24,6 +24,14 @@ public:
         return Format::fileSizeNice(buf, size);
     }
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        char buf[32];
+        char* p = format(buf);
+        out.write(buf, p - buf);
+    }
+
 private:
     uint64_t size_;
 };

@@ -68,7 +68,7 @@ public:
         return parentZoom;
     }
 
-    void format(char* buf) const
+    char* format(char* buf) const
     {
         Iterator it = iter();
         char* p = buf;
@@ -80,6 +80,15 @@ public:
             p = clarisma::Format::integer(p, zoom);
         }
         *p = 0;
+        return p;
+    }
+
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        char buf[64];
+        char* end = format(buf);
+        out.write(buf, end-buf);
     }
 
     std::string toString() const
