@@ -73,8 +73,7 @@ public:
 		{
 			if (p_ > buf_)
 			{
-				size_t bytesWritten;
-				file_.tryWrite(buf_, p_ - buf_, bytesWritten);
+				(void)file_.tryWriteAll(buf_, p_ - buf_);
 			}
 			if (ownFile_) file_.tryClose();
 		}
@@ -101,6 +100,7 @@ public:
 
 	void close()
 	{
+		if (p_ > buf_) flush(p_);
 		if (ownFile_) file_.close();
 	}
 

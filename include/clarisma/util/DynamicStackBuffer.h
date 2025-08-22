@@ -17,7 +17,7 @@ public:
 		end_ = buf_ + N;
     }
 
-	~DynamicStackBuffer() override // noexcept
+	~DynamicStackBuffer() noexcept override
     {
 		if (buf_ != stackBuf) delete[] buf_;
     }

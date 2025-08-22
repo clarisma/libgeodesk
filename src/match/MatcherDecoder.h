@@ -10,6 +10,7 @@ namespace geodesk {
 
 class FeatureStore;
 
+// TODO: Use Buffer
 class MatcherDecoder
 {
 public:

@@ -12,11 +12,19 @@
 
 namespace clarisma {
 
+// TODO: Clarify when buffer will be flushed
+//  Currently, will flush if write op fills it completely,
+//  so we always leave room for 1 byte
+
 class Buffer
 {
 public:
-	Buffer() : buf_(nullptr) {}
-	virtual ~Buffer() {} // TODO: make noexcept
+	Buffer() :
+		buf_(nullptr),
+		p_(nullptr),
+		end_(nullptr) {}
+
+	virtual ~Buffer() noexcept {}
 
 	const char* data() const { return buf_; }
 	char* pos() const { return p_; }
@@ -33,6 +41,10 @@ public:
 
 	virtual void filled(char *p) = 0;
 	virtual void flush(char* p) = 0;
+	void flush() { flush(p_); }
+
+	// We never leave a buffer fully filled p_ == end_,
+	// to guarantee that at least one byte will fit
 
 	void write(const void* data, size_t len)
 	{
@@ -40,7 +52,7 @@ public:
 		for (;;)
 		{
 			size_t remainingCapacity = capacityRemaining();
-			if (len <= remainingCapacity)
+			if (len < remainingCapacity)	// Don't use <=, see note above
 			{
 				std::memcpy(p_, b, len);
 				p_ += len;
@@ -63,14 +75,18 @@ public:
 	{
 		*p_++ = ch;
 		if (p_ == end_) filled(p_);
+		// We never leave a full buffer at method end
 	}
+
+	// We never leave a buffer fully filled p_ == end_,
+	// to guarantee that at least one byte will fit
 
 	void writeRepeatedChar(int ch, size_t times)
 	{
 		for (;;)
 		{
 			size_t remainingCapacity = capacityRemaining();
-			if (times < remainingCapacity)
+			if (times < remainingCapacity)		// don't use <=
 			{
 				std::memset(p_, ch, times);
 				p_ += times;
@@ -82,53 +98,6 @@ public:
 			times -= remainingCapacity;
 		}
 	}
-
-	/*
-	Buffer& operator<<(std::string_view s)
-	{
-		write(s);
-		return *this;
-	}
-
-	Buffer& operator<<(const char* s)
-	{
-		write(s, strlen(s));
-		return *this;
-	}
-
-	Buffer& operator<<(char ch)
-	{
-		writeByte(ch);
-		return *this;
-	}
-
-	Buffer& operator<<(int64_t n)
-	{
-		char buf[32];
-		char* end = buf + sizeof(buf);
-		char* start = Format::integerReverse(n, end);
-		write(start, end - start);
-		return *this;
-	}
-
-	Buffer& operator<<(uint64_t n)
-	{
-		char buf[32];
-		char* end = buf + sizeof(buf);
-		char* start = Format::unsignedIntegerReverse(n, end);
-		write(start, end - start);
-		return *this;
-	}
-
-	Buffer& operator<<(double d)
-	{
-		char buf[64];
-		char* end = buf + sizeof(buf);
-		char* start = Format::doubleReverse(&end, d);
-		write(start, end - start);
-		return *this;
-	}
-	*/
 
 	operator std::string_view() const
 	{
@@ -144,13 +113,14 @@ protected:
 	// TODO: Only works if len will fit into a flushed/resized buffer
 	void ensureCapacityUnsafe(size_t len)
 	{
+		// We never fully fill a buffer
 		if (capacityRemaining() < len) filled(p_);
-		assert(capacityRemaining() >= len);
+		assert(capacityRemaining() > len);
 	}
 
 	void putStringUnsafe(const char* s, size_t len)
 	{
-		assert(capacityRemaining() >= len);
+		assert(capacityRemaining() > len);
 		memcpy(p_, s, len);
 		p_ += len;
 	}
@@ -171,7 +141,7 @@ class DynamicBuffer : public Buffer
 {
 public:
 	explicit DynamicBuffer(size_t initialCapacity);
-	~DynamicBuffer() override;
+	~DynamicBuffer() noexcept override;
 
 	DynamicBuffer(DynamicBuffer&& other) noexcept
 	{
