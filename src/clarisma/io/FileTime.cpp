@@ -22,7 +22,7 @@ FileTime::FileTime(const char* filename)
 	File file;
     file.open(filename, File::OpenMode::READ);
 	FILETIME created, accessed, modified;
-	if (!GetFileTime(file.handle(), &created, &accessed, &modified))
+	if (!GetFileTime(file.native(), &created, &accessed, &modified))
 	{
 		IOException::checkAndThrow();
 	}

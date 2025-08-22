@@ -29,7 +29,7 @@ class IndexFile : protected ExpandableMappedFile
 public:
 	IndexFile();
 
-	void open(const char* filename, int /* OpenMode */ mode, int valueWidth);
+	void open(const char* filename, OpenMode mode, int valueWidth);
 
 
 	uint32_t get(uint64_t key);

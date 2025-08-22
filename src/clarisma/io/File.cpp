@@ -11,57 +11,30 @@
 
 namespace clarisma {
 
-
-
-// TODO
-void File::error(const char* what)
-{
-
-}
-
-
 ByteBlock File::readBlock(size_t length)
 {
     ByteBlock block(length);
-    size_t bytesRead = read(block.data(), block.size());
-    if(bytesRead != length)
-    {
-        throw IOException("Read %ull bytes instead of %lld",
-            bytesRead, length);
-    }
+    FileHandle::readAll(block.data(), block.size());
     return block;
 }
 
-// TODO: use smart pointer!
 ByteBlock File::readAll(const char* filename)
 {
     File file;
-    file.open(filename, READ);
-    uint64_t size = file.size();
-    uint8_t* data = new uint8_t[size];
-    uint64_t bytesRead = file.read(data, size);
-    if (bytesRead != size)
-    {
-        throw IOException("%s: Expected to read %lld bytes instead of %lld",
-            filename, size, bytesRead);
-    }
-    return ByteBlock(data, size);
+    file.open(filename, OpenMode::READ);
+    uint64_t size = file.getSize();
+    return ByteBlock(file.readAll<uint8_t>(size), size);
 }
 
 
 std::string File::readString(const char* filename)
 {
     File file;
-    file.open(filename, READ);
-    uint64_t size = file.size();
+    file.open(filename, OpenMode::READ);
+    uint64_t size = file.getSize();
     std::string s;
     s.resize(size+1);
-    uint64_t bytesRead = file.read(&s[0], size);
-    if (bytesRead != size)
-    {
-        throw IOException("%s: Expected to read %lld bytes instead of %lld",
-            filename, size, bytesRead);
-    }
+    file.FileHandle::readAll(&s[0], size);
     s[size] = '\0';
     return s;
 }
@@ -70,13 +43,8 @@ std::string File::readString(const char* filename)
 void File::writeAll(const char* filename, const void* data, size_t size)
 {
     File file;
-    file.open(filename, WRITE | CREATE | REPLACE_EXISTING);
-    uint64_t bytesWritten = file.write(data, size);
-    if (bytesWritten != size)
-    {
-        throw IOException("%s: Expected to write %lld bytes instead of %lld",
-            filename, size, bytesWritten);
-    }
+    file.open(filename, OpenMode::WRITE | OpenMode::CREATE | OpenMode::REPLACE_EXISTING);
+    file.FileHandle::writeAll(data, size);
 }
 
 } // namespace clarisma

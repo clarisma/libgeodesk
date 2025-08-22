@@ -13,7 +13,7 @@ IndexFile::IndexFile() :
 {
 }
 
-void IndexFile::open(const char* filename, int /* OpenMode */ mode, int valueWidth)
+void IndexFile::open(const char* filename, OpenMode mode, int valueWidth)
 {
 	ExpandableMappedFile::open(filename, mode);
 	assert(valueWidth > 0 && valueWidth <= 32);

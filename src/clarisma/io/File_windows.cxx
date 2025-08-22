@@ -6,6 +6,7 @@
 
 namespace clarisma {
 
+/*
 void File::open(const char* filename, int mode)
 {
     DWORD access = 0;
@@ -181,21 +182,9 @@ size_t File::tryWriteAt(uint64_t ofs, const void* buf, size_t length)
         &bytesWritten, &ovl);
     return res ? bytesWritten : 0;
 }
+*/
 
-
-std::string File::fileName() const
-{
-    TCHAR buf[MAX_PATH];
-    if (GetFinalPathNameByHandle(fileHandle_, buf, MAX_PATH, FILE_NAME_NORMALIZED) > 0) 
-    {
-        return std::string(buf);
-    }
-    else 
-    {
-        return "<invalid file>";
-    }
-}
-
+/*
 
 void File::makeSparse()
 {
@@ -246,6 +235,7 @@ void File::zeroFill(uint64_t ofs, size_t length)
     }
 }
 
+*/
 
 bool File::exists(const char* fileName)
 {
@@ -279,6 +269,7 @@ void File::rename(const char* from, const char* to)
     }
 }
 
+/*
 std::string File::path(FileHandle handle)
 {
     // TODO: long-path support (res will be > MAX_PATH)
@@ -286,17 +277,9 @@ std::string File::path(FileHandle handle)
     DWORD res = GetFinalPathNameByHandleA(handle, buf, MAX_PATH, FILE_NAME_NORMALIZED);
     return std::string(buf, res);
 }
+*/
 
-uint64_t File::allocatedSize() const
-{
-    FILE_STANDARD_INFO fileInfo;
-    if (!GetFileInformationByHandleEx(fileHandle_, FileStandardInfo,
-        &fileInfo, sizeof(fileInfo)))
-    {
-        IOException::checkAndThrow();
-    }
-    return fileInfo.AllocationSize.QuadPart;
-}
+/*
 
 bool File::tryLock(uint64_t ofs, uint64_t length, bool shared)
 {
@@ -314,5 +297,7 @@ bool File::tryUnlock(uint64_t ofs, uint64_t length)
     overlapped.OffsetHigh = ofs >> 32;
     return UnlockFileEx(fileHandle_, 0, length & 0xFFFFFFFF, length >> 32, &overlapped);
 }
+
+*/
 
 } // namespace clarisma

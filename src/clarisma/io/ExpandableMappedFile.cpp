@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/io/ExpandableMappedFile.h>
+#include <algorithm>
 #include <cassert>
 #include <clarisma/cli/Console.h>
 #include <clarisma/util/Bits.h>
@@ -19,12 +20,12 @@ ExpandableMappedFile::ExpandableMappedFile() :
 }
 
 
-void ExpandableMappedFile::open(const char* filename, int /* OpenMode */ mode)
+void ExpandableMappedFile::open(const char* filename, OpenMode mode)
 {
 	File::open(filename, mode | OpenMode::SPARSE);
 		// must always be a sparse file
-	uint64_t fileSize = size();
-	if (mode & OpenMode::WRITE)
+	uint64_t fileSize = getSize();
+	if (has(mode, OpenMode::WRITE))
 	{
         uint64_t segmentLen = SEGMENT_LENGTH;
             // This gets around the odr issue of using SEGMENT_LENGTH in call
@@ -41,7 +42,8 @@ void ExpandableMappedFile::open(const char* filename, int /* OpenMode */ mode)
 		mainMappingSize_ = fileSize;
 	}
 	mainMapping_ = reinterpret_cast<byte*>(map(0, mainMappingSize_,
-		mode & (MappingMode::READ | MappingMode::WRITE)));
+		static_cast<int>(mode & (OpenMode::READ | OpenMode::WRITE))));
+		// TODO: assumes OpenMode and MappingMode have same r/w flags, check!
 	// Console::msg("Created main mapping at %p (size %llu)", mainMapping_, mainMappingSize_);
 }
 

@@ -9,6 +9,8 @@
 #include <clarisma/util/DateTime.h>
 #include <clarisma/util/MutableDataPtr.h>
 
+// TODO: This macro clashes with the enum value in Store::LockLevel
+#undef LOCK_READ
 
 namespace clarisma {
 
@@ -38,6 +40,7 @@ public:
 		CREATE = 1 << 2,		// TODO: expected to match File::OpenMode
 								// TODO: Create always implies WRITE
 		EXCLUSIVE = 1 << 7
+			// TODO: ensure does not collide with FileHandle::OpenMode
 	};
 
 	Store();
@@ -112,9 +115,9 @@ protected:
 			return File::exists(fileName_.c_str());
 		}
 
-		void open(int openMode)
+		void open(OpenMode openMode)
 		{
-			File::open(fileName_.c_str(), openMode);
+			File::open(fileName_.c_str(), static_cast<OpenMode>(openMode));
 		}
 
 		void remove() const

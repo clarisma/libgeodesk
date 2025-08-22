@@ -68,12 +68,12 @@ void Console::restoreStream(int streamNo)
 	if(!isTerminal_[streamNo]) return;
 
 	// Restore the old console mode
-	SetConsoleMode(handle_[streamNo], prevConsoleMode_[streamNo]);
+	SetConsoleMode(handle_[streamNo].native(), prevConsoleMode_[streamNo]);
 	// Re-enable the cursor
 	CONSOLE_CURSOR_INFO cursorInfo;
-	GetConsoleCursorInfo(handle_[streamNo], &cursorInfo);
+	GetConsoleCursorInfo(handle_[streamNo].native(), &cursorInfo);
 	cursorInfo.bVisible = true; 
-	SetConsoleCursorInfo(handle_[streamNo], &cursorInfo);
+	SetConsoleCursorInfo(handle_[streamNo].native(), &cursorInfo);
 }
 
 void Console::print(Stream stream, const char* s, size_t len)
@@ -81,7 +81,7 @@ void Console::print(Stream stream, const char* s, size_t len)
 	int streamNo = static_cast<int>(stream);
 	DWORD written;
 	// WriteConsoleA(hConsole_, s, static_cast<DWORD>(len), &written, NULL);
-	WriteFile(handle_[streamNo], s, static_cast<DWORD>(len), &written, NULL);
+	WriteFile(handle_[streamNo].native(), s, static_cast<DWORD>(len), &written, NULL);
 }
 
 char Console::readKeyPress()

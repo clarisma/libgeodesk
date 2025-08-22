@@ -31,7 +31,7 @@ class ExpandableMappedFile : public MappedFile
 public:
 	ExpandableMappedFile();
 
-	void open(const char* filename, int /* OpenMode */ mode);
+	void open(const char* filename, OpenMode mode);
 	
 	/**
 	 * Obtains a pointer to the data which begins at the given 

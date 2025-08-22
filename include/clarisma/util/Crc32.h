@@ -7,6 +7,8 @@
 
 namespace clarisma {
 
+// TODO: Switch to CRC32C (hardware support, greater strength)
+
 class Crc32
 {
 public:

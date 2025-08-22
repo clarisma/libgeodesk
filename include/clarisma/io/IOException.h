@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <clarisma/io/FileError.h>
 #include <clarisma/text/Format.h>
 
 namespace clarisma {
@@ -27,6 +28,9 @@ public:
 
     explicit IOException(unsigned long errorCode) :
         IOException(getMessage(static_cast<int>(errorCode))) {}
+
+    explicit IOException(FileError error) :
+        IOException(getMessage(static_cast<int>(error))) {}
 
     static std::string getMessage(int errorCode);
 #ifdef _WIN32
