@@ -84,6 +84,7 @@ char* Xml::unescapeInplace(char* s)
     return write;
 }
 
+// TODO: Get rid of this in favor of Buffer variant
 void Xml::writeEscaped(BufferWriter& out, std::string_view s)
 {
     const char* start = s.data();
@@ -164,5 +165,88 @@ void Xml::writeEscaped(BufferWriter& out, std::string_view s)
         out.write(lastWritten, end - lastWritten);
     }
 }
+
+
+void Xml::writeEscaped(Buffer& out, std::string_view s)
+{
+    const char* start = s.data();
+    const char* end = start + s.size();
+    const char* lastWritten = start;
+
+    for (const char* p = start; p < end; ++p)
+    {
+        char currentChar = *p;
+        const char* replacement = nullptr;
+        size_t replacementLen = 0;
+        char hexBuf[8];
+
+        switch (currentChar)
+        {
+        case '&':
+            replacement = "&amp;";
+            replacementLen = 5;
+            break;
+
+        case '<':
+            replacement = "&lt;";
+            replacementLen = 4;
+            break;
+
+        case '>':
+            replacement = "&gt;";
+            replacementLen = 4;
+            break;
+
+        case '"':
+            replacement = "&quot;";
+            replacementLen = 6;
+            break;
+
+        case '\'':
+            replacement = "&apos;";
+            replacementLen = 6;
+            break;
+
+        default:
+        {
+            unsigned char uc = static_cast<unsigned char>(currentChar);
+            if (uc < 32)
+            {
+                // Convert unprintable character to "&#xHH;"
+                hexBuf[0] = '&';
+                hexBuf[1] = '#';
+                hexBuf[2] = 'x';
+                Format::hex(hexBuf + 3, uc, 2); // 2 hex digits for one byte (00–ff)
+                hexBuf[5] = ';';
+                replacement = hexBuf;
+                replacementLen = 6; // "&" + "#" + "x" + 2 hex digits + ";"
+            }
+            break;
+        }
+        }
+
+        if (replacement)
+        {
+            // Write everything before the special/unprintable char
+            if (p > lastWritten)
+            {
+                out.write(lastWritten, p - lastWritten);
+            }
+
+            // Write the replacement sequence
+            out.write(replacement, replacementLen);
+
+            // Move past the replaced character
+            lastWritten = p + 1;
+        }
+    }
+
+    // Write any remaining text after the loop
+    if (lastWritten < end)
+    {
+        out.write(lastWritten, end - lastWritten);
+    }
+}
+
 
 } // namespace clarisma
