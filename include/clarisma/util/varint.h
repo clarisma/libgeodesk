@@ -188,6 +188,7 @@ inline int32_t fromZigzag(uint32_t v)
 	return static_cast<int32_t>((v >> 1) ^ -static_cast<int32_t>(v & 1));
 }
 
+/*
 
 class Varint
 {
@@ -228,6 +229,9 @@ Stream& operator<<(Stream& out, SignedVarint v)
 	out.write(reinterpret_cast<const char*>(buf), p-buf);
 	return static_cast<Stream&>(out);
 }
+
+*/
+
 
 
 } // namespace clarisma

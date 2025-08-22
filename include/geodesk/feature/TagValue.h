@@ -78,7 +78,7 @@ public:
         case 0:     // narrow number
             return TagValues::intFromNarrowNumber(rawNumberValue());
         case 2:     // wide number
-            return TagValues::decimalFromWideNumber(rawNumberValue());
+            return static_cast<double>(TagValues::decimalFromWideNumber(rawNumberValue()));
         default:
             UNREACHABLE_CASE
         }

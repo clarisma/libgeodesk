@@ -7,6 +7,7 @@
 #include <string_view>
 #include <type_traits>
 #include <clarisma/alloc/Block.h>
+// #include <clarisma/math/Decimal.h>
 #include <clarisma/text/Format.h>
 
 namespace clarisma {
@@ -206,32 +207,25 @@ private:
 	FILE* file_;
 };
 
-template<typename T>
-concept BufferLike = std::is_base_of_v<Buffer, T>;
-
-template<BufferLike B>
-B& operator<<(B& buf, std::string_view s)
+inline Buffer& operator<<(Buffer& buf, std::string_view s)
 {
 	buf.write(s);
 	return buf;
 }
 
-template<BufferLike B>
-B& operator<<(B& buf, const char* s)
+inline Buffer& operator<<(Buffer& buf, const char* s)
 {
 	buf.write(s, std::strlen(s));
 	return buf;
 }
 
-template<BufferLike B>
-B& operator<<(B& buf, char ch)
+inline Buffer& operator<<(Buffer& buf, char ch)
 {
 	buf.writeByte(ch);
 	return buf;
 }
 
-template<BufferLike B>
-B& operator<<(B& buf, int64_t n)
+inline Buffer& operator<<(Buffer& buf, int64_t n)
 {
 	char tmp[32];
 	char* end = tmp + sizeof(tmp);
@@ -240,15 +234,13 @@ B& operator<<(B& buf, int64_t n)
 	return buf;
 }
 
-template<BufferLike B>
-B& operator<<(B& buf, int n)
+inline Buffer& operator<<(Buffer& buf, int n)
 {
 	buf << static_cast<int64_t>(n);
 	return buf;
 }
 
-template<BufferLike B>
-B& operator<<(B& buf, uint64_t n)
+inline Buffer& operator<<(Buffer& buf, uint64_t n)
 {
 	char tmp[32];
 	char* end = tmp + sizeof(tmp);
@@ -257,14 +249,46 @@ B& operator<<(B& buf, uint64_t n)
 	return buf;
 }
 
-template<BufferLike B>
-B& operator<<(B& buf, double d)
+inline Buffer& operator<<(Buffer& buf, double d)
 {
 	char tmp[64];
 	char* end = tmp + sizeof(tmp);
 	char* start = Format::doubleReverse(&end, d);
 	buf.write(start, end - start);
 	return buf;
+}
+
+/*
+inline Buffer& operator<<(Buffer& buf, Decimal d)
+{
+	d.format(buf);
+	return buf;
+}
+*/
+
+template<typename T>
+concept BufferFormattable =
+	requires (const T& t, Buffer& b)
+{
+	{ t.template format<Buffer>(b) } -> std::same_as<void>;
+};
+
+template<typename T> requires BufferFormattable<T>
+Buffer& operator<<(Buffer& buf, T value)
+{
+	value.template format<Buffer>(buf);
+	return buf;
+}
+
+template<typename B, typename T>
+B& operator<<(B& b, const T& value)
+	requires std::is_base_of_v<Buffer, std::remove_reference_t<B>> &&
+		 !std::is_same_v<std::remove_reference_t<B>, Buffer> &&
+		 BufferFormattable<T>
+{
+	// Call the Buffer& core (no payload template here), then return B&.
+	static_cast<Buffer&>(b) << value;
+	return b;
 }
 
 } // namespace clarisma

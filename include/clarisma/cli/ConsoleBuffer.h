@@ -21,6 +21,7 @@ public:
 		// printf("\n\nFlushed CW\n\n");
 	}
 
+	/*
 	ConsoleBuffer& operator<<(std::string_view s)
 	{
 		write(s);
@@ -70,6 +71,7 @@ public:
 		write(start, end - start);
 		return *this;
 	}
+	*/
 
 	ConsoleBuffer& blank();
 	ConsoleBuffer& timestamp();

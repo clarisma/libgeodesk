@@ -43,7 +43,7 @@ public:
 		return static_cast<int>(value_ & 15);
 	}
 
-	operator int64_t() const noexcept
+	explicit operator int64_t() const noexcept
 	{
 		if (value_ == INVALID) return value_;
 		if (scale() == 0) return mantissa();
@@ -60,7 +60,7 @@ public:
 		return static_cast<uint32_t>(static_cast<int64_t>(*this));
 	}
 
-	operator double() const noexcept
+	explicit operator double() const noexcept
 	{
 		if (value_ == INVALID) return std::numeric_limits<double>::quiet_NaN();
 		double m = static_cast<double>(mantissa());
@@ -114,7 +114,7 @@ private:
 	int64_t value_;
 };
 
-
+/*
 template<typename Stream>
 Stream& operator<<(Stream& out, const Decimal& d)
 {
@@ -123,5 +123,6 @@ Stream& operator<<(Stream& out, const Decimal& d)
 	out.write(buf, p - buf);
 	return out;
 }
+*/
 
 } // namespace clarisma
