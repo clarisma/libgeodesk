@@ -5,13 +5,10 @@
 
 #include <iosfwd>
 #include <clarisma/text/Format.h>
-// #include <clarisma/util/Buffer.h>
 #include <clarisma/compile/unreachable.h>
 #include <clarisma/math/Math.h>
 #include <geodesk/feature/StringValue.h>
 #include <geodesk/feature/TagValues.h>
-
-#include "clarisma/util/Xml.h"
 
 namespace geodesk {
 
@@ -284,6 +281,19 @@ public:
     /// empty string.
     ///
     StringValue storedString() const noexcept { return stringValue_; }
+
+    /// @brief The tag value as a Decimal, if its native storage format
+    /// is numeric. If the value is stored as a string, returns its
+    /// global-string code (or 0 for a local string).
+    ///
+    clarisma::Decimal storedNumber() const noexcept
+    {
+        if (type() == TagValues::Type::WIDE_NUMBER)
+        {
+            return TagValues::decimalFromWideNumber(rawNumberValue());
+        }
+        return TagValues::decimalFromNarrowNumber(rawNumberValue());
+    }
 
     /// @brief Writes the tag value to the given Buffer,
     /// XMl/HTML-encoded.

@@ -5,9 +5,8 @@
 
 #include <clarisma/io/File.h>
 #include <clarisma/io/FileBuffer3.h>
+#include <clarisma/util/Crc32C.h>
 #include <clarisma/util/DateTime.h>
-
-#include "clarisma/util/Crc32.h"
 
 namespace clarisma {
 
@@ -30,9 +29,9 @@ public:
 
 class FreeStore
 {
+public:
 	class Transaction;
 
-public:
 	virtual ~FreeStore() {}
 
 	void open(const char* fileName);

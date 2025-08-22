@@ -23,10 +23,10 @@ public:
         LOCAL_STRING = 3
     };
 
-    static const int MAX_COMMON_KEY = (1 << 13) - 2;
-	static const int MIN_NUMBER = -256;
-    static const int MAX_WIDE_NUMBER = (1 << 30) - 1 + MIN_NUMBER;
-    static const int MAX_NARROW_NUMBER = (1 << 16) - 1 + MIN_NUMBER;
+    static constexpr int MAX_COMMON_KEY = (1 << 13) - 2;
+	static constexpr int MIN_NUMBER = -256;
+    static constexpr int MAX_WIDE_NUMBER = (1 << 30) - 1 + MIN_NUMBER;
+    static constexpr int MAX_NARROW_NUMBER = (1 << 16) - 1 + MIN_NUMBER;
 
     static constexpr uint16_t EMPTY_TABLE_KEY = 0x8001;
     static constexpr uint32_t EMPTY_TABLE_MARKER = EMPTY_TABLE_KEY;
@@ -52,6 +52,12 @@ public:
         int64_t mantissa = static_cast<int64_t>(val >> 2) + MIN_NUMBER;
         int scale = val & 3;
         return clarisma::Decimal(mantissa, scale);
+    }
+
+    static clarisma::Decimal decimalFromNarrowNumber(uint32_t val)
+    {
+        int64_t mantissa = static_cast<int64_t>(val) + MIN_NUMBER;
+        return clarisma::Decimal(mantissa, 0);
     }
 
     static bool isNumericValue(clarisma::Decimal d)

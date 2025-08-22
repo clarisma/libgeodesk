@@ -4,6 +4,7 @@
 #pragma once
 
 #include <clarisma/text/TextTemplate.h>
+#include <clarisma/util/Pointers.h>
 #include <cassert>
 #include <cstring>
 #include <stdexcept>
@@ -33,7 +34,7 @@ TextTemplate::Ptr TextTemplate::compile(std::string_view text)
     {
         if (*p == '{')
         {
-            len = p-literalStart;
+            len = Pointers::nearOffset(p, literalStart);
             totalTextLen += len;
             parts.emplace_back(literalStart-start, len);
             ++p;
@@ -69,7 +70,7 @@ TextTemplate::Ptr TextTemplate::compile(std::string_view text)
                 throw std::runtime_error("Empty parameter name");
             }
 
-            len = paramEnd-paramStart;
+            len = Pointers::nearOffset(paramEnd, paramStart);
             totalTextLen += len;
             parts.emplace_back(paramStart-start, len);
             literalStart = p + 1;

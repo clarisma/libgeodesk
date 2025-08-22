@@ -35,7 +35,7 @@ void FreeStore::Transaction::save()
     journalBuffer_.write(&checksum, sizeof(checksum));
     journalBuffer_.flush();
     journalBuffer_.fileHandle().syncData();
-    journalChecksum_ = Crc32();
+    journalChecksum_ = Crc32C();
     stagedBlocks_.clear();
 
     // TODO: write journal header here?
