@@ -39,7 +39,7 @@ public:
 		for (;;)
 		{
 			size_t remainingCapacity = capacityRemaining();
-			if (len < remainingCapacity)
+			if (len <= remainingCapacity)
 			{
 				std::memcpy(p_, b, len);
 				p_ += len;
@@ -191,19 +191,6 @@ protected:
 	void grow();
 };
 
-/*
-class FrugalBuffer : public DynamicBuffer
-{
-public:
-	FrugalBuffer(size_t initialHeapCapacity);
-	virtual ~DynamicBuffer() {};
-
-	virtual void flush();
-
-protected:
-	void grow();
-};
-*/
 
 // TODO: replace with FileBuffer2
 class FileBuffer : public Buffer
