@@ -3,10 +3,12 @@
 
 #pragma once
 
-#include <utility>
+#include <clarisma/util/streamable.h> // for << operator support
 #include <geodesk/feature/TagValue.h>
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 /// @brief A lightweight wrapper for a key string.
 ///
@@ -89,12 +91,5 @@ private:
 
     friend class FeatureStore;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const Key& k)
-{
-    out.write(k.data(), k.size());
-	return static_cast<Stream&>(out);
-}
 
 } // namespace geodesk

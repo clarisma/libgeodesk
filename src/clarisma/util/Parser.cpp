@@ -18,7 +18,7 @@ void Parser::error(const char* format, ...)
 	vsnprintf(buf, sizeof(buf), format, args);
 	va_end(args);
 	StringBuilder sb;
-	sb.writeString(buf);
+	sb << buf;
 	sb.writeByte('\n');
 	Highlighter::highlight(sb, pStart_, pNext_ - pStart_, 1, 31);
 	throw ParseException(sb.toString());

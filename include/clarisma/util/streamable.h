@@ -2,6 +2,36 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#include <iosfwd>      // forward declares std::ostream
+#include <concepts>    // std::same_as
+
+namespace clarisma
+{
+
+/// @brief Type supports: value.template format<std::ostream>(os)
+template<typename T>
+concept OstreamFormattable =
+    requires (const T& t, std::ostream& os)
+{
+    { t.template format<std::ostream>(os) } -> std::same_as<void>;
+};
+
+/// @brief ostream inserter enabled only for OstreamFormattable types.
+/// @details Header stays light via <iosfwd>. TUs that actually *use*
+///          streaming must include <ostream>/<iostream>.
+template<typename T>
+    requires OstreamFormattable<T>
+std::ostream& operator<<(std::ostream& os, const T& value)
+{
+    value.template format<std::ostream>(os);
+    return os;
+}
+
+} // namespace clarisma
+
+/*
+
+#pragma once
 #include <concepts>
 #include <cstddef>
 #include <type_traits>
@@ -51,3 +81,5 @@ Stream& operator<<(Stream& s, const T& value)
 }
 
 } // namespace clarisma
+
+*/

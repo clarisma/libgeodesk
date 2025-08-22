@@ -3,28 +3,17 @@
 
 #pragma once
 
-#include <clarisma/util/StreamWriter.h>
 #include <clarisma/util/DynamicStackBuffer.h>
 
 namespace clarisma {
 
-// TODO: deprecate, or derive directly from DynamicStackBuffer
-class StringBuilder : public AbstractStreamWriter<StringBuilder>
+class StringBuilder : public DynamicStackBuffer<1024>
 {
 public:
-	explicit StringBuilder()
+	std::string toString() const
 	{
-		setBuffer(&buf_);
+		return { buf_, length() };
 	}
-
-	std::string toString()
-	{
-		flush();
-		return { buf_.data(), buf_.length() };
-	}
-
-private:
-	DynamicStackBuffer<1024> buf_;
 };
 
 } // namespace clarisma

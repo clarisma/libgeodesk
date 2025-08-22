@@ -5,6 +5,7 @@
 
 #include <limits>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
 #include <geodesk/geom/Box.h>
 
 namespace clarisma
@@ -15,6 +16,7 @@ class BufferWriter;
 namespace geodesk {
 
 typedef int32_t ZoomLevel;
+using clarisma::operator<<;
 
 /// \cond lowlevel
 
@@ -232,13 +234,6 @@ protected:
 	
 	uint32_t tile_;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, Tile tile)
-{
-	tile.format(out);
-	return static_cast<Stream&>(out);
-}
 
 } // namespace geodesk
 

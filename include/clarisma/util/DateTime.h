@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <istream>
 #include <clarisma/util/StringViewBuffer.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 // TODO: Use std::time_t instead?
 
@@ -85,15 +86,5 @@ public:
 private:
 	int64_t timestamp_;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, DateTime dt)
-{
-	char buf[32];
-	dt.format(buf);
-	std::string_view sv = buf;
-	out.write(sv.data(), sv.size());
-	return static_cast<Stream&>(out);
-}
 
 } // namespace clarisma

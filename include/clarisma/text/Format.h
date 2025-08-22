@@ -10,6 +10,7 @@
 #include <thread>
 #include <string>
 #include <cstdarg>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace clarisma {
 
@@ -283,15 +284,5 @@ public:
 private:
     int64_t value_;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const FormattedLong v)
-{
-    char buf[32];
-    char* p = v.format(buf);
-    out.write(buf, p-buf);
-    return out;
-}
-
 
 } // namespace clarisma

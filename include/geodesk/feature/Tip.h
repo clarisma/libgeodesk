@@ -5,8 +5,11 @@
 
 #include <cstdint>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 // internal; needed by GOL
 
@@ -101,16 +104,6 @@ private:
 };
 
 inline constexpr Tip Tip::ROOT{1};
-
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const Tip& tip)
-{
-    char buf[8];
-    tip.format(buf);
-    out.write(buf, 6);
-    return out;
-}
 
 } // namespace geodesk
 

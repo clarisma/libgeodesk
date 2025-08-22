@@ -115,15 +115,4 @@ private:
 	int64_t value_;
 };
 
-/*
-template<typename Stream>
-Stream& operator<<(Stream& out, const Decimal& d)
-{
-	char buf[32];
-	char* p = d.format(buf);
-	out.write(buf, p - buf);
-	return out;
-}
-*/
-
 } // namespace clarisma

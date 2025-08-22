@@ -318,4 +318,32 @@ protected:
 	char* end_;
 };
 
+
+
+template<typename T>
+concept BufferWriterFormattable =
+	requires (const T& t, BufferWriter& b)
+{
+	{ t.template format<BufferWriter>(b) } -> std::same_as<void>;
+};
+
+template<typename T> requires BufferWriterFormattable<T>
+BufferWriter& operator<<(BufferWriter& buf, const T& value)
+{
+	value.template format<BufferWriter>(buf);
+	return buf;
+}
+
+template<typename B, typename T>
+B& operator<<(B& b, const T& value)
+	requires std::is_base_of_v<BufferWriter, std::remove_reference_t<B>> &&
+		 !std::is_same_v<std::remove_reference_t<B>, BufferWriter> &&
+		 BufferWriterFormattable<T>
+{
+	// Call the Buffer& core (no payload template here), then return B&.
+	static_cast<BufferWriter&>(b) << value;
+	return b;
+}
+
+
 } // namespace clarisma

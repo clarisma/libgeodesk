@@ -4,10 +4,13 @@
 #pragma once
 
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
 #include <geodesk/feature/Tex.h>
 #include <geodesk/feature/Tip.h>
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 /// \cond lowlevel
 ///
@@ -49,16 +52,6 @@ struct ForeignFeatureRef
 	Tip tip;
 	Tex tex;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const ForeignFeatureRef& ref)
-{
-	char buf[32];
-	char* p = ref.format(buf);
-	assert(p - buf < sizeof(buf));
-	out.write(buf, p-buf);
-	return out;
-}
 
 // \endcond
 

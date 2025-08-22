@@ -6,14 +6,15 @@
 #include <functional> // for std::hash
 #include <cstdint>
 #include <string>
-#include <cstring>
-#include <cmath>
 #include <geodesk/geom/Coordinate.h>
 #include <geodesk/geom/Mercator.h>
 #include <clarisma/math/Math.h>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 /// @brief A WGS-84 coordinate pair in 100-nanodegree fixed-point precision.
 ///
@@ -73,13 +74,6 @@ private:
     int32_t lon_;
     int32_t lat_;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const FixedLonLat& lonlat)
-{
-    lonlat.format(out);
-    return out;
-}
 
 } // namespace geodesk
 

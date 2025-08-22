@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
-#include <array>
 #include <cstdint>
 #include <cstring>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace clarisma {
 
@@ -61,15 +61,5 @@ public:
 private:
     uint8_t guid_[16];
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const UUID& uuid)
-{
-    char buf[64];
-    char* p = uuid.format(buf);
-    out.write(buf, p - buf);
-    return out;
-}
-
 
 } // namespace clarisma

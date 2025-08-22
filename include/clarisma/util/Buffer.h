@@ -65,6 +65,24 @@ public:
 		if (p_ == end_) filled(p_);
 	}
 
+	void writeRepeatedChar(int ch, size_t times)
+	{
+		for (;;)
+		{
+			size_t remainingCapacity = capacityRemaining();
+			if (times < remainingCapacity)
+			{
+				std::memset(p_, ch, times);
+				p_ += times;
+				return;
+			}
+			std::memset(p_, ch, remainingCapacity);
+			p_ += remainingCapacity;
+			filled(p_);
+			times -= remainingCapacity;
+		}
+	}
+
 	/*
 	Buffer& operator<<(std::string_view s)
 	{
@@ -249,6 +267,12 @@ inline Buffer& operator<<(Buffer& buf, uint64_t n)
 	return buf;
 }
 
+inline Buffer& operator<<(Buffer& buf, uint32_t n)
+{
+	buf << static_cast<uint64_t>(n);
+	return buf;
+}
+
 inline Buffer& operator<<(Buffer& buf, double d)
 {
 	char tmp[64];
@@ -274,7 +298,7 @@ concept BufferFormattable =
 };
 
 template<typename T> requires BufferFormattable<T>
-Buffer& operator<<(Buffer& buf, T value)
+Buffer& operator<<(Buffer& buf, const T& value)
 {
 	value.template format<Buffer>(buf);
 	return buf;

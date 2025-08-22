@@ -3,10 +3,13 @@
 
 #pragma once
 
-#include <geodesk/geom/Coordinate.h>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
+#include <geodesk/geom/Coordinate.h>
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 /// @brief A WGS-84 coordinate pair.
 ///
@@ -42,13 +45,5 @@ public:
 	double lon;
 	double lat;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const LonLat& lonlat)
-{
-	lonlat.format(out);
-	return out;
-}
-
 
 } // namespace geodesk

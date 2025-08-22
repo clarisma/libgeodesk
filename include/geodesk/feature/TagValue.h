@@ -3,7 +3,9 @@
 
 #pragma once
 
+#include <iosfwd>
 #include <clarisma/text/Format.h>
+// #include <clarisma/util/Buffer.h>
 #include <clarisma/compile/unreachable.h>
 #include <clarisma/math/Math.h>
 #include <geodesk/feature/StringValue.h>
@@ -12,6 +14,7 @@
 #include "clarisma/util/Xml.h"
 
 namespace geodesk {
+
 /// @brief The value of a Tag. Converts implicitly to `std::string`,
 /// `double`, `int` or `bool`.
 ///
@@ -328,11 +331,18 @@ private:
     StringValue stringValue_;
 };
 
-template<typename Stream>
-Stream& operator<<(Stream& out, const TagValue& v)
+inline std::ostream& operator<<(std::ostream& out, const TagValue& v)
 {
     v.format(out);
     return out;
 }
+
+/*
+inline clarisma::Buffer& operator<<(clarisma::Buffer& out, const TagValue& v)
+{
+    v.format(out);
+    return out;
+}
+*/
 
 } // namespace geodesk

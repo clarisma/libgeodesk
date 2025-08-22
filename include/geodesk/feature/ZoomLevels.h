@@ -6,9 +6,11 @@
 #include <clarisma/text/Format.h>
 #include <clarisma/util/BitIterator.h>
 #include <clarisma/util/Bits.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace geodesk {
 
+using clarisma::operator<<;
 
 ///
 /// \cond lowlevel
@@ -103,17 +105,6 @@ public:
 private:
     uint32_t levels_;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, ZoomLevels levels)
-{
-    char buf[64];
-    levels.format(buf);
-    std::string_view sv = buf;
-    out.write(sv.data(), sv.size());
-    return static_cast<Stream&>(out);
-}
-
 
 // \endcond
 } // namespace geodesk

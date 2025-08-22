@@ -28,11 +28,11 @@ public:
 		ownFile_ = false;
 	}
 
-	explicit FileBuffer3(char* buf, size_t size)
+	explicit FileBuffer3(std::span<char> buf)
 	{
-		buf_ = buf;
+		buf_ = buf.data();
 		p_ = buf_;
-		end_ = buf_ + size;
+		end_ = buf_ + buf.size();
 		ownBuffer_ = false;
 		ownFile_ = false;
 	}
@@ -90,6 +90,14 @@ public:
 		file_.open(filename, mode);
 		ownFile_ = true;
 	}
+
+	void open(const std::filesystem::path& path, File::OpenMode mode =
+		File::OpenMode::CREATE | File::OpenMode::WRITE | File::OpenMode::REPLACE_EXISTING)
+	{
+		std::string strFile = path.string();
+		open(strFile.c_str(), mode);
+	}
+
 
 	void close()
 	{

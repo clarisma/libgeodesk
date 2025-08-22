@@ -11,6 +11,7 @@
 #include <limits>
 #include <string>
 #include <utility>
+#include <clarisma/util/streamable.h> // for << operator support
 #include <geodesk/export.h>
 #include <geodesk/geom/Coordinate.h>
 #ifdef GEODESK_WITH_GEOS
@@ -18,6 +19,8 @@
 #endif
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 /// @brief An axis-aligned bounding box. A Box represents minimum and
 /// maximum X and Y coordinates in a Mercator-projected plane. It can
@@ -363,15 +366,5 @@ private:
 	int32_t m_maxX;
 	int32_t m_maxY;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const Box& box)
-{
-	char buf[64];
-	box.format(buf);
-	std::string_view sv = buf;
-	out.write(sv.data(), sv.size());
-	return static_cast<Stream&>(out);
-}
 
 } // namespace geodesk

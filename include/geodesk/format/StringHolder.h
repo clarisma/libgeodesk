@@ -5,8 +5,11 @@
 #include <cstdint>
 #include <clarisma/math/Decimal.h>
 #include <clarisma/util/ShortVarString.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 class StringHolder 
 {
@@ -124,12 +127,5 @@ private:
 };
 
 static_assert(sizeof(StringHolder) == 16, "StringHolder must be 16 bytes");
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const StringHolder& v)
-{
-    v.format(out);
-    return out;
-}
 
 } // namespace geodesk

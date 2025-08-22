@@ -3,6 +3,7 @@
 
 #pragma once
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 // TODO: move to text
 
@@ -35,15 +36,5 @@ public:
 private:
     uint64_t size_;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, FileSize size)
-{
-    char buf[32];
-    size.format(buf);
-    std::string_view sv = buf;
-    out.write(sv.data(), sv.size());
-    return static_cast<Stream&>(out);
-}
 
 } // namespace clarisma
