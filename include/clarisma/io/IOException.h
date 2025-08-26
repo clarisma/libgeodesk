@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <clarisma/io/FileError.h>
+#include <clarisma/text/Format.h>
 
 namespace clarisma {
 
@@ -20,7 +21,12 @@ public:
     explicit IOException(const std::string& message)
         : std::runtime_error(message) {}
 
+    template <typename... Args>
+    explicit IOException(const char* message, Args... args)
+        : std::runtime_error(Format::format(message, args...)) {}
+
     // explicit IOException(FileError error);
+
 #ifdef _WIN32
     static std::string getMessage(const char* moduleName, int errorCode);
 #endif
