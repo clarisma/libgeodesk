@@ -22,7 +22,7 @@ void* MappedFile::map(uint64_t offset, uint64_t length, int mode)
     if (!mappingHandle)
     {
         // Error creating file mapping
-        IOException::checkAndThrow();
+        throw IOException();
     }
 
     void* mappedAddress = MapViewOfFile(mappingHandle, 
@@ -34,7 +34,7 @@ void* MappedFile::map(uint64_t offset, uint64_t length, int mode)
     if (!mappedAddress)
     {
         // Error mapping view of file
-        IOException::checkAndThrow();
+        throw IOException();
     }
     return mappedAddress;
 }
@@ -46,8 +46,8 @@ void MappedFile::unmap(void* mappedAddress, uint64_t /* length */)
 
 void MappedFile::sync(const void* address, uint64_t length)
 {
-    if (!FlushViewOfFile(address, length)) IOException::checkAndThrow();
-    if (!FlushFileBuffers(handle_)) IOException::checkAndThrow();
+    if (!FlushViewOfFile(address, length)) throw IOException();
+    if (!FlushFileBuffers(handle_)) throw IOException();
 }
 
 void MappedFile::prefetch(void* address, uint64_t length)

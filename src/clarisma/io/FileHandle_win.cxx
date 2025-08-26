@@ -73,7 +73,7 @@ void FileHandle::open(const char* fileName, OpenMode mode)
         {
             throw FileNotFoundException(fileName);
         }
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -91,7 +91,7 @@ void FileHandle::makeSparse()
         &bytesReturned,       // Bytes returned
         NULL))                // Not using overlapped I/O
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -112,7 +112,7 @@ void FileHandle::zeroFill(uint64_t ofs, size_t length)
         &bytesReturned,              // lpBytesReturned
         NULL))                       // lpOverlapped
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -190,6 +190,53 @@ bool File::tryUnlock(uint64_t ofs, uint64_t length)
     overlapped.Offset = ofs & 0xFFFFFFFF;
     overlapped.OffsetHigh = ofs >> 32;
     return UnlockFileEx(fileHandle_, 0, length & 0xFFFFFFFF, length >> 32, &overlapped);
+}
+*/
+
+std::string FileHandle::errorMessage()
+{
+    LPSTR buffer = nullptr;
+    size_t size = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+        static_cast<DWORD>(error()),
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&buffer, 0, NULL);
+    std::string message(buffer, size);
+    LocalFree(buffer);
+    return message;
+}
+
+
+std::string FileHandle::errorMessage(const char* fileName)
+{
+    LPSTR buffer = nullptr;
+    size_t msgLen = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+        static_cast<DWORD>(error()),
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&buffer, 0, NULL);
+
+    size_t fileNameLen = std::strlen(fileName);
+    std::string s;
+    s.reserve(fileNameLen + 2 + msgLen);
+    s.append(fileName, fileNameLen);
+    s.append(": ", 2);
+    s.append(buffer, msgLen);
+    LocalFree(buffer);
+    return s;
+}
+
+/*
+void FileHandle::formatError(char* buf, int bufSize)
+{
+    int errorCode = getL
+    size_t size = FormatMessageA(
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&buf, bufSize, NULL);
 }
 */
 

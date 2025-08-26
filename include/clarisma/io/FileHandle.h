@@ -120,6 +120,8 @@ public:
     Native native() const noexcept { return handle_; }
 
     static FileError error();
+    static std::string errorMessage();
+    static std::string errorMessage(const char* fileName);
 
     bool tryOpen(const char* fileName, OpenMode mode) noexcept;
     void open(const char* fileName, OpenMode mode);

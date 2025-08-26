@@ -30,10 +30,7 @@ inline bool FileHandle::tryClose() noexcept
 
 inline void FileHandle::close()
 {
-    if (!tryClose())
-    {
-        IOException::checkAndThrow();
-    }
+    if (!tryClose()) throw IOException();
 }
 
 /// @brief Get logical file size.
@@ -50,10 +47,7 @@ inline bool FileHandle::tryGetSize(uint64_t& size) const noexcept
 inline uint64_t FileHandle::getSize() const
 {
     uint64_t s;
-    if (!tryGetSize(s))
-    {
-        IOException::checkAndThrow();
-    }
+    if (!tryGetSize(s)) throw IOException();
     return s;
 }
 
@@ -71,7 +65,7 @@ inline bool FileHandle::trySetSize(uint64_t newSize) noexcept
 /// @brief Set logical file size or throw on error.
 inline void FileHandle::setSize(uint64_t newSize)
 {
-    if (!trySetSize(newSize)) IOException::checkAndThrow();
+    if (!trySetSize(newSize)) throw IOException();
 }
 
 /// @brief Grow file to at least newSize.
@@ -96,7 +90,7 @@ inline uint64_t FileHandle::allocatedSize() const
             &info,
             sizeof(info)))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
     return static_cast<uint64_t>(info.AllocationSize.QuadPart);
 }
@@ -112,10 +106,7 @@ inline bool FileHandle::trySeek(uint64_t posAbsolute) noexcept
 /// @brief Seek or throw on error.
 inline void FileHandle::seek(uint64_t posAbsolute)
 {
-    if (!trySeek(posAbsolute))
-    {
-        IOException::checkAndThrow();
-    }
+    if (!trySeek(posAbsolute)) throw IOException();
 }
 
 /// @brief One-shot read at current pointer (no loop).
@@ -134,10 +125,7 @@ inline bool FileHandle::tryRead(
 inline void FileHandle::read(
     void* buf, size_t length, size_t& bytesRead)
 {
-    if (!tryRead(buf, length, bytesRead))
-    {
-        IOException::checkAndThrow();
-    }
+    if (!tryRead(buf, length, bytesRead)) throw IOException();
 }
 
 /// @brief Loop until length or EOF; no throw on clean EOF.
@@ -172,7 +160,7 @@ inline void FileHandle::readAll(void* buf, size_t length)
 {
     if (!tryReadAll(buf, length))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -214,10 +202,7 @@ inline bool FileHandle::tryReadAt(
 inline void FileHandle::readAt(
     uint64_t ofs, void* buf, size_t length, size_t& bytesRead) const
 {
-    if (!tryReadAt(ofs, buf, length, bytesRead))
-    {
-        IOException::checkAndThrow();
-    }
+    if (!tryReadAt(ofs, buf, length, bytesRead)) throw IOException();
 }
 
 /// @brief Loop positional until length or EOF; no throw on EOF.
@@ -277,7 +262,7 @@ inline void FileHandle::readAllAt(
 {
     if (!tryReadAllAt(ofs, buf, length))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -298,10 +283,7 @@ inline bool FileHandle::tryWrite(
 inline void FileHandle::write(
     const void* buf, size_t length, size_t& bytesWritten)
 {
-    if (!tryWrite(buf, length, bytesWritten))
-    {
-        IOException::checkAndThrow();
-    }
+    if (!tryWrite(buf, length, bytesWritten)) throw IOException();
 }
 
 /// @brief Loop until all bytes written; no throw on partial? (false)
@@ -334,10 +316,7 @@ inline bool FileHandle::tryWriteAll(
 /// @brief Loop until all bytes written; throw on any failure.
 inline void FileHandle::writeAll(const void* buf, size_t length)
 {
-    if (!tryWriteAll(buf, length))
-    {
-        IOException::checkAndThrow();
-    }
+    if (!tryWriteAll(buf, length)) throw IOException();
 }
 
 /// @brief One-shot positional write (OVERLAPPED).
@@ -377,7 +356,7 @@ inline void FileHandle::writeAt(
 {
     if (!tryWriteAt(ofs, buf, length, bytesWritten))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -441,23 +420,20 @@ inline void FileHandle::writeAllAt(
 {
     if (!tryWriteAllAt(ofs, buf, length))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
 /// @brief Flush file data/metadata; no data-only primitive on Win32.
 inline bool FileHandle::trySyncData() noexcept
 {
-    return ::FlushFileBuffers(handle_) != 0;
+    return FlushFileBuffers(handle_) != 0;
 }
 
 /// @brief Flush or throw on error.
 inline void FileHandle::syncData()
 {
-    if (!trySyncData())
-    {
-        IOException::checkAndThrow();
-    }
+    if (!trySyncData()) throw IOException();
 }
 
 /// @brief Same as syncData() on Windows.
@@ -531,20 +507,15 @@ inline byte* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
     uint64_t maxSize = offset + length;
     HANDLE mappingHandle = CreateFileMappingA(handle_, NULL, protect,
         static_cast<DWORD>(maxSize >> 32), static_cast<DWORD>(maxSize), NULL);
-    if (!mappingHandle)
-    {
-        IOException::checkAndThrow();
-    }
+    if (!mappingHandle) throw IOException();
 
     void* mappedAddress = MapViewOfFile(mappingHandle,
         writable ? FILE_MAP_ALL_ACCESS : FILE_MAP_READ,
         (DWORD)((offset >> 32) & 0xFFFFFFFF),
         (DWORD)(offset & 0xFFFFFFFF), length);
     CloseHandle(mappingHandle);
-    if (!mappedAddress)
-    {
-        IOException::checkAndThrow();
-    }
+    if (!mappedAddress) throw IOException();
+        // TODO: Does CloseHandle reset errno?
     return static_cast<byte*>(mappedAddress);
 }
 

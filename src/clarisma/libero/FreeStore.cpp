@@ -170,7 +170,7 @@ int FreeStore::ensureIntegrity(
             }
             return 0;
         }
-        throw IOException(error);
+        throw IOException();
     }
 
     uint64_t journalTransactionId;

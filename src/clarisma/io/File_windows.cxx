@@ -246,7 +246,7 @@ bool File::exists(const char* fileName)
         if (error != ERROR_FILE_NOT_FOUND && error != ERROR_PATH_NOT_FOUND)
         {
             // "true" errors
-            IOException::checkAndThrow();
+            throw IOException();
         }
         return false;
     }
@@ -257,7 +257,7 @@ void File::remove(const char* fileName)
 {
     if (!DeleteFile(fileName))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -265,7 +265,7 @@ void File::rename(const char* from, const char* to)
 {
     if (!MoveFileEx(from, to, MOVEFILE_REPLACE_EXISTING))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 

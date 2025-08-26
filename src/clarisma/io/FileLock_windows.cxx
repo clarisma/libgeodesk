@@ -13,7 +13,7 @@ void FileLock::lock(FileHandle fileHandle, uint64_t offset, uint64_t length, boo
 
     if (!LockFileEx(fileHandle.native(), shared ? 0 : LOCKFILE_EXCLUSIVE_LOCK, 0, length & 0xFFFFFFFF, length >> 32, &overlapped_))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
     fileHandle_ = fileHandle;
     lockLength_ = length;
@@ -38,7 +38,7 @@ void FileLock::release()
 {
     if (!UnlockFileEx(fileHandle_.native(), 0, lockLength_ & 0xFFFFFFFF, lockLength_ >> 32, &overlapped_))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
     fileHandle_ = INVALID_HANDLE_VALUE;
     lockLength_ = 0;

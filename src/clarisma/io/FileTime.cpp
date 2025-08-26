@@ -24,7 +24,7 @@ FileTime::FileTime(const char* filename)
 	FILETIME created, accessed, modified;
 	if (!GetFileTime(file.native(), &created, &accessed, &modified))
 	{
-		IOException::checkAndThrow();
+		throw IOException();
 	}
 	created_ = fromWindowsTime(created);
 	accessed_ = fromWindowsTime(accessed);

@@ -80,10 +80,7 @@ inline bool FileHandle::tryClose() noexcept
 
 inline void FileHandle::close()
 {
-    if (!tryClose())
-    {
-        IOException::checkAndThrow();
-    }
+    if (!tryClose()) throw IOException();
 }
 
 /// @brief Get logical file size.
@@ -100,10 +97,7 @@ inline bool FileHandle::tryGetSize(uint64_t& size) const noexcept
 inline uint64_t FileHandle::getSize() const
 {
     uint64_t s;
-    if (!tryGetSize(s))
-    {
-        IOException::checkAndThrow();
-    }
+    if (!tryGetSize(s)) throw IOException();
     return s;
 }
 
@@ -117,10 +111,7 @@ inline bool FileHandle::trySetSize(uint64_t newSize) noexcept
 /// @brief Set logical file size or throw on error.
 inline void FileHandle::setSize(uint64_t newSize)
 {
-    if (!trySetSize(newSize))
-    {
-        IOException::checkAndThrow();
-    }
+    if (!trySetSize(newSize)) throw IOException();
 }
 
 /// @brief Grow file to at least newSize.
@@ -144,7 +135,7 @@ inline uint64_t FileHandle::allocatedSize() const
     struct stat st;
     if (::fstat(handle_, &st) != 0)
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
     // POSIX st_blocks is in 512-byte units.
     return static_cast<uint64_t>(st.st_blocks) * 512ull;
@@ -160,10 +151,7 @@ inline bool FileHandle::trySeek(uint64_t posAbsolute) noexcept
 /// @brief Seek or throw on error.
 inline void FileHandle::seek(uint64_t posAbsolute)
 {
-    if (!trySeek(posAbsolute))
-    {
-        IOException::checkAndThrow();
-    }
+    if (!trySeek(posAbsolute)) throw IOException();
 }
 
 /// @brief One-shot read at current pointer (no loop).
@@ -181,7 +169,7 @@ inline void FileHandle::read(
 {
     if (!tryRead(buf, length, bytesRead))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -213,7 +201,7 @@ inline void FileHandle::readAll(void* buf, size_t length)
 {
     if (!tryReadAll(buf, length))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -233,7 +221,7 @@ inline void FileHandle::readAt(
 {
     if (!tryReadAt(ofs, buf, length, bytesRead))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -269,7 +257,7 @@ inline void FileHandle::readAllAt(
 {
     if (!tryReadAllAt(ofs, buf, length))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -288,7 +276,7 @@ inline void FileHandle::write(
 {
     if (!tryWrite(buf, length, bytesWritten))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -320,7 +308,7 @@ inline void FileHandle::writeAll(const void* buf, size_t length)
 {
     if (!tryWriteAll(buf, length))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -340,7 +328,7 @@ inline void FileHandle::writeAt(
 {
     if (!tryWriteAt(ofs, buf, length, bytesWritten))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -376,7 +364,7 @@ inline void FileHandle::writeAllAt(
 {
     if (!tryWriteAllAt(ofs, buf, length))
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -393,10 +381,7 @@ inline bool FileHandle::trySyncData() noexcept
 /// @brief Flush or throw on error.
 inline void FileHandle::syncData()
 {
-    if (!trySyncData())
-    {
-        IOException::checkAndThrow();
-    }
+    if (!trySyncData()) throw IOException();
 }
 
 /// @brief Full metadata flush.
@@ -408,10 +393,7 @@ inline bool FileHandle::trySync() noexcept
 /// @brief Full metadata flush or throw.
 inline void FileHandle::sync()
 {
-    if (!trySync())
-    {
-        IOException::checkAndThrow();
-    }
+    if (!trySync()) throw IOException();
 }
 
 inline bool FileHandle::tryLock(uint64_t ofs, uint64_t length, bool shared)
@@ -441,9 +423,9 @@ inline byte* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
     void* mappedAddress = mmap(nullptr, length, prot, MAP_SHARED, handle_, offset);
     if (mappedAddress == MAP_FAILED)
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
-    return return static_cast<byte*>(mappedAddress);
+    return static_cast<byte*>(mappedAddress);
 }
 
 inline void FileHandle::unmap(void* address, uint64_t length)

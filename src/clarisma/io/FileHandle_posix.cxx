@@ -17,7 +17,7 @@ void FileHandle::open(const char* fileName, OpenMode mode)
     if (!tryOpen(fileName, mode))
     {
         if(errno == ENOENT) throw FileNotFoundException(fileName);
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -45,7 +45,7 @@ void FileHandle::allocate(uint64_t ofs, size_t length)
     // Could use posix_fallocate on Linux as well, buf fallocate is more efficient
     if (fallocate(handle_, 0, ofs, length) != 0)
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 #endif
 }
@@ -154,5 +154,41 @@ bool File::tryUnlock(uint64_t ofs, uint64_t length)
 }
  */
 
+
+std::string FileHandle::errorMessage()
+{
+    char buf[256];
+
+#if defined(__GLIBC__) && defined(_GNU_SOURCE)
+    char* p = strerror_r(errno, buf, sizeof(buf));
+    return std::string(p);
+#else
+    int res = strerror_r(errno, buf, sizeof(buf));
+    return std::string(res == 0 ? buf : "Error while retrieving message");
+#endif
+}
+
+std::string FileHandle::errorMessage(const char* fileName)
+{
+    char buf[256];
+    const char *msg;
+
+#if defined(__GLIBC__) && defined(_GNU_SOURCE)
+    msg = strerror_r(errno, buf, sizeof(buf));
+#else
+    int res = strerror_r(errno, buf, sizeof(buf));
+    msg = (res == 0) ? buf : "Error while retrieving message";
+#endif
+
+    size_t fileNameLen = std::strlen(fileName);
+    size_t msgLen = std::strlen(msg);
+
+    std::string s;
+    s.reserve(fileNameLen + 2 + msgLen);
+    s.append(fileName, fileNameLen);
+    s.append(": ", 2);
+    s.append(msg, msgLen);
+    return s;
+}
 
 } // namespace clarisma
