@@ -5,6 +5,7 @@
 
 #include <clarisma/io/File.h>
 #include <clarisma/io/FileBuffer3.h>
+#include <clarisma/io/MemoryMapping.h>
 #include <clarisma/util/Crc32C.h>
 #include <clarisma/util/DateTime.h>
 
@@ -34,8 +35,18 @@ public:
 
 	virtual ~FreeStore() {}
 
+	enum class OpenMode
+	{
+		WRITE = 1,
+		CREATE = 2,
+		EXCLUSIVE = 4,
+		TRY_EXCLUSIVE = 8
+	};
+
 	void open(const char* fileName);
-	void open(const char* fileName, Transaction* tx);
+	void open(const char* fileName, OpenMode mode);
+	// void open(const char* fileName, Transaction* tx);
+	void close();
 
 protected:
 	struct BasicHeader
@@ -43,29 +54,34 @@ protected:
 		uint32_t magic;
 		uint16_t versionLow;
 		uint16_t versionHigh;
-		uint32_t checksum;
-		uint8_t dirtyAllocFlag;
+		uint64_t commitId;
 		uint8_t pageSizeShift;
+		uint8_t activeSnapshot;
 		uint16_t reserved;
-		uint64_t transactionId;
+		uint32_t reserved2;
 	};
 
 	struct Header : BasicHeader
 	{
-
 		uint32_t totalPages;
 		uint32_t freeRangeIndex;
 	};
 
 	static constexpr int BLOCK_SIZE = 4096;
+	static constexpr int HEADER_SIZE = 512;
 	static constexpr uint64_t SEGMENT_LENGTH = 1024 * 1024 * 1024;	// 1 GB
+	static constexpr int LOCK_OFS = HEADER_SIZE;
+	static constexpr int CHECKSUMMED_HEADER_SIZE = HEADER_SIZE - sizeof(uint32_t) * 2;
+	static constexpr uint32_t INVALID_FREE_RANGE_INDEX = 0xffff'ffff;
 
 	struct HeaderBlock : Header
 	{
-		uint8_t unused[4096 - sizeof(Header)];
+		uint8_t reserved[CHECKSUMMED_HEADER_SIZE - sizeof(Header)];
+		uint32_t checksum;
+		uint32_t unused;
 	};
 
-	static_assert(sizeof(HeaderBlock) == BLOCK_SIZE);
+	static_assert(sizeof(HeaderBlock) == HEADER_SIZE);
 
 	enum class JournalStatus
 	{
@@ -88,9 +104,8 @@ protected:
 	static bool verifyJournal(std::span<const byte> journal);
 	static void applyJournal(FileHandle writableStore,
 		std::span<const byte> journal,
-		HeaderBlock* header, bool isHeaderValid);
-	static bool verifyHeader(HeaderBlock* header);
-	static void sealHeader(HeaderBlock* header);
+		HeaderBlock* header);
+	static bool verifyHeader(const HeaderBlock* header);
 	std::string getJournalFileName() const
 	{
 		return fileName_ + ".journal";
@@ -106,6 +121,11 @@ private:
 	File file_;
 	std::string fileName_;
 	uint32_t pageSizeShift_ = 12;	// TODO: default 4KB page
+	bool writeable_ = false;
+	bool lockedExclusively_ = false;
+	MemoryMapping mapping_;
 };
+
+CLARISMA_ENUM_FLAGS(FreeStore::OpenMode)
 
 } // namespace clarisma

@@ -25,7 +25,27 @@ constexpr EnumType& operator&=(EnumType& a, EnumType b) noexcept           \
 a = a & b;                                                             \
 return a;                                                              \
 }                                                                          \
-constexpr auto has(EnumType a, EnumType b) noexcept                                  \
+constexpr EnumType operator~(EnumType a) noexcept           \
+{                                                                          \
+    return static_cast<EnumType>(~static_cast<uint64_t>(a));         \
+}                                                                       \
+constexpr auto has(EnumType a, EnumType b) noexcept                       \
 {                                                                          \
 return static_cast<bool>(a & b);                                          \
+}                                                                         \
+constexpr auto hasAny(EnumType a, EnumType b) noexcept              \
+{                                                                          \
+    return static_cast<bool>(a & b);                                          \
+}                                                                         \
+constexpr auto hasAll(EnumType a, EnumType b) noexcept              \
+{                                                                          \
+    return (a & b) == b;                                          \
+}                                                                         \
+
+
+/*
+constexpr bool operator bool(EnumType e) noexcept                        \
+{                                                                        \
+    return static_cast<uint64_t>(e) != 0;                               \
 }
+*/

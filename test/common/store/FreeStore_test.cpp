@@ -34,7 +34,7 @@ protected:
 	}
 };
 
-/*
+
 TEST_CASE("FreeStore")
 {
 	const char *filename = R"(d:\geodesk\tests\freestore.bin)";
@@ -43,41 +43,41 @@ TEST_CASE("FreeStore")
 	TestFreeStore store;
 
 	std::remove(filename);
-	store.open(filename, File::OpenMode::READ | File::OpenMode::WRITE |
-		File::OpenMode::CREATE);
-	TestFreeStore::Transaction t0(&store);
+	store.open(filename, FreeStore::OpenMode::WRITE | FreeStore::OpenMode::CREATE);
+	TestFreeStore::Transaction t0(store);
 	t0.begin();
 	t0.createStore();
 	t0.commit();
 	t0.end();
 
-	TestFreeStore::Transaction t1(&store);
+	TestFreeStore::Transaction t1(store);
 	t1.begin();
 	uint32_t a = t1.allocPages(20);
 	uint32_t b = t1.allocPages(1000);
 	uint32_t c = t1.allocPages(200'000);
 	uint32_t d = t1.allocPages(100'000);
-	t1.dumpFreePages();
+	t1.dumpFreeRanges();
 	t1.commit();
 	t1.end();
 
-	TestFreeStore::Transaction t2(&store);
+	TestFreeStore::Transaction t2(store);
 	t2.begin();
 	t2.freePages(a, 20);
 	t2.commit();
-	t2.dumpFreePages();
+	t2.dumpFreeRanges();
 	t2.end();
 
-	TestFreeStore::Transaction t3(&store);
+	TestFreeStore::Transaction t3(store);
 	t3.begin();
 	t3.freePages(b, 1000);
 	t3.commit();
-	t3.dumpFreePages();
+	t3.dumpFreeRanges();
 	t3.end();
 
 	store.close();
 }
 
+/*
 
 TEST_CASE("FeatureStore simulation")
 {

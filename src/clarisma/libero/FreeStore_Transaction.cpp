@@ -11,12 +11,21 @@
 namespace clarisma {
 
 
+void FreeStore::Transaction::begin()
+{
+}
+
+void FreeStore::Transaction::end()
+{
+    // TODO: delete journal
+}
+
 void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
 {
     assert ((ofs & (BLOCK_SIZE - 1)) == 0);
     assert (content);
 
-    auto [it, inserted] = stagedBlocks_.insert(ofs);
+    auto [it, inserted] = editedBlocks_.try_emplace(ofs, content);
     if (!inserted) return;
 
     journalBuffer_.write(&ofs, sizeof(ofs));
@@ -27,25 +36,52 @@ void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
 
 void FreeStore::Transaction::save()
 {
-    uint64_t trailer = JOURNAL_END_MARKER_FLAG;
-    // TODO: DAF
+    uint64_t trailer = JOURNAL_END_MARKER_FLAG | journalChecksum_.get();
+
     journalBuffer_.write(&trailer, sizeof(trailer));
-    journalChecksum_.update(&trailer, sizeof(trailer));
-    uint64_t checksum = journalChecksum_.get();
-    journalBuffer_.write(&checksum, sizeof(checksum));
     journalBuffer_.flush();
     journalBuffer_.fileHandle().syncData();
     journalChecksum_ = Crc32C();
-    stagedBlocks_.clear();
+    editedBlocks_.clear();
 
     // TODO: write journal header here?
     // TODO: what if client never calls commit() after save()?
 }
 
+
+void FreeStore::Transaction::commit()
+{
+    uint64_t trailer = JOURNAL_END_MARKER_FLAG | journalChecksum_.get();
+
+    journalBuffer_.write(&trailer, sizeof(trailer));
+    journalBuffer_.flush();
+    journalBuffer_.fileHandle().syncData();
+
+    for (auto [ofs, content] : editedBlocks_)
+    {
+        store_.file_.writeAllAt(ofs, content, BLOCK_SIZE);
+    }
+    store_.file_.syncData();
+
+    header_.commitId++;
+    Crc32C crc;
+    crc.update(&header_, CHECKSUMMED_HEADER_SIZE);
+    header_.checksum = crc.get();
+    store_.file_.writeAllAt(0, &header_, sizeof(header_));
+    store_.file_.syncData();
+
+    journalChecksum_ = Crc32C();
+    // TODO: REset journal header
+    editedBlocks_.clear();
+}
+
+
 uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
 {
     assert(requestedPages > 0);
     assert(requestedPages <= (SEGMENT_LENGTH >> store_.pageSizeShift_));
+
+    header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
 
     // checkFreeTrees();
     // LOGS << "Allocating " << requestedPages << " pages\n";
@@ -148,6 +184,8 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
 {
     assert(pages > 0);
     assert(pages <= SEGMENT_LENGTH >> store_.pageSizeShift_);
+
+    header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
 
     // checkFreeTrees();
     // LOGS << firstPage << ": Freeing " << pages << " pages\n";

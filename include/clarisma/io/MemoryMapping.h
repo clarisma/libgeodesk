@@ -29,6 +29,26 @@ public:
     {
     }
 
+    MemoryMapping(MemoryMapping&& other) noexcept :
+        data_(std::exchange(other.data_, nullptr)),
+        size_(std::exchange(other.size_, 0))
+    {
+    }
+
+    MemoryMapping& operator=(MemoryMapping&& other) noexcept
+    {
+        if (this != &other)
+        {
+            if (data_) FileHandle::unmap(data_, size_);
+            data_ = std::exchange(other.data_, nullptr);
+            size_ = std::exchange(other.size_, 0);
+        }
+        return *this;
+    }
+
+    MemoryMapping(const MemoryMapping&) = delete;
+    MemoryMapping& operator=(const MemoryMapping&) = delete;
+
     ~MemoryMapping()
     {
         if (data_) FileHandle::unmap(data_, size_);
@@ -39,17 +59,17 @@ public:
 
     operator std::span<std::byte>() noexcept
     {
-        return { data_, static_cast<size_t>(size_) };
+        return { data_,size_ };
     }
 
     operator std::span<const std::byte>() const noexcept
     {
-        return { data_, static_cast<size_t>(size_) };
+        return { data_, size_ };
     }
 
 private:
     byte* data_ = nullptr;
-    uint64_t size_ = 0;
+    size_t size_ = 0;
 };
 
 } // namespace clarisma
