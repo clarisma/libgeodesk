@@ -159,7 +159,7 @@ TEST_CASE("FeatureStore simulation")
 
 	std::vector<Blob> tiles;
 
-	const char *filename = R"(c:\geodesk\tests\fstore-sim2.bin)";
+	const char *filename = R"(d:\geodesk\tests\bstore-sim2.bin)";
 
 	Console console;
 	TestBlobStore store;
