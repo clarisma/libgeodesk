@@ -4,6 +4,7 @@
 #include <clarisma/libero/FreeStore_Transaction.h>
 #include <clarisma/util/Crc32.h>
 #include <cassert>
+#include <cstdio>
 #include <random>
 
 #include "clarisma/io/MemoryMapping.h"
@@ -117,6 +118,9 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
             // Perfect fit
             freeByStart_.erase(it);
             --header_.freeRanges;
+
+            assert(freeByStart_.size() == header_.freeRanges);
+            assert(freeBySize_.size() == header_.freeRanges);
             return firstPage;
         }
 
@@ -130,14 +134,20 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
         */
 
         bool garbageFlag = static_cast<bool>(*it & 1);
-        auto hint = std::next(it);
+        uint32_t leftoverSize = freePages - requestedPages;
+        uint32_t leftoverStart = firstPage + requestedPages;
+        //  auto hint = std::next(it);
         freeByStart_.erase(it);
-        freeByStart_.insert(hint, (static_cast<uint64_t>(
-            firstPage + requestedPages) << 32) |
-            ((freePages - requestedPages) << 1) |
+        freeByStart_.insert(/* hint, */
+            (static_cast<uint64_t>(leftoverStart) << 32) |
+            (leftoverSize << 1) |
             garbageFlag);
+        // TODO: hint asserts
+
+        freeBySize_.insert((static_cast<uint64_t>(leftoverSize) << 32) | leftoverStart);
 
         assert(freeByStart_.size() == header_.freeRanges);
+        assert(freeBySize_.size() == header_.freeRanges);
 
         return firstPage;
     }
@@ -169,6 +179,7 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
             << firstRemainingPage;
         */
         assert(freeByStart_.size() == header_.freeRanges);
+        assert(freeBySize_.size() == header_.freeRanges);
         return firstPage;
     }
 
@@ -179,10 +190,11 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
 
     header_.totalPages = firstPage + requestedPages;
     assert(freeByStart_.size() == header_.freeRanges);
+    assert(freeBySize_.size() == header_.freeRanges);
     return firstPage;
 }
 
-
+// TODO: Doesn't work, erase() invalidates iterators
 void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
 {
     assert(pages > 0);
@@ -215,6 +227,7 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
             // LOGS << first << ": Trimmed " << size << " from end";
         }
         assert(freeByStart_.size() == header_.freeRanges);
+        assert(freeBySize_.size() == header_.freeRanges);
         return;
     }
 
@@ -229,8 +242,7 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
             // coalesce with right neighbor
             uint32_t rightSize = static_cast<uint32_t>(*right) >> 1;
             pages += rightSize;
-            auto next = std::next(right);
-            freeByStart_.erase(right);
+            right = freeByStart_.erase(right);
             auto itSize = freeBySize_.lower_bound(
                 (static_cast<uint64_t>(rightSize) << 32) | rightStart);
             if (itSize == freeBySize_.end() ||
@@ -241,7 +253,6 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
             }
             freeBySize_.erase(itSize);
             --header_.freeRanges;
-            right = next;
         }
     }
     if (!freeByStart_.empty() && right != freeByStart_.begin())
@@ -255,7 +266,7 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
             // coalesce with left neighbor
             firstPage = leftStart;
             pages += leftSize;
-            freeByStart_.erase(left);
+            right = freeByStart_.erase(left);
             auto itSize = freeBySize_.lower_bound(
                 (static_cast<uint64_t>(leftSize) << 32) | leftStart);
             if (itSize == freeBySize_.end() ||
@@ -271,10 +282,12 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
     freeByStart_.insert(right,
         (static_cast<uint64_t>(firstPage) << 32) |
         (pages << 1) | 1);
+        // TODO: hint asserts
     freeBySize_.insert(
         (static_cast<uint64_t>(pages) << 32) | firstPage);
     ++header_.freeRanges;
     assert(freeByStart_.size() == header_.freeRanges);
+    assert(freeBySize_.size() == header_.freeRanges);
 }
 
 void FreeStore::Transaction::writeFreeRangeIndex()
@@ -296,7 +309,8 @@ void FreeStore::Transaction::writeFreeRangeIndex()
     }
     uint32_t indexSize = (header_.freeRanges + 1) * sizeof(uint64_t);
     uint32_t indexSizeInPages = store_.pagesForBytes(indexSize);
-    auto it = freeBySize_.lower_bound(indexSizeInPages);
+    auto it = freeBySize_.lower_bound(
+        static_cast<uint64_t>(indexSizeInPages) << 32);
     uint32_t indexPage;
     if (it != freeBySize_.end()) [[likely]]
     {
