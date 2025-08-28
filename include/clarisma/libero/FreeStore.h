@@ -6,7 +6,6 @@
 #include <clarisma/io/File.h>
 #include <clarisma/io/FileBuffer3.h>
 #include <clarisma/io/MemoryMapping.h>
-#include <clarisma/util/Crc32C.h>
 #include <clarisma/util/DateTime.h>
 
 namespace clarisma {
@@ -31,6 +30,7 @@ public:
 class FreeStore
 {
 public:
+	class Journal;
 	class Transaction;
 
 	virtual ~FreeStore() {}
@@ -65,6 +65,7 @@ protected:
 	{
 		uint32_t totalPages;
 		uint32_t freeRangeIndex;
+		uint32_t freeRanges;
 	};
 
 	static constexpr int BLOCK_SIZE = 4096;
@@ -106,9 +107,9 @@ protected:
 		std::span<const byte> journal,
 		HeaderBlock* header);
 	static bool verifyHeader(const HeaderBlock* header);
-	std::string getJournalFileName() const
+	const char* journalFileName() const
 	{
-		return fileName_ + ".journal";
+		return journalFileName_.c_str();
 	}
 
 	virtual void gatherUsedRanges(std::vector<uint64_t>& ranges) = 0;
@@ -119,7 +120,7 @@ protected:
 
 private:
 	File file_;
-	std::string fileName_;
+	std::string journalFileName_;
 	uint32_t pageSizeShift_ = 12;	// TODO: default 4KB page
 	bool writeable_ = false;
 	bool lockedExclusively_ = false;

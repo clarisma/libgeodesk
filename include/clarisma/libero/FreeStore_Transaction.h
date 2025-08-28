@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <clarisma/libero/FreeStore.h>
+#include <clarisma/libero/FreeStore_Journal.h>
 #include "clarisma/data/BTreeSet.h"
 #include "clarisma/data/HashMap.h"
 #include "clarisma/data/HashSet.h"
@@ -31,16 +31,21 @@ public:
 	/// @content the block's current content (must be 4 KB in length)
 	///
 	void stageBlock(uint64_t ofs, const void* content);
-	void save();
-	void commit();
+	void commit(bool isFinal = true);
 	void end();
 
 	uint32_t allocPages(uint32_t requestedPages);
 	void freePages(uint32_t firstPage, uint32_t pages);
 	void dumpFreeRanges();
 
+	void beginCreateStore();
+	void endCreateStore();
+
+	Header& header() noexcept { return header_; }
+
 private:
 	void buildFreeRangeIndex();
+	void readFreeRangeIndex();
 	void writeFreeRangeIndex();
 
 	[[nodiscard]] bool isFirstPageOfSegment(uint32_t page) const
@@ -49,13 +54,10 @@ private:
 	}
 
 	FreeStore& store_;
-	File journalFile_;
-	FileBuffer3 journalBuffer_;
+	Journal journal_;
 	HashMap<uint64_t,const void*> editedBlocks_;
 	BTreeSet<uint64_t> freeBySize_;
 	BTreeSet<uint64_t> freeByStart_;
-	uint32_t totalPageCount_ = 0;
-	uint32_t freeRangeCount_ = 0;
 	Crc32C journalChecksum_;
 	HeaderBlock header_;
 };

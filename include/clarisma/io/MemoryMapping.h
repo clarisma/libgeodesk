@@ -19,6 +19,8 @@ namespace clarisma {
 class MemoryMapping
 {
 public:
+    MemoryMapping() {}
+
     MemoryMapping(byte* data, uint64_t size) :
         data_(data),
         size_(size) {}

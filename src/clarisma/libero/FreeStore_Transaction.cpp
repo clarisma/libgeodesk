@@ -4,6 +4,7 @@
 #include <clarisma/libero/FreeStore_Transaction.h>
 #include <clarisma/util/Crc32.h>
 #include <cassert>
+#include <random>
 
 #include "clarisma/io/MemoryMapping.h"
 #include "clarisma/util/log.h"
@@ -13,11 +14,21 @@ namespace clarisma {
 
 void FreeStore::Transaction::begin()
 {
+    header_.magic = 0;
+    (void)store_.file_.tryReadAllAt(0, &header_, HEADER_SIZE);
+    // TODO: Header already read during opening
+
+    if (header_.magic == 0)  [[unlikely]]
+    {
+        memset(&header_, 0, sizeof(header_));
+    }
+    readFreeRangeIndex();
+    journal_.open(store_.journalFileName());
 }
 
 void FreeStore::Transaction::end()
 {
-    // TODO: delete journal
+    std::remove(store_.journalFileName());
 }
 
 void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
@@ -28,38 +39,25 @@ void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
     auto [it, inserted] = editedBlocks_.try_emplace(ofs, content);
     if (!inserted) return;
 
-    journalBuffer_.write(&ofs, sizeof(ofs));
-    journalBuffer_.write(content, BLOCK_SIZE);
-    journalChecksum_.update(&ofs, sizeof(ofs));
-    journalChecksum_.update(content, BLOCK_SIZE);
-}
-
-void FreeStore::Transaction::save()
-{
-    uint64_t trailer = JOURNAL_END_MARKER_FLAG | journalChecksum_.get();
-
-    journalBuffer_.write(&trailer, sizeof(trailer));
-    journalBuffer_.flush();
-    journalBuffer_.fileHandle().syncData();
-    journalChecksum_ = Crc32C();
-    editedBlocks_.clear();
-
-    // TODO: write journal header here?
-    // TODO: what if client never calls commit() after save()?
+    journal_.addBlock(ofs, content, BLOCK_SIZE);
 }
 
 
-void FreeStore::Transaction::commit()
+void FreeStore::Transaction::commit(bool isFinal)
 {
-    uint64_t trailer = JOURNAL_END_MARKER_FLAG | journalChecksum_.get();
-
-    journalBuffer_.write(&trailer, sizeof(trailer));
-    journalBuffer_.flush();
-    journalBuffer_.fileHandle().syncData();
+    journal_.seal();
 
     for (auto [ofs, content] : editedBlocks_)
     {
         store_.file_.writeAllAt(ofs, content, BLOCK_SIZE);
+    }
+
+    if (isFinal)
+    {
+        if (header_.freeRangeIndex == INVALID_FREE_RANGE_INDEX)
+        {
+            writeFreeRangeIndex();
+        }
     }
     store_.file_.syncData();
 
@@ -70,8 +68,8 @@ void FreeStore::Transaction::commit()
     store_.file_.writeAllAt(0, &header_, sizeof(header_));
     store_.file_.syncData();
 
-    journalChecksum_ = Crc32C();
-    // TODO: REset journal header
+    journal_.reset(0, &header_);
+        // TODO: journal-mode marker
     editedBlocks_.clear();
 }
 
@@ -118,7 +116,7 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
 
             // Perfect fit
             freeByStart_.erase(it);
-            --freeRangeCount_;
+            --header_.freeRanges;
             return firstPage;
         }
 
@@ -139,10 +137,12 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
             ((freePages - requestedPages) << 1) |
             garbageFlag);
 
+        assert(freeByStart_.size() == header_.freeRanges);
+
         return firstPage;
     }
 
-    uint32_t firstPage = totalPageCount_;
+    uint32_t firstPage = header_.totalPages;
     uint32_t pagesPerSegment = SEGMENT_LENGTH >> store_.pageSizeShift_;
     int remainingPages = pagesPerSegment - (firstPage & (pagesPerSegment - 1));
     if (remainingPages < requestedPages)
@@ -151,8 +151,9 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
         // mark the remaining space as a free blob, and allocate
         // the blob in a fresh segment
 
-        uint32_t firstRemainingPage = totalPageCount_;
+        uint32_t firstRemainingPage = header_.totalPages;
         firstPage = firstRemainingPage + remainingPages;
+        header_.totalPages = firstPage + requestedPages;
 
         freeBySize_.insert(
             (static_cast<uint64_t>(remainingPages) << 32) |
@@ -160,13 +161,14 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
         freeByStart_.insert(
             (static_cast<uint64_t>(firstRemainingPage) << 32) |
             (remainingPages << 1));
-        ++freeRangeCount_;
+        ++header_.freeRanges;
 
         /*
         LOGS << "  Allocated virgin " << requestedPages << " pages at "
             << firstPage << ", skipping " << remainingPages << " at "
             << firstRemainingPage;
         */
+        assert(freeByStart_.size() == header_.freeRanges);
         return firstPage;
     }
 
@@ -175,7 +177,8 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
         << " pages at " << firstPage;
     */
 
-    totalPageCount_ = firstPage + requestedPages;
+    header_.totalPages = firstPage + requestedPages;
+    assert(freeByStart_.size() == header_.freeRanges);
     return firstPage;
 }
 
@@ -190,27 +193,28 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
     // checkFreeTrees();
     // LOGS << firstPage << ": Freeing " << pages << " pages\n";
 
-    if (firstPage + pages == totalPageCount_)
+    if (firstPage + pages == header_.totalPages)
     {
         // Blob is at end -> trim the file
-        totalPageCount_ -= pages;
+        header_.totalPages -= pages;
         while (!freeByStart_.empty())
         {
             auto it = std::prev(freeByStart_.end());
             uint32_t first = static_cast<uint32_t>(*it >> 32);
             uint32_t size = static_cast<uint32_t>(*it) >> 1;
-            if (first + size != totalPageCount_) break;
-            totalPageCount_ = first;
+            if (first + size != header_.totalPages) break;
+            header_.totalPages = first;
             uint64_t sizeKey =
                 (static_cast<uint64_t>(size) << 32) | first;
             auto itSize = freeBySize_.lower_bound(sizeKey);
             assert(itSize != freeBySize_.end() && *itSize == sizeKey);
             freeBySize_.erase(itSize);
             freeByStart_.erase(it);
-            --freeRangeCount_;
+            --header_.freeRanges;
 
             // LOGS << first << ": Trimmed " << size << " from end";
         }
+        assert(freeByStart_.size() == header_.freeRanges);
         return;
     }
 
@@ -236,7 +240,7 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
                 assert(false);
             }
             freeBySize_.erase(itSize);
-            --freeRangeCount_;
+            --header_.freeRanges;
             right = next;
         }
     }
@@ -261,7 +265,7 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
                 assert(false);
             }
             freeBySize_.erase(itSize);
-            --freeRangeCount_;
+            --header_.freeRanges;
         }
     }
     freeByStart_.insert(right,
@@ -269,40 +273,51 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
         (pages << 1) | 1);
     freeBySize_.insert(
         (static_cast<uint64_t>(pages) << 32) | firstPage);
-    ++freeRangeCount_;
+    ++header_.freeRanges;
+    assert(freeByStart_.size() == header_.freeRanges);
 }
 
 void FreeStore::Transaction::writeFreeRangeIndex()
 {
-    if (freeRangeCount_ == 0) [[unlikely]]
+    if (freeByStart_.size() != freeBySize_.size() ||
+        freeByStart_.size() != header_.freeRanges)
+    {
+        LOGS << "Free by start: " << freeByStart_.size()
+            << "\nFree by size:  " << freeBySize_.size()
+            << "\nFree ranges:   " << header_.freeRanges;
+    }
+    assert(freeByStart_.size() == freeBySize_.size());
+    assert(freeByStart_.size() == header_.freeRanges);
+
+    if (header_.freeRanges == 0) [[unlikely]]
     {
         header_.freeRangeIndex = 0;
         return;
     }
-    uint32_t indexSize = (freeRangeCount_ + 1) * sizeof(uint64_t);
+    uint32_t indexSize = (header_.freeRanges + 1) * sizeof(uint64_t);
     uint32_t indexSizeInPages = store_.pagesForBytes(indexSize);
     auto it = freeBySize_.lower_bound(indexSizeInPages);
     uint32_t indexPage;
     if (it != freeBySize_.end()) [[likely]]
     {
-        indexPage = static_cast<uint32_t>(*it >> 32);
+        indexPage = static_cast<uint32_t>(*it);
     }
     else
     {
-        indexPage = totalPageCount_;
-        totalPageCount_ += indexSizeInPages;
+        indexPage = header_.totalPages;
+        header_.totalPages += indexSizeInPages;
         // TODO: clarify if the FRI is allowed to straddle
         //  segment boundaries (it is not used by consumers
         //  that may require segment-based mapping)
     }
-    std::unique_ptr<uint64_t[]> index(new uint64_t[freeRangeCount_ + 1]);
+    std::unique_ptr<uint64_t[]> index(new uint64_t[header_.freeRanges + 1]);
     uint64_t* p = index.get();
-    *p++ = (freeRangeCount_ * 8) + 4;
+    *p++ = (header_.freeRanges * 8) + 4;
     for (auto entry : freeByStart_)
     {
         *p++ = entry;
     }
-    assert(p - index.get() == freeRangeCount_ + 1);
+    assert(p - index.get() == header_.freeRanges + 1);
 
     store_.file_.writeAllAt(indexPage << store_.pageSizeShift_,
         index.get(), indexSize);
@@ -335,10 +350,57 @@ void FreeStore::Transaction::dumpFreeRanges()
         startSize += size;
     }
     LOGS << "  " << startCount << " entries with " << startSize << " total pages\n";
-    LOGS << totalPageCount_ << " total pages\n";
-    LOGS << "Free ratio: " << (static_cast<double>(startSize) / totalPageCount_) << "\n";
+    LOGS << header_.totalPages << " total pages\n";
+    LOGS << "Free ratio: " << (static_cast<double>(startSize) / header_.totalPages) << "\n";
     assert(startCount == sizeCount);
     assert(startSize == sizeSize);
 }
 
+void FreeStore::Transaction::beginCreateStore()
+{
+//    memset(&header_, 0, sizeof(header_));
+
+    std::random_device rd;
+    std::mt19937_64 gen(rd());  // 64-bit Mersenne Twister engine
+    // Uniform distribution over the whole uint64_t range
+    std::uniform_int_distribution<uint64_t> dist(
+        std::numeric_limits<uint64_t>::min(),
+        std::numeric_limits<uint64_t>::max()
+    );
+    header_.commitId = dist(gen);
+    header_.pageSizeShift = 12;     // 4KB blocks
+    header_.totalPages = 1;
+}
+
+void FreeStore::Transaction::endCreateStore()
+{
+
+}
+
+void FreeStore::Transaction::readFreeRangeIndex()
+{
+    uint32_t count = header_.freeRanges;
+    if (count == 0) return;
+    std::unique_ptr<uint64_t[]> ranges(new uint64_t[count]);
+    store_.file_.readAllAt(
+        (header_.freeRangeIndex << store_.pageSizeShift_) + 8,
+        ranges.get(), count * sizeof(uint64_t));
+    for (int i=0; i<count; i++)
+    {
+        uint64_t range = ranges[i];
+        freeByStart_.insert(freeByStart_.end(), range);
+        uint32_t first = static_cast<uint32_t>(range >> 32);
+        uint32_t size = static_cast<uint32_t>(range) >> 1;
+        ranges[i] = (static_cast<uint64_t>(size) << 32) | first;
+    }
+    std::sort(ranges.get(), ranges.get() + count);
+    for (int i=0; i<count; i++)
+    {
+        uint64_t range = ranges[i];
+        freeBySize_.insert(freeBySize_.end(), range);
+    }
+}
+
 } // namespace clarisma
+
+

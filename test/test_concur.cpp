@@ -6,6 +6,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <geodesk/geodesk.h>
 
+#ifdef GEODESK_CONCUR_TEST
+
 using namespace geodesk;
 
 // Structure to hold test information
@@ -423,3 +425,5 @@ TEST_CASE("concur")
         std::cout << test.name << "=" << test.function() << std::endl;
     }
 }
+
+#endif

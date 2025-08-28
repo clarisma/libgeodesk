@@ -22,8 +22,9 @@ public:
 
 		void createStore()
 		{
-			// beginCreateStore();
-			// endCreateStore();
+			beginCreateStore();
+			header().magic = 0x4321;
+			endCreateStore();
 		}
 	};
 
@@ -77,7 +78,6 @@ TEST_CASE("FreeStore")
 	store.close();
 }
 
-/*
 
 TEST_CASE("FeatureStore simulation")
 {
@@ -98,9 +98,8 @@ TEST_CASE("FeatureStore simulation")
 	TestFreeStore store;
 	std::remove(filename);
 
-	store.open(filename, File::OpenMode::READ | File::OpenMode::WRITE |
-		File::OpenMode::CREATE);
-	TestFreeStore::Transaction t0(&store);
+	store.open(filename, FreeStore::OpenMode::WRITE | FreeStore::OpenMode::CREATE);
+	TestFreeStore::Transaction t0(store);
 	t0.begin();
 	t0.createStore();
 	std::uniform_int_distribution<uint32_t> initialSizeRange(100, 1000);
@@ -122,7 +121,7 @@ TEST_CASE("FeatureStore simulation")
 
 	std::vector<Blob> edited;
 
-	TestFreeStore::Transaction tx(&store);
+	TestFreeStore::Transaction tx(store);
 	tx.begin();
 
 	for (int i=0; i<1000; i++)
@@ -161,7 +160,7 @@ TEST_CASE("FeatureStore simulation")
 		// tx.checkFreeTrees();
 	}
 
-	tx.dumpFreePages();
+	tx.dumpFreeRanges();
 	size_t tilePages = 0;
 	for (const auto& e : tiles)
 	{
@@ -173,4 +172,3 @@ TEST_CASE("FeatureStore simulation")
 	store.close();
 }
 
-*/
