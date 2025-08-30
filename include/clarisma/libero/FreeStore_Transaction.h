@@ -43,6 +43,7 @@ public:
 	void endCreateStore();
 
 	Header& header() noexcept { return header_; }
+	FreeStore& store() const noexcept { return store_; }
 
 private:
 	void buildFreeRangeIndex();

@@ -90,6 +90,7 @@ private:
     const char* data_;
 
     friend class FeatureStore;
+    friend class FeatureStore2;     // TODO: rename
 };
 
 } // namespace geodesk

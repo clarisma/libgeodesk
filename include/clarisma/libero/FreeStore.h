@@ -65,7 +65,10 @@ protected:
 		uint32_t totalPages;
 		uint32_t freeRangeIndex;
 		uint32_t freeRanges;
+		uint32_t reserved[6];
 	};
+
+	static_assert(sizeof(Header) == 64);
 
 	static constexpr int BLOCK_SIZE = 4096;
 	static constexpr int HEADER_SIZE = 512;
@@ -116,6 +119,8 @@ protected:
 	{
 		return (bytes + (1 << pageSizeShift_) - 1) >> pageSizeShift_;
 	}
+
+	byte* data() const { return mapping_.data(); }
 
 private:
 	File file_;
