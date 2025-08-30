@@ -37,6 +37,7 @@ public:
 	uint32_t allocPages(uint32_t requestedPages);
 	void freePages(uint32_t firstPage, uint32_t pages);
 	void dumpFreeRanges();
+	uint32_t addBlob(std::span<byte> data);
 
 	void beginCreateStore();
 	void endCreateStore();

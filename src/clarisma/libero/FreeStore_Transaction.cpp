@@ -137,8 +137,8 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
         uint32_t leftoverSize = freePages - requestedPages;
         uint32_t leftoverStart = firstPage + requestedPages;
         //  auto hint = std::next(it);
-        freeByStart_.erase(it);
-        freeByStart_.insert(/* hint, */
+        it = freeByStart_.erase(it);
+        freeByStart_.insert(it,
             (static_cast<uint64_t>(leftoverStart) << 32) |
             (leftoverSize << 1) |
             garbageFlag);
@@ -413,6 +413,14 @@ void FreeStore::Transaction::readFreeRangeIndex()
         uint64_t range = ranges[i];
         freeBySize_.insert(freeBySize_.end(), range);
     }
+}
+
+uint32_t FreeStore::Transaction::addBlob(std::span<byte> data)
+{
+    uint32_t firstPage = allocPages(store_.pagesForBytes(data.size()));
+    uint64_t ofs = static_cast<uint64_t>(firstPage) << store_.pageSizeShift_;
+    store_.file_.writeAllAt(ofs, data);
+    return firstPage;
 }
 
 } // namespace clarisma

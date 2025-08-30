@@ -43,7 +43,6 @@ public:
 		TRY_EXCLUSIVE = 8
 	};
 
-	void open(const char* fileName);
 	void open(const char* fileName, OpenMode mode);
 	// void open(const char* fileName, Transaction* tx);
 	void close();
@@ -120,11 +119,11 @@ protected:
 
 private:
 	File file_;
-	std::string journalFileName_;
 	uint32_t pageSizeShift_ = 12;	// TODO: default 4KB page
 	bool writeable_ = false;
 	bool lockedExclusively_ = false;
 	MemoryMapping mapping_;
+	std::string journalFileName_;
 };
 
 CLARISMA_ENUM_FLAGS(FreeStore::OpenMode)

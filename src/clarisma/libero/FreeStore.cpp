@@ -191,7 +191,18 @@ void FreeStore::applyJournal(FileHandle writableStore,
         writableStore.writeAllAt(ofs, p, BLOCK_SIZE);
         p += BLOCK_SIZE;
     }
+    writableStore.sync();
 
+    // After applying the Journal, we inc the commit ID and
+    // write the header in a separate sync phase (just like
+    // a commit in a transaction)
+    // This prevents the Journal form being re-applied in case
+    // we're unable to delete it
+
+    ++header->commitId;
+    Crc32C crc;
+    crc.update(header, CHECKSUMMED_HEADER_SIZE);
+    header->checksum = crc.get();
     writableStore.writeAllAt(0, header, HEADER_SIZE);
     writableStore.sync();
 }
@@ -253,13 +264,16 @@ int FreeStore::ensureIntegrity(
 
     int result = 0;
     size_t journalSize = journalFile.size();
-    byte* mappedJournal = journalFile.map(0, journalSize);
-    MemoryMapping journal = { mappedJournal, journalSize };
-    if (verifyJournal(journal))
+    MemoryMapping journal = { journalFile, 0, journalSize };
+    if (journalHeader.header.commitId == header->commitId || !isHeaderValid)
     {
-        applyJournal(writableStoreHandle, journal, header);
-        result = 1;
+        if (verifyJournal(journal))
+        {
+            applyJournal(writableStoreHandle, journal, header);
+            result = 1;
+        }
     }
+    journal.unmap();
     journalFile.tryClose();
     std::remove(journalFileName);
 

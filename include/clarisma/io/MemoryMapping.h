@@ -53,7 +53,14 @@ public:
 
     ~MemoryMapping()
     {
+        unmap();
+    }
+
+    void unmap()
+    {
         if (data_) FileHandle::unmap(data_, size_);
+        data_ = nullptr;
+        size_ = 0;
     }
 
     byte* data() const { return data_; }
