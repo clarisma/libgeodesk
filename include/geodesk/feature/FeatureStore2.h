@@ -159,7 +159,7 @@ public:
 
     clarisma::ThreadPool<TileQueryTask>& executor() { return executor_; }
 
-    DataPtr fetchTile(Tip tip);
+    DataPtr fetchTile(Tip tip) const;
 
     struct Metadata;
     class Transaction;
@@ -175,10 +175,12 @@ protected:
 
 private:
 	static constexpr uint32_t MAGIC = 0x1CE50D6E;
+    static constexpr uint16_t VERSION_HIGH = 2;
+    static constexpr uint16_t VERSION_LOW = 0;
 
     void readIndexSchema(DataPtr pSchema);
 
-    static std::unordered_map<std::string, FeatureStore*>& getOpenStores();
+    static std::unordered_map<std::string, FeatureStore2*>& getOpenStores();
     static std::mutex& getOpenStoresMutex();
 
 #ifdef GEODESK_MULTITHREADED
@@ -189,6 +191,7 @@ private:
 
     StringTable strings_;
     IndexedKeyMap keysToCategories_;
+    uint32_t* tileIndex_ = nullptr;
     MatcherCompiler matchers_;
     MatcherHolder allMatcher_;
     #ifdef GEODESK_PYTHON

@@ -8,6 +8,8 @@
 #include <clarisma/io/MemoryMapping.h>
 #include <clarisma/util/DateTime.h>
 
+#include "clarisma/util/DataPtr.h"
+
 namespace clarisma {
 
 class StoreException : public IOException
@@ -46,6 +48,13 @@ public:
 	void open(const char* fileName, OpenMode mode);
 	// void open(const char* fileName, Transaction* tx);
 	void close();
+
+	const byte* data() const  {return mapping_.data(); }
+	DataPtr pagePointer(uint32_t page) const
+	{
+		return DataPtr(mapping_.data() +
+			(static_cast<uint64_t>(page) << pageSizeShift_));
+	}
 
 protected:
 	struct BasicHeader

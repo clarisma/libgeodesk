@@ -3,6 +3,8 @@
 
 #include <geodesk/feature/WayCoordinateIterator.h>
 
+// TODO: Move to header?
+
 namespace geodesk {
 
 using namespace clarisma;

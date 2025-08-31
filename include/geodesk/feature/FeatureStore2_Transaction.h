@@ -46,7 +46,7 @@ public:
     }
 
     void setup(const Metadata& metadata);
-    // void addTile(Tip tip, clarisma::ByteSpan data);
+    // void addTile(Tip tip, std::span<byte> data);
 
 protected:
     // uint32_t tileIndexOfs_;
