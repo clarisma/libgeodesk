@@ -15,21 +15,25 @@ namespace clarisma {
 
 void FreeStore::Transaction::begin()
 {
-    header_.magic = 0;
-    (void)store_.file_.tryReadAllAt(0, &header_, HEADER_SIZE);
-    // TODO: Header already read during opening
-
-    if (header_.magic == 0)  [[unlikely]]
+    if (store_.created_)  [[unlikely]]
     {
         memset(&header_, 0, sizeof(header_));
     }
-    readFreeRangeIndex();
-    journal_.open(store_.journalFileName());
+    else
+    {
+        memcpy(&header_, store_.mapping_.data(), sizeof(header_));
+        readFreeRangeIndex();
+        journal_.open(store_.journalFileName());
+    }
 }
 
 void FreeStore::Transaction::end()
 {
-    std::remove(store_.journalFileName());
+    if (!store_.created_)  [[likely]]
+    {
+        journal_.close();
+        std::remove(store_.journalFileName());
+    }
 }
 
 void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
@@ -46,13 +50,6 @@ void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
 
 void FreeStore::Transaction::commit(bool isFinal)
 {
-    journal_.seal();
-
-    for (auto [ofs, content] : editedBlocks_)
-    {
-        store_.file_.writeAllAt(ofs, content, BLOCK_SIZE);
-    }
-
     if (isFinal)
     {
         if (header_.freeRangeIndex == INVALID_FREE_RANGE_INDEX)
@@ -60,18 +57,29 @@ void FreeStore::Transaction::commit(bool isFinal)
             writeFreeRangeIndex();
         }
     }
-    store_.file_.syncData();
 
     header_.commitId++;
     Crc32C crc;
     crc.update(&header_, CHECKSUMMED_HEADER_SIZE);
     header_.checksum = crc.get();
+
+    if (!store_.created_)   [[likely]]
+    {
+        journal_.seal();
+
+        for (auto [ofs, content] : editedBlocks_)
+        {
+            store_.file_.writeAllAt(ofs, content, BLOCK_SIZE);
+        }
+
+        journal_.reset(store_.lockedExclusively_ ?
+            Journal::MODIFIED_ALL : Journal::MODIFIED_INACTIVE, &header_);
+        editedBlocks_.clear();
+    }
+
+    store_.file_.syncData();
     store_.file_.writeAllAt(0, &header_, sizeof(header_));
     store_.file_.syncData();
-
-    journal_.reset(0, &header_);
-        // TODO: journal-mode marker
-    editedBlocks_.clear();
 }
 
 

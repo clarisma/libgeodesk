@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#ifdef GEODESK_LIBERO
 
 
 #include <geodesk/feature/FeatureStore2.h>
@@ -9,7 +10,7 @@
 
 namespace geodesk {
 
-struct FeatureStore2::Metadata
+struct FeatureStore::Metadata
 {
     Metadata(const clarisma::UUID& guid_) :
         guid(guid_)
@@ -21,7 +22,7 @@ struct FeatureStore2::Metadata
     uint32_t revision = 0;
     DateTime revisionTimestamp;
     const Settings* settings = nullptr;
-    const uint32_t* tileIndex = nullptr;
+    uint32_t tipCount = 0;
     const uint8_t* stringTable = nullptr;
     size_t stringTableSize = 0;
     const uint8_t* properties  = nullptr;
@@ -29,10 +30,10 @@ struct FeatureStore2::Metadata
     const uint32_t* indexedKeys = nullptr;
 };
 
-class FeatureStore2::Transaction : public FreeStore::Transaction
+class FeatureStore::Transaction : public FreeStore::Transaction
 {
 public:
-    explicit Transaction(FeatureStore2& store) :
+    explicit Transaction(FeatureStore& store) :
         FreeStore::Transaction(store) {}
 
     FeatureStore& store() const noexcept
@@ -55,3 +56,5 @@ protected:
 } // namespace geodesk
 
 // \endcond
+
+#endif

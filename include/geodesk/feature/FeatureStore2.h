@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#ifdef GEODESK_LIBERO
 
 #include <span>
 #include <unordered_map>
@@ -42,7 +43,7 @@ using clarisma::DateTime;
 /// This class if part of the **Low-Level API**. It is not intended to
 /// be used directly by applications.
 ///
-class GEODESK_API FeatureStore2 final : public clarisma::FreeStore
+class GEODESK_API FeatureStore final : public clarisma::FreeStore
 {
 public:
     using IndexedKeyMap = std::unordered_map<uint16_t, uint16_t>;
@@ -81,7 +82,8 @@ public:
         int32_t indexSchemaPtr;
         int32_t propertiesPtr;
         Settings settings;
-        uint32_t reserved[5];
+        uint32_t tipCount;
+        uint32_t reserved[4];
         Snapshot snapshots[2];
         uint8_t urlLength;
         char url[245];
@@ -90,10 +92,10 @@ public:
 
     static_assert(sizeof(Header) == HEADER_SIZE - 8);
 
-    FeatureStore2();
-    ~FeatureStore2() override;
+    FeatureStore();
+    ~FeatureStore() override;
 
-    static FeatureStore2* openSingle(std::string_view fileName);
+    static FeatureStore* openSingle(std::string_view fileName);
 
 #ifdef GEODESK_MULTITHREADED
     void addref()
@@ -128,7 +130,7 @@ public:
     int getIndexCategory(int keyCode) const;
     const Header* header() const
     {
-        return reinterpret_cast<Header*>(data());
+        return reinterpret_cast<const Header*>(data());
     }
     std::span<byte> stringTableData() const;
     std::span<byte> propertiesData() const;
@@ -152,6 +154,10 @@ public:
             code > TagValues::MAX_COMMON_KEY ? -1 : code);
     }
 
+    // const uint32_t* tileIndex() const noexcept { return tileIndex_; }
+    DataPtr tileIndex() const noexcept { return DataPtr(reinterpret_cast<byte*>(tileIndex_)); }
+        // TODO: standardize on const uint32_t*?
+
     #ifdef GEODESK_PYTHON
     PyObject* getEmptyTags();
     PyFeatures* getEmptyFeatures();
@@ -165,7 +171,7 @@ public:
     class Transaction;
 
 protected:
-    void initialize(bool create) override;
+    void initialize(const byte* data) override;
     void gatherUsedRanges(std::vector<uint64_t>& ranges) override;
 
     DataPtr getPointer(int ofs) const
@@ -180,7 +186,7 @@ private:
 
     void readIndexSchema(DataPtr pSchema);
 
-    static std::unordered_map<std::string, FeatureStore2*>& getOpenStores();
+    static std::unordered_map<std::string, FeatureStore*>& getOpenStores();
     static std::mutex& getOpenStoresMutex();
 
 #ifdef GEODESK_MULTITHREADED
@@ -212,3 +218,5 @@ private:
 } // namespace geodesk
 
 // \endcond
+
+#endif

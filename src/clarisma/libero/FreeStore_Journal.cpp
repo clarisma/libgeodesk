@@ -24,6 +24,7 @@ void FreeStore::Journal::close()
 
 void FreeStore::Journal::reset(uint64_t marker, const Header* header)
 {
+    assert(marker == MODIFIED_INACTIVE || marker == MODIFIED_ALL);
     filePos_ = 0;
     *reinterpret_cast<uint64_t*>(buf_.get()) = marker;
     memcpy(buf_.get() + 8, header, HEADER_SIZE);

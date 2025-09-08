@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef GEODESK_LIBERO
+
 #include <geodesk/feature/FeatureStore2.h>
 #include <geodesk/feature/TileIndexEntry.h>
 #include <filesystem>
@@ -22,7 +24,7 @@ using namespace clarisma;
 
 // std::unordered_map<std::string, FeatureStore*> FeatureStore::openStores_;
 
-FeatureStore2::FeatureStore2() :
+FeatureStore::FeatureStore() :
     refcount_(1),
 	matchers_(this),	// TODO: this not initialized yet!
 	#ifdef GEODESK_PYTHON
@@ -37,7 +39,7 @@ FeatureStore2::FeatureStore2() :
 {
 }
 
-FeatureStore2* FeatureStore2::openSingle(std::string_view relativeFileName)
+FeatureStore* FeatureStore::openSingle(std::string_view relativeFileName)
 {
 	std::filesystem::path path;
 	try
@@ -58,7 +60,7 @@ FeatureStore2* FeatureStore2::openSingle(std::string_view relativeFileName)
 	// removes the store from the list of open stores (which requires
 	// the mutex)
 
-	FeatureStore2* store = nullptr;
+	FeatureStore* store = nullptr;
 	try
 	{
 		std::lock_guard lock(getOpenStoresMutex());
@@ -71,7 +73,7 @@ FeatureStore2* FeatureStore2::openSingle(std::string_view relativeFileName)
 			store->addref();
 			return store;
 		}
-		store = new FeatureStore2();
+		store = new FeatureStore();
 		store->open(fileName.data());
 		openStores[fileName] = store;
 		return store;
@@ -83,17 +85,22 @@ FeatureStore2* FeatureStore2::openSingle(std::string_view relativeFileName)
 	}
 }
 
-void FeatureStore2::initialize(bool create)
+void FeatureStore::initialize(const byte* data)
 {
-	FreeStore::initialize(create);
+	const Header* header = reinterpret_cast<const Header*>(data);
+	if (header->magic != MAGIC)
+	{
+		throw FreeStoreException("Not a Geographic Onject Library");
+	}
+	// TODO: Version check
 
 	strings_.create(reinterpret_cast<const uint8_t*>(
-		mainMapping() + header()->stringTablePtr));
-	zoomLevels_ = ZoomLevels(header()->settings.zoomLevels);
-	readIndexSchema(mainMapping() + header()->indexSchemaPtr);
+		data + header->stringTablePtr));
+	zoomLevels_ = ZoomLevels(header->settings.zoomLevels);
+	readIndexSchema(data + header->indexSchemaPtr);
 }
 
-FeatureStore2::~FeatureStore2()
+FeatureStore::~FeatureStore()
 {
 	LOG("Destroying FeatureStore...");
 	#ifdef GEODESK_PYTHON
@@ -108,7 +115,7 @@ FeatureStore2::~FeatureStore2()
 }
 
 // TODO: Return TilePtr?
-DataPtr FeatureStore2::fetchTile(Tip tip) const
+DataPtr FeatureStore::fetchTile(Tip tip) const
 {
 	TileIndexEntry entry(tileIndex_[tip]);
 	if(!entry.isLoadedAndCurrent())	[[unlikely]]
@@ -120,7 +127,7 @@ DataPtr FeatureStore2::fetchTile(Tip tip) const
 
 
 
-void FeatureStore2::readIndexSchema(DataPtr p)
+void FeatureStore::readIndexSchema(DataPtr p)
 {
 	int32_t count = p.getInt();
 	keysToCategories_.reserve(count);
@@ -131,7 +138,7 @@ void FeatureStore2::readIndexSchema(DataPtr p)
 	}
 }
 
-int FeatureStore2::getIndexCategory(int keyCode) const
+int FeatureStore::getIndexCategory(int keyCode) const
 {
 	auto it = keysToCategories_.find(keyCode);
 	if (it != keysToCategories_.end())
@@ -141,7 +148,7 @@ int FeatureStore2::getIndexCategory(int keyCode) const
 	return 0;
 }
 
-std::vector<std::string_view> FeatureStore2::indexedKeyStrings() const
+std::vector<std::string_view> FeatureStore::indexedKeyStrings() const
 {
 	std::vector<std::string_view> keys;
 	keys.reserve(keysToCategories_.size());
@@ -153,9 +160,9 @@ std::vector<std::string_view> FeatureStore2::indexedKeyStrings() const
 }
 
 // TODO: inefficient, should store strign table size when initializing
-std::span<byte> FeatureStore2::stringTableData() const
+std::span<byte> FeatureStore::stringTableData() const
 {
-	DataPtr pTable (mainMapping() + header()->stringTablePtr);
+	DataPtr pTable (data() + header()->stringTablePtr);
 	int count = pTable.getUnsignedShort();
 	byte* p = pTable.bytePtr();
 	p += 2;
@@ -166,9 +173,9 @@ std::span<byte> FeatureStore2::stringTableData() const
 	return { pTable.bytePtr(), static_cast<size_t>(p - pTable.bytePtr()) };
 }
 
-std::span<byte> FeatureStore2::propertiesData() const
+std::span<byte> FeatureStore::propertiesData() const
 {
-	DataPtr pTable (mainMapping() + header()->propertiesPointer);
+	DataPtr pTable (data() + header()->propertiesPtr);
 	int count = pTable.getUnsignedShort();
 	byte* p = pTable.bytePtr();
 	p += 2;
@@ -179,7 +186,7 @@ std::span<byte> FeatureStore2::propertiesData() const
 	return { pTable.bytePtr(), static_cast<size_t>(p - pTable.bytePtr()) };
 }
 
-const MatcherHolder* FeatureStore2::getMatcher(const char* query)
+const MatcherHolder* FeatureStore::getMatcher(const char* query)
 {
 	return matchers_.getMatcher(query);
 }
@@ -210,16 +217,23 @@ PyFeatures* FeatureStore2::getEmptyFeatures()
 #endif
 
 
-std::unordered_map<std::string, FeatureStore2*>& FeatureStore2::getOpenStores()
+std::unordered_map<std::string, FeatureStore*>& FeatureStore::getOpenStores()
 {
-	static std::unordered_map<std::string, FeatureStore2*> openStores;
+	static std::unordered_map<std::string, FeatureStore*> openStores;
 	return openStores;
 }
 
-std::mutex& FeatureStore2::getOpenStoresMutex()
+std::mutex& FeatureStore::getOpenStoresMutex()
 {
 	static std::mutex openStoresMutex;
 	return openStoresMutex;
 }
 
+void FeatureStore::gatherUsedRanges(std::vector<uint64_t>& ranges)
+{
+	// TODO
+}
+
 } // namespace geodesk
+
+#endif

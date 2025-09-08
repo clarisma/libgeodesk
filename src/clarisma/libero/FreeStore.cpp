@@ -1,7 +1,7 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <clarisma/libero/FreeStore.h>
+#include <clarisma/libero/FreeStore_Journal.h>
 #include <clarisma/util/Crc32C.h>
 #include <clarisma/util/Strings.h>
 #include <cassert>
@@ -13,14 +13,12 @@ namespace clarisma {
 void FreeStore::open(const char* fileName, OpenMode mode)
 {
     File file;
-    HeaderBlock header;
+    MemoryMapping mapping;
     bool lockedExclusively = false;
     bool writable = hasAny(mode,OpenMode::WRITE | OpenMode::CREATE);
-    int snapshot;
+    bool created = false;
     int lockStart;
     int lockSize;
-
-    header.magic = 0;
 
     File::OpenMode writeMode =
         has(mode, OpenMode::WRITE) ? File::OpenMode::WRITE :
@@ -47,7 +45,7 @@ void FreeStore::open(const char* fileName, OpenMode mode)
                         mode &= ~(OpenMode::EXCLUSIVE | OpenMode::TRY_EXCLUSIVE);
                         continue;
                     }
-                    throw StoreException("Store locked");
+                    throw FreeStoreException("Store locked");
                 }
                 lockedExclusively = true;
                 lockStart = LOCK_OFS;
@@ -58,12 +56,25 @@ void FreeStore::open(const char* fileName, OpenMode mode)
                 // Try to lock for writing
                 if (!file.tryLock(LOCK_OFS + 1, 1), false)
                 {
-                    throw StoreException("Store locked");
+                    throw FreeStoreException("Store locked");
                 }
                 lockStart = LOCK_OFS + 1;
                 lockSize = 1;
             }
-            (void)file.tryReadAllAt(0, &header, sizeof(header));
+            uint64_t size = file.size();
+            if (size >= HEADER_SIZE) [[likely]]
+            {
+                mapping = MemoryMapping(file, 0, size);
+            }
+            else if (size == 0)
+            {
+                created = true;
+                break;
+            }
+            else
+            {
+                throw FreeStoreException("Invalid store");
+            }
         }
         else
         {
@@ -72,24 +83,34 @@ void FreeStore::open(const char* fileName, OpenMode mode)
             // figure out which snapshot to lock, the read
             // header again and check if changed in the meantime
 
-            (void)file.tryReadAllAt(0, &header, sizeof(BasicHeader));
+            BasicHeader basicHeader;
+            (void)file.tryReadAllAt(0, &basicHeader, sizeof(BasicHeader));
             for (;;)
             {
-                uint64_t commitId = header.commitId;
-                lockStart = LOCK_OFS + (header.activeSnapshot << 1);
+                lockStart = LOCK_OFS + (basicHeader.activeSnapshot << 1);
                 lockSize = 1;
                 if (!file.tryLockShared(lockStart, 1))
                 {
-                    throw StoreException("Store locked");
+                    throw FreeStoreException("Store locked");
                 }
-                (void)file.tryReadAllAt(0, &header, sizeof(header));
-                if (header.commitId == commitId) break;
+                uint64_t size = file.size();
+                if (size < HEADER_SIZE)
+                {
+                    throw FreeStoreException("Invalid store");
+                }
+                mapping = MemoryMapping(file, 0, size);
+                if (reinterpret_cast<const Header*>(
+                    mapping.data())->commitId == basicHeader.commitId)
+                {
+                    break;
+                }
+                mapping.unmap();
                 file.tryUnlock(lockStart, 1);
             }
         }
 
-        int res = ensureIntegrity(
-            fileName, file, &header,
+        int res = ensureIntegrity(fileName, file,
+            reinterpret_cast<const HeaderBlock*>(mapping.data()),
             journalFileName_.c_str(), writable);
         if (res == 0)  [[likely]]
         {
@@ -112,19 +133,17 @@ void FreeStore::open(const char* fileName, OpenMode mode)
         file.tryUnlock(lockStart, lockSize);
     }
 
-    /*
-    if (header.magic == 0)  [[unlikely]]
+    if (!created) [[likely]]
     {
-        if (!has(mode, OpenMode::CREATE))
-        {
-            throw StoreException("Invalid store");
-        }
+        initialize(mapping.data());
     }
-    */
 
     file_ = std::move(file);
+    fileName_ = fileName;
     writeable_ = writable;
     lockedExclusively_ = lockedExclusively;
+    created_ = created;
+    mapping_ = std::move(mapping);
 }
 
 void FreeStore::close()
@@ -177,10 +196,11 @@ bool FreeStore::verifyJournal(std::span<const byte> journal)
 // Journal must be valid
 // NOLINTNEXTLINE: not const
 void FreeStore::applyJournal(FileHandle writableStore,
-    std::span<const byte> journal, HeaderBlock* header)
+    std::span<const byte> journal)
 {
+    HeaderBlock header;
     const byte* p = journal.data() + sizeof(uint64_t);
-    memcpy(header, p, HEADER_SIZE);
+    memcpy(&header, p, HEADER_SIZE);
     p += HEADER_SIZE;
 
     for (;;)
@@ -199,17 +219,17 @@ void FreeStore::applyJournal(FileHandle writableStore,
     // This prevents the Journal form being re-applied in case
     // we're unable to delete it
 
-    ++header->commitId;
+    ++header.commitId;
     Crc32C crc;
-    crc.update(header, CHECKSUMMED_HEADER_SIZE);
-    header->checksum = crc.get();
-    writableStore.writeAllAt(0, header, HEADER_SIZE);
+    crc.update(&header, CHECKSUMMED_HEADER_SIZE);
+    header.checksum = crc.get();
+    writableStore.writeAllAt(0, &header, HEADER_SIZE);
     writableStore.sync();
 }
 
 int FreeStore::ensureIntegrity(
     const char* storeFileName, FileHandle storeHandle,
-    HeaderBlock* header, const char* journalFileName, bool isWriter)
+    const HeaderBlock* header, const char* journalFileName, bool isWriter)
 {
     bool isHeaderValid = verifyHeader(header);
     File journalFile;
@@ -220,7 +240,7 @@ int FreeStore::ensureIntegrity(
         {
             if (!isHeaderValid && header->magic != 0)
             {
-                throw StoreException("Missing journal; unable to restore header");
+                throw FreeStoreException("Missing journal; unable to restore header");
             }
             return 0;
         }
@@ -248,7 +268,7 @@ int FreeStore::ensureIntegrity(
         {
             // TODO: handle other possible locking errors
             journalFile.close();
-            if (!isHeaderValid || header->commitId == journalHeader.header.commitId)
+            if (!isHeaderValid || journalHeader.journalMode == Journal::MODIFIED_ALL)
             {
                 // Journal locked, retry
                 return -1;
@@ -269,7 +289,7 @@ int FreeStore::ensureIntegrity(
     {
         if (verifyJournal(journal))
         {
-            applyJournal(writableStoreHandle, journal, header);
+            applyJournal(writableStoreHandle, journal);
             result = 1;
         }
     }

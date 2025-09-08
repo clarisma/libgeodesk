@@ -12,19 +12,19 @@
 
 namespace clarisma {
 
-class StoreException : public IOException
+class FreeStoreException : public IOException
 {
 public:
-	explicit StoreException(const char* message)
+	explicit FreeStoreException(const char* message)
 		: IOException(message) {}
 
-	explicit StoreException(const std::string& message)
+	explicit FreeStoreException(const std::string& message)
 		: IOException(message) {}
 
-	explicit StoreException(const std::string& fileName, const char* message)
+	explicit FreeStoreException(const std::string& fileName, const char* message)
 		: IOException(fileName + ": " + message) {}
 
-	explicit StoreException(const std::string& fileName, const std::string& message)
+	explicit FreeStoreException(const std::string& fileName, const std::string& message)
 		: IOException(fileName + ": " + message) {}
 };
 
@@ -39,17 +39,19 @@ public:
 
 	enum class OpenMode
 	{
+		READ = 0,		// TODO: should this be a flag?
 		WRITE = 1,
 		CREATE = 2,
 		EXCLUSIVE = 4,
 		TRY_EXCLUSIVE = 8
 	};
 
-	void open(const char* fileName, OpenMode mode);
+	void open(const char* fileName, OpenMode mode = OpenMode::READ);
 	// void open(const char* fileName, Transaction* tx);
 	void close();
 
-	const byte* data() const  {return mapping_.data(); }
+	const std::string& fileName() const { return fileName_; }
+	const byte* data() const { return mapping_.data(); }
 	DataPtr pagePointer(uint32_t page) const
 	{
 		return DataPtr(mapping_.data() +
@@ -66,7 +68,7 @@ protected:
 		uint8_t pageSizeShift;
 		uint8_t activeSnapshot;
 		uint16_t reserved;
-		uint32_t reserved2;
+		uint32_t metaSectionSize;
 	};
 
 	struct Header : BasicHeader
@@ -111,32 +113,32 @@ protected:
 	// -1 = need to retry (other process applying journal)
 	static int ensureIntegrity(
 		const char* storeFileName, FileHandle storeHandle,
-		HeaderBlock* header,
+		const HeaderBlock* header,
 		const char* journalFileName, bool isWriter);
 	static bool verifyJournal(std::span<const byte> journal);
 	static void applyJournal(FileHandle writableStore,
-		std::span<const byte> journal,
-		HeaderBlock* header);
+		std::span<const byte> journal);
 	static bool verifyHeader(const HeaderBlock* header);
 	const char* journalFileName() const
 	{
 		return journalFileName_.c_str();
 	}
 
+	virtual void initialize(const byte* data) {}
 	virtual void gatherUsedRanges(std::vector<uint64_t>& ranges) = 0;
 	uint32_t pagesForBytes(uint32_t bytes) const
 	{
 		return (bytes + (1 << pageSizeShift_) - 1) >> pageSizeShift_;
 	}
 
-	byte* data() const { return mapping_.data(); }
-
 private:
 	File file_;
 	uint32_t pageSizeShift_ = 12;	// TODO: default 4KB page
 	bool writeable_ = false;
 	bool lockedExclusively_ = false;
+	bool created_ = false;
 	MemoryMapping mapping_;
+	std::string fileName_;
 	std::string journalFileName_;
 };
 

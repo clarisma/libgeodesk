@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#ifdef GEODESK_LIBERO
+#include "FeatureStore2.h"
+#else
 
 #include <span>
 #include <unordered_map>
@@ -267,3 +270,5 @@ private:
 } // namespace geodesk
 
 // \endcond
+
+#endif

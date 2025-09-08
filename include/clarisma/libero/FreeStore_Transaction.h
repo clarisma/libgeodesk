@@ -42,8 +42,10 @@ public:
 	void beginCreateStore();
 	void endCreateStore();
 
+protected:
 	Header& header() noexcept { return header_; }
 	FreeStore& store() const noexcept { return store_; }
+	FileHandle file() const noexcept { return store_.file_; }
 
 private:
 	void buildFreeRangeIndex();

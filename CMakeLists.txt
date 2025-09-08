@@ -22,6 +22,7 @@ option(GEODESK_PYTHON "Build GeoDesk with Python support" OFF)
 option(GEODESK_PYTHON_WHEELS "Enable Support for Python Wheels" OFF)
 option(GEODESK_EXAMPLES "Build example applications" ON)
 option(GEODESK_MULTITHREADED "Allow multiple threads to use the same GOL" OFF)
+option(GEODESK_LIBERO "Enable Libero storage engine" ON)
 
 # Option to choose between static or shared library
 # Only set the option if BUILD_SHARED_LIBS is not already defined
@@ -45,6 +46,7 @@ FetchContent_MakeAvailable(gtl)
 set(PREVIOUS_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF)
 set(CATCH_BUILD_STATIC_LIBRARY ON)
+set(GEODESK_LIBERO ON)
 # Fetch Catch2 from its GitHub repository
 FetchContent_Declare(Catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -66,6 +68,12 @@ if(GEODESK_MULTITHREADED)
     target_compile_definitions(geodesk PUBLIC GEODESK_MULTITHREADED)
 else()
     message(STATUS "GeoDesk: Single-threaded query access")
+endif()
+if(GEODESK_LIBERO)
+    message(STATUS "GeoDesk: Libero storage engine enabled")
+    target_compile_definitions(geodesk PUBLIC GEODESK_LIBERO)
+else()
+    message(STATUS "GeoDesk: Legacy BlobStore storage engine enabled")
 endif()
 target_compile_features(geodesk INTERFACE cxx_std_20)
 set_target_properties(geodesk PROPERTIES CXX_VISIBILITY_PRESET hidden)

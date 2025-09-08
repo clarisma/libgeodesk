@@ -20,6 +20,9 @@ public:
 	void reset(uint64_t marker, const Header* header);
 	void seal();
 
+	static constexpr uint64_t MODIFIED_INACTIVE = 1;
+	static constexpr uint64_t MODIFIED_ALL = 2;
+
 private:
 	void computeChecksum();
 	void writeToFile();
