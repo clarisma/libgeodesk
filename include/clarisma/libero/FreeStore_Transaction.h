@@ -37,7 +37,11 @@ public:
 	uint32_t allocPages(uint32_t requestedPages);
 	void freePages(uint32_t firstPage, uint32_t pages);
 	void dumpFreeRanges();
-	uint32_t addBlob(std::span<byte> data);
+	uint32_t addBlob(std::span<const byte> data);
+	uint32_t addBlob(std::span<const uint8_t> data)
+	{
+		return addBlob(std::as_bytes(data));
+	}
 
 	void beginCreateStore();
 	void endCreateStore();
@@ -46,6 +50,11 @@ protected:
 	Header& header() noexcept { return header_; }
 	FreeStore& store() const noexcept { return store_; }
 	FileHandle file() const noexcept { return store_.file_; }
+	void setMetaSectionSize(uint32_t size)
+	{
+		header_.metaSectionSize = size;
+		header_.totalPages = store_.pagesForBytes(size + BLOCK_SIZE);
+	}
 
 private:
 	void buildFreeRangeIndex();

@@ -5,6 +5,7 @@
 #include <geodesk/feature/FeatureStore2_Transaction.h>
 #include <geodesk/feature/TileIndexEntry.h>
 #include <filesystem>
+#include <random>
 #include <clarisma/io/FilePath.h>
 #include <clarisma/util/log.h>
 #include <clarisma/util/PbfDecoder.h>
@@ -30,8 +31,17 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 {
 	// BlobStore::Transaction::setup();
 	Header& header = Transaction::header();
+	header.magic = MAGIC;
 	header.versionHigh = VERSION_HIGH;
 	header.versionLow = VERSION_LOW;
+
+	// Initialize commitId with a random 64-bit value
+	std::random_device rd;
+	std::mt19937_64 gen(rd());  // 64-bit Mersenne Twister
+	std::uniform_int_distribution<uint64_t> dist(
+		0, std::numeric_limits<uint64_t>::max());
+	header.commitId = dist(gen);
+
 	header.flags = metadata.flags;
 	header.guid = metadata.guid;
 	header.snapshots[0].revision = metadata.revision;
@@ -59,7 +69,7 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 	header.indexSchemaPtr = static_cast<int>(indexedKeysOfs);
 	header.stringTablePtr = static_cast<int>(stringTableOfs);
 	header.propertiesPtr = static_cast<int>(propertiesOfs);
-	header.metaSectionSize = static_cast<uint32_t>(metaSectionSize);
+	setMetaSectionSize(static_cast<uint32_t>(metaSectionSize));
 
 	store().zoomLevels_ = ZoomLevels(header.settings.zoomLevels);
 	store().readIndexSchema(reinterpret_cast<const byte*>(metadata.indexedKeys));

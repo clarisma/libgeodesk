@@ -423,7 +423,7 @@ void FreeStore::Transaction::readFreeRangeIndex()
     }
 }
 
-uint32_t FreeStore::Transaction::addBlob(std::span<byte> data)
+uint32_t FreeStore::Transaction::addBlob(std::span<const byte> data)
 {
     uint32_t firstPage = allocPages(store_.pagesForBytes(data.size()));
     uint64_t ofs = static_cast<uint64_t>(firstPage) << store_.pageSizeShift_;

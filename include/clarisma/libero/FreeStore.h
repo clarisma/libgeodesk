@@ -51,6 +51,7 @@ public:
 	void close();
 
 	const std::string& fileName() const { return fileName_; }
+	bool isCreated() const { return created_; }
 	const byte* data() const { return mapping_.data(); }
 	DataPtr pagePointer(uint32_t page) const
 	{
@@ -58,12 +59,22 @@ public:
 			(static_cast<uint64_t>(page) << pageSizeShift_));
 	}
 
+	uint32_t pagesForBytes(uint32_t bytes) const
+	{
+		return (bytes + (1 << pageSizeShift_) - 1) >> pageSizeShift_;
+	}
+
+	uint64_t allocatedSize() const
+	{
+		return file_.allocatedSize();
+	}
+
 protected:
 	struct BasicHeader
 	{
 		uint32_t magic;
-		uint16_t versionLow;
 		uint16_t versionHigh;
+		uint16_t versionLow;
 		uint64_t commitId;
 		uint8_t pageSizeShift;
 		uint8_t activeSnapshot;
@@ -126,10 +137,6 @@ protected:
 
 	virtual void initialize(const byte* data) {}
 	virtual void gatherUsedRanges(std::vector<uint64_t>& ranges) = 0;
-	uint32_t pagesForBytes(uint32_t bytes) const
-	{
-		return (bytes + (1 << pageSizeShift_) - 1) >> pageSizeShift_;
-	}
 
 private:
 	File file_;

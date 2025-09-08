@@ -65,7 +65,7 @@ public:
         DateTime revisionTimestamp;
         DateTime modifiedSinceTimestamp;
         uint32_t tileCount;
-        int32_t tileIndexPtr;
+        uint32_t tileIndex;
         uint32_t reserved[8];
     };
 
@@ -117,11 +117,11 @@ public:
 #endif
 
     const clarisma::UUID& guid() const { return header()->guid; }
-    /*
-    uint32_t revision() const { return header()->revision; }
-    DateTime revisionTimestamp() const { return header()->revisionTimestamp; }
-    uint32_t tileCount() const { return header()->tileCount; }
-    */
+    const Snapshot& snapshot() const { return header()->snapshots[header()->activeSnapshot]; }
+    uint32_t revision() const { return snapshot().revision; }
+    DateTime revisionTimestamp() const { return snapshot().revisionTimestamp; }
+    uint32_t tileCount() const { return snapshot().tileCount; }
+
     bool hasWaynodeIds() const { return header()->flags & Header::Flags::WAYNODE_IDS; }
     ZoomLevels zoomLevels() const { return zoomLevels_; }
     StringTable& strings() { return strings_; }
