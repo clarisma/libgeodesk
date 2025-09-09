@@ -53,10 +53,13 @@ public:
 	const std::string& fileName() const { return fileName_; }
 	bool isCreated() const { return created_; }
 	const byte* data() const { return mapping_.data(); }
-	DataPtr pagePointer(uint32_t page) const
+	uint64_t offsetOfPage(uint32_t page) const noexcept
 	{
-		return DataPtr(mapping_.data() +
-			(static_cast<uint64_t>(page) << pageSizeShift_));
+		return static_cast<uint64_t>(page) << pageSizeShift_;
+	}
+	DataPtr pagePointer(uint32_t page) const noexcept
+	{
+		return DataPtr(mapping_.data() + offsetOfPage(page));
 	}
 
 	uint32_t pagesForBytes(uint32_t bytes) const

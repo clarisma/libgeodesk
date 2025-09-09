@@ -64,7 +64,7 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 		// properties must be 2-byte aligned
 	file().writeAllAt(propertiesOfs, metadata.properties, metadata.propertiesSize);
 
-	size_t metaSectionSize = propertiesOfs + metadata.propertiesSize;
+	size_t metaSectionSize = propertiesOfs + metadata.propertiesSize - BLOCK_SIZE;
 
 	header.indexSchemaPtr = static_cast<int>(indexedKeysOfs);
 	header.stringTablePtr = static_cast<int>(stringTableOfs);

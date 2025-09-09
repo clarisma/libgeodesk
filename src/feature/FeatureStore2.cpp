@@ -90,9 +90,14 @@ void FeatureStore::initialize(const byte* data)
 	const Header* header = reinterpret_cast<const Header*>(data);
 	if (header->magic != MAGIC)
 	{
-		throw FreeStoreException("Not a Geographic Onject Library");
+		throw FreeStoreException("Not a Geographic Object Library");
 	}
 	// TODO: Version check
+
+	const Snapshot* snapshot = &header->snapshots[header->activeSnapshot];
+	tileIndex_ =
+		const_cast<uint32_t*>(		// TODO
+			reinterpret_cast<const uint32_t*>(data + offsetOfPage(snapshot->tileIndex)));
 
 	strings_.create(reinterpret_cast<const uint8_t*>(
 		data + header->stringTablePtr));
