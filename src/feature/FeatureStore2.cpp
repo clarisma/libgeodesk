@@ -9,6 +9,8 @@
 #include <clarisma/io/FilePath.h>
 #include <clarisma/util/log.h>
 #include <clarisma/util/PbfDecoder.h>
+
+#include "clarisma/util/Crc32C.h"
 #ifdef GEODESK_PYTHON
 #include "python/feature/PyTags.h"
 #include "python/query/PyFeatures.h"
@@ -232,6 +234,15 @@ std::mutex& FeatureStore::getOpenStoresMutex()
 {
 	static std::mutex openStoresMutex;
 	return openStoresMutex;
+}
+
+bool FeatureStore::isTileValid(const byte* pTile)
+{
+	DataPtr p(pTile);
+	Crc32C checksum;
+	uint32_t payloadSize = p.getUnsignedInt();
+	checksum.update(p.ptr(), payloadSize);
+	return checksum.get() == (p + payloadSize).getUnsignedIntUnaligned();
 }
 
 void FeatureStore::gatherUsedRanges(std::vector<uint64_t>& ranges)

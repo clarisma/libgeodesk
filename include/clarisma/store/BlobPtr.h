@@ -15,12 +15,11 @@ class BlobPtr
 public:
 	BlobPtr(const uint8_t* p) : p_(p) {}
 
-	static uint32_t headerSize() { return 8; }
+	static uint32_t headerSize() { return 4; }
 
 	uint32_t payloadSize() const
 	{
-		const BlobStore::Blob* blob = reinterpret_cast<const BlobStore::Blob*>(p_.ptr());
-		return blob->payloadSize;
+		return p_.getUnsignedInt();
 	}
 
 	uint32_t totalSize() const

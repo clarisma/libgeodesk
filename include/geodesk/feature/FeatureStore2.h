@@ -166,6 +166,7 @@ public:
     clarisma::ThreadPool<TileQueryTask>& executor() { return executor_; }
 
     DataPtr fetchTile(Tip tip) const;
+    static bool isTileValid(const byte* p);
 
     struct Metadata;
     class Transaction;
