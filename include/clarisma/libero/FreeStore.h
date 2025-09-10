@@ -102,6 +102,9 @@ protected:
 		return (bytes + (1 << pageSizeShift_) - 1) >> pageSizeShift_;
 	}
 
+	FileHandle file() { return file_; }
+	uint32_t pageSizeShift() const { return pageSizeShift_; }
+
 private:
 	File file_;
 	std::string fileName_;
