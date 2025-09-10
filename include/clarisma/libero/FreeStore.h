@@ -141,6 +141,9 @@ protected:
 	virtual void initialize(const byte* data) {}
 	virtual void gatherUsedRanges(std::vector<uint64_t>& ranges) = 0;
 
+	FileHandle file() { return file_; }
+	uint32_t pageSizeShift() const { return pageSizeShift_; }
+
 private:
 	File file_;
 	uint32_t pageSizeShift_ = 12;	// TODO: default 4KB page
