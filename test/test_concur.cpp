@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <geodesk/geodesk.h>
 
+#define GEODESK_CONCUR_TEST
 #ifdef GEODESK_CONCUR_TEST
 
 using namespace geodesk;
@@ -41,7 +42,9 @@ struct test_name##_registrar                                     \
 } test_name##_registrar_instance;                                \
 int64_t test_name##_impl()
 
-static Features world(R"(c:\geodesk\tests\mcxx.gol)");
+// static Features world(R"(c:\geodesk\tests\mcxx.gol)");
+static Features world(R"(c:\geodesk\tests\liguria-libero4.gol)");
+
 
 Feature findLargestCountry()
 {

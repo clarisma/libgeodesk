@@ -148,4 +148,20 @@ TEST_CASE("Issue 21")
 	Features features = tile("w");
 }
 
+TEST_CASE("WayNodes")
+{
+	Features features("c:\\geodesk\\tests\\liguria-libero4.gol");
+	uint64_t count = 0;
+	for (auto street : features("w[highway]"))
+	{
+		for(auto node : street.nodes("n"))
+		{
+			std::cout << street << ": " << node << '\n';
+			count++;
+		}
+		if (count == 10) break;
+	}
+	std::cout << count << " waynodes\n";
+}
+
 // TODO: Test if parent relation iterator respect types
