@@ -35,6 +35,8 @@
 namespace clarisma
 {
 
+bool testCrc32C(const void* p, size_t len);
+
 /// @brief CRC32C (Castagnoli) checksum engine.
 /// @details
 /// One-time dispatch at startup selects the best raw implementation.
@@ -180,6 +182,8 @@ private:
     friend struct Crc32C_Init;
 
     uint32_t value_;
+
+    friend bool testCrc32C(const void*, size_t);
 };
 
 } // namespace clarisma
