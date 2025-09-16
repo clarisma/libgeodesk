@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef GOL_BLOBSTORE
+
 #include <clarisma/store/BlobStore.h>
 #include <clarisma/util/Bits.h>
 #include <clarisma/util/ShortVarString.h>
@@ -724,3 +726,5 @@ std::map<std::string_view,std::string_view> BlobStore::properties() const
 }
 
 } // namespace clarisma
+
+#endif

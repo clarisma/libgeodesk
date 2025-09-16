@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifdef GOL_BLOBSTORE
+
 #include <clarisma/store/Store.h>
 #include <clarisma/util/BitIterator.h>
 #include <clarisma/util/log.h>
@@ -555,3 +557,5 @@ bool Store::isBlank() const
 }
 
 } // namespace clarisma
+
+#endif
