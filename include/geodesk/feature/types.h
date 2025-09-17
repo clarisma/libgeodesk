@@ -33,7 +33,7 @@ public:
 
 namespace FeatureFlags
 {
-    enum FeatureFlags
+    enum
     {
         LAST_SPATIAL_ITEM = 1,
         AREA = 1 << 1,

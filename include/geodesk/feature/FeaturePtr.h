@@ -141,11 +141,11 @@ public:
 	 * A 64-bit value that uniquely identifies the feature based on its
 	 * type and ID.
 	 * 
-	 * Clears all 12 flags, except fort the type flags.
+	 * Clears all 12 flags, except for the type flags.
 	 */
 	int64_t idBits() const
 	{
-		return p_.getLong() & 0xffff'ffff'ffff'f018;
+		return p_.getLong() & 0xffff'ffff'ffff'f018ULL;
 	}
 
 	int64_t hash() const

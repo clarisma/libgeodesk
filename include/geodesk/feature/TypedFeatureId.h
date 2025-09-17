@@ -51,12 +51,11 @@ public:
 	bool isWay() const { return type() == FeatureType::WAY; }
 	bool isRelation() const { return type() == FeatureType::RELATION; }
 
-	// TODO: will change in 2.0
+	// TODO: Change if reassigning FeatureFlags
 	uint64_t asIdBits() const noexcept
 	{
-		uint64_t hi = (typedId_ >> 34) << 8;
-		uint64_t lo = (typedId_ >> 2) << 32;
-		return hi | lo | (static_cast<int>(type()) << 3);
+		int typeCode = typedId_ & 3;
+		return ((typedId_ ^ typeCode) << 10) | (typeCode << 3);
 	}
 	 
 	char* format(char* buf) const
