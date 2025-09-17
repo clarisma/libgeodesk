@@ -38,7 +38,11 @@ enum FeatureFlags
     RELATION_MEMBER = 1 << 2,
     WAYNODE = 1 << 5,
     MULTITILE_WEST = 1 << 6,
-    MULTITILE_NORTH = 1 << 7
+    MULTITILE_NORTH = 1 << 7,
+    SHARED_LOCATION = 1 << 8,
+    EXCEPTION_NODE = 1 << 9,
+    UNMODIFIED = 1 << 10,
+    DELETED = 1 << 11
 };
 
 

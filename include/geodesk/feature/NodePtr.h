@@ -25,9 +25,6 @@ public:
 		return Box(x(), y(), x(), y());
 	}
 
-	// TODO: remove in v2
-	bool isPlaceholder() const { return (p_-8).getLongUnaligned() == 0; }
-
 	bool intersects(const Box& bounds) const
 	{
 		return bounds.contains(x(), y());

@@ -17,9 +17,6 @@ public:
 	explicit WayPtr(FeaturePtr f) : FeaturePtr(f.ptr()) { assert(isNull() || isWay()); }
 	explicit WayPtr(DataPtr p) : FeaturePtr(p) {}
 
-	// TODO: remove in v2
-	bool isPlaceholder() const { return maxY() < minY(); }
-
 	bool hasFeatureNodes() const noexcept
 	{
 		return flags() & FeatureFlags::WAYNODE;
