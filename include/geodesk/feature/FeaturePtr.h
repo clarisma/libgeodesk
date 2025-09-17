@@ -78,6 +78,11 @@ public:
 	bool isRelationMember() const noexcept { return flags() & FeatureFlags::RELATION_MEMBER; }
 	bool isType(FeatureTypes types) const noexcept { return types.acceptFlags(flags()); }
 
+	// Placeholder features no longer exist in v2
+	// But we may need a similar mechanism once we introduce deleted features,
+	// so keep this for now but always return false
+	bool isPlaceholder() const { return false; }
+
 	// TODO: In v2, these bits are re-used for node flags
 	//  colocated_node / exception_node
 	//  No: these flags have been moved to bit 8 / bit 9
