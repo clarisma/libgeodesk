@@ -126,6 +126,7 @@ public:
         case 3:     // local string (fall through)
             return stringValue_.size() != 0 && stringValue_ != "no";
             // TODO: Use fixed constant in v2
+            // TODO: are "000", "0.00000000" true or false?
         case 0:     // narrow number
             return TagValues::intFromNarrowNumber(rawNumberValue()) != 0;
         case 2:     // wide number

@@ -31,15 +31,22 @@ public:
     }
 };
 
-enum FeatureFlags
+namespace FeatureFlags
 {
-    LAST_SPATIAL_ITEM = 1,
-    AREA = 1 << 1,
-    RELATION_MEMBER = 1 << 2,
-    WAYNODE = 1 << 5,
-    MULTITILE_WEST = 1 << 6,
-    MULTITILE_NORTH = 1 << 7
-};
+    enum
+    {
+        LAST_SPATIAL_ITEM = 1,
+        AREA = 1 << 1,
+        RELATION_MEMBER = 1 << 2,
+        WAYNODE = 1 << 5,
+        MULTITILE_WEST = 1 << 6,
+        MULTITILE_NORTH = 1 << 7,
+        SHARED_LOCATION = 1 << 8,
+        EXCEPTION_NODE = 1 << 9,
+        UNMODIFIED = 1 << 10,
+        DELETED = 1 << 11
+    };
+}
 
 
 enum MemberFlags

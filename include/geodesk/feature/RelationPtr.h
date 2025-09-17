@@ -17,11 +17,10 @@ public:
 	explicit RelationPtr(FeaturePtr f) : FeaturePtr(f.ptr()) { assert(isNull() || isRelation()); }
 	explicit RelationPtr(DataPtr p) : FeaturePtr(p) {}
 
-	// TODO: remove in v2
-	bool isPlaceholder() const { return maxY() < minY(); }
 	bool containsPointFast(double cx, double cy);
 };
 
+// TODO: remove in v2
 /**
  * A safeguard against endless recursion in case a Relation contains a
  * reference cycle.

@@ -35,9 +35,7 @@ public:
 
 	uint64_t id() const noexcept
 	{
-		uint32_t hi = p_.getUnsignedInt() >> 8;
-		uint32_t lo = (p_ + 4).getUnsignedInt();
-		return (static_cast<uint64_t>(hi) << 32) | lo;
+		return p_.getUnsignedLongUnaligned() >> 12;
 	}
 
 	TypedFeatureId typedId() const noexcept
@@ -80,8 +78,14 @@ public:
 	bool isRelationMember() const noexcept { return flags() & FeatureFlags::RELATION_MEMBER; }
 	bool isType(FeatureTypes types) const noexcept { return types.acceptFlags(flags()); }
 
+	// Placeholder features no longer exist in v2
+	// But we may need a similar mechanism once we introduce deleted features,
+	// so keep this for now but always return false
+	bool isPlaceholder() const { return false; }
+
 	// TODO: In v2, these bits are re-used for node flags
 	//  colocated_node / exception_node
+	//  No: these flags have been moved to bit 8 / bit 9
 	bool hasNorthwestTwin() const noexcept
 	{
 		return flags() & (FeatureFlags::MULTITILE_NORTH | FeatureFlags::MULTITILE_WEST);
@@ -137,11 +141,11 @@ public:
 	 * A 64-bit value that uniquely identifies the feature based on its
 	 * type and ID.
 	 * 
-	 * TODO: Changes in 2.0
+	 * Clears all 12 flags, except for the type flags.
 	 */
 	int64_t idBits() const
 	{
-		return p_.getLong() & 0xffff'ffff'ffff'ff18;
+		return p_.getLong() & 0xffff'ffff'ffff'f018ULL;
 	}
 
 	int64_t hash() const
@@ -156,7 +160,7 @@ public:
 
 	int typeCode() const
 	{
-		return (p_.getUnsignedInt() >> 3) & 3;
+		return static_cast<int>((p_.getUnsignedInt() >> 3) & 3);
 	}
 
 	// TODO: not valid for NodeRef
