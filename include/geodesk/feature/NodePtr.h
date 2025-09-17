@@ -39,6 +39,30 @@ public:
 	{
 		return (p_ + 12).follow();
 	}
+
+	bool hasSharedLocation() const
+	{
+		return flags() & FeatureFlags::SHARED_LOCATION;
+	}
+
+	/// Checks if this node is a *duplicate node*: it has no tags and
+	/// has the same location as another node
+	///
+	bool isDuplicate() const
+	{
+		return (flags() & (FeatureFlags::SHARED_LOCATION | FeatureFlags::EXCEPTION_NODE))
+			== (FeatureFlags::SHARED_LOCATION | FeatureFlags::EXCEPTION_NODE);
+	}
+
+	/// Checks if this node is an *orphan*: it has no tags and does not
+	/// belong to a way or relation
+	///
+	bool isOrphan() const
+	{
+		return (flags() & (FeatureFlags::EXCEPTION_NODE |
+			FeatureFlags::WAYNODE | FeatureFlags::RELATION_MEMBER))
+			== FeatureFlags::EXCEPTION_NODE;
+	}
 };
 
 
