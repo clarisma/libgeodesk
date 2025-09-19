@@ -91,7 +91,7 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
     header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
 
     // checkFreeTrees();
-    // LOGS << "Allocating " << requestedPages << " pages\n";
+    LOGS << "Allocating " << requestedPages << " pages\n";
 
     auto it = freeBySize_.lower_bound(
         static_cast<uint64_t>(requestedPages) << 32);
@@ -118,14 +118,14 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
 
         if (freePages == requestedPages)
         {
-            /*
             LOGS << "  Found perfect fit of " << requestedPages
                 << " pages at " << firstPage;
-            */
 
             // Perfect fit
             freeByStart_.erase(it);
             --header_.freeRanges;
+
+            dumpFreeRanges();
 
             assert(freeByStart_.size() == header_.freeRanges);
             assert(freeBySize_.size() == header_.freeRanges);
@@ -134,12 +134,10 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
 
         // we need to give back the remaining chunk
 
-        /*
         LOGS << "  Allocated " << requestedPages
             << " pages at " << firstPage << ", giving back "
             << (freePages - requestedPages) << " at " <<
                 (firstPage + requestedPages) << "\n";
-        */
 
         bool garbageFlag = static_cast<bool>(*it & 1);
         uint32_t leftoverSize = freePages - requestedPages;
@@ -156,6 +154,7 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
 
         assert(freeByStart_.size() == header_.freeRanges);
         assert(freeBySize_.size() == header_.freeRanges);
+        dumpFreeRanges();
 
         return firstPage;
     }
@@ -181,20 +180,19 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
             (remainingPages << 1));
         ++header_.freeRanges;
 
-        /*
         LOGS << "  Allocated virgin " << requestedPages << " pages at "
             << firstPage << ", skipping " << remainingPages << " at "
             << firstRemainingPage;
-        */
+
+        dumpFreeRanges();
+
         assert(freeByStart_.size() == header_.freeRanges);
         assert(freeBySize_.size() == header_.freeRanges);
         return firstPage;
     }
 
-    /*
     LOGS << "  Allocated virgin " << requestedPages
         << " pages at " << firstPage;
-    */
 
     header_.totalPages = firstPage + requestedPages;
     assert(freeByStart_.size() == header_.freeRanges);
@@ -341,7 +339,7 @@ void FreeStore::Transaction::writeFreeRangeIndex()
     }
     assert(p - index.get() == header_.freeRanges + 1);
 
-    store_.file_.writeAllAt(indexPage << store_.pageSizeShift_,
+    store_.file_.writeAllAt(store_.offsetOfPage(indexPage),
         index.get(), indexSize);
     header_.freeRangeIndex = indexPage;
 }

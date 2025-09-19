@@ -43,7 +43,7 @@ struct test_name##_registrar                                     \
 int64_t test_name##_impl()
 
 // static Features world(R"(c:\geodesk\tests\mcxx.gol)");
-static Features world(R"(c:\geodesk\tests\liguria-libero4.gol)");
+static Features world(R"(c:\geodesk\tests\fr-fsk.gol)");
 
 
 Feature findLargestCountry()

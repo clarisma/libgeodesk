@@ -36,6 +36,14 @@ namespace clarisma {
 // Derived won't be fully initialzied at that point
 // Use a "start" method that inits the contexts and starts the threads
 
+/*
+class WorkerBase
+{
+protected:
+
+};
+*/
+
 template <typename Derived, typename WorkContext, typename WorkTask, typename OutputTask>
 class TaskEngine
 {
@@ -149,9 +157,14 @@ private:
             std::abort();
         }
     }
+
+    void preProcessOutput()     // CRTP virtual
+    {
+    }
     
     void processOutput()
     {
+        self()->preProcessOutput();
         outputQueue_.process((Derived*)this);
     }
 
