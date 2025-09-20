@@ -119,7 +119,7 @@ FeatureStore::~FeatureStore()
 	openStores.erase(fileName());
 }
 
-// TODO: Return TilePtr?
+
 TilePtr FeatureStore::fetchTile(Tip tip) const
 {
 	TileIndexEntry entry(tileIndex_[tip]);
@@ -164,7 +164,7 @@ std::vector<std::string_view> FeatureStore::indexedKeyStrings() const
 	return keys;
 }
 
-// TODO: inefficient, should store strign table size when initializing
+// TODO: inefficient, should store string table size when initializing
 std::span<byte> FeatureStore::stringTableData() const
 {
 	DataPtr pTable (data() + header()->stringTablePtr);

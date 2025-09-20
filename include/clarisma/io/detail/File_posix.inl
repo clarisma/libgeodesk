@@ -25,7 +25,7 @@ inline bool File::tryRename(const char* from, const char* to)
 
 inline void File::rename(const char* from, const char* to)
 {
-    if(!tryRename(from, to)) IOException::checkAndThrow();
+    if(!tryRename(from, to)) throw IOException();
 }
 
 } // namespace clarisma
