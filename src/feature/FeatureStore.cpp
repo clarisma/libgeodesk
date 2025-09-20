@@ -1,14 +1,14 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef GEODESK_LIBERO
-
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/feature/TileIndexEntry.h>
 #include <filesystem>
 #include <clarisma/io/FilePath.h>
 #include <clarisma/util/log.h>
 #include <clarisma/util/PbfDecoder.h>
+
+#include "clarisma/util/Crc32C.h"
 #ifdef GEODESK_PYTHON
 #include "python/feature/PyTags.h"
 #include "python/query/PyFeatures.h"
@@ -85,14 +85,24 @@ FeatureStore* FeatureStore::openSingle(std::string_view relativeFileName)
 	}
 }
 
-void FeatureStore::initialize(bool create)
+void FeatureStore::initialize(const byte* data)
 {
-	BlobStore::initialize(create);
+	const Header* header = reinterpret_cast<const Header*>(data);
+	if (header->magic != MAGIC)
+	{
+		throw FreeStoreException("Not a Geographic Object Library");
+	}
+	// TODO: Version check
+
+	const Snapshot* snapshot = &header->snapshots[header->activeSnapshot];
+	tileIndex_ =
+		const_cast<uint32_t*>(		// TODO
+			reinterpret_cast<const uint32_t*>(data + offsetOfPage(snapshot->tileIndex)));
 
 	strings_.create(reinterpret_cast<const uint8_t*>(
-		mainMapping() + header()->stringTablePtr));
-	zoomLevels_ = ZoomLevels(header()->settings.zoomLevels);
-	readIndexSchema(mainMapping() + header()->indexSchemaPtr);
+		data + header->stringTablePtr));
+	zoomLevels_ = ZoomLevels(header->settings.zoomLevels);
+	readIndexSchema(data + header->indexSchemaPtr);
 }
 
 FeatureStore::~FeatureStore()
@@ -109,16 +119,15 @@ FeatureStore::~FeatureStore()
 	openStores.erase(fileName());
 }
 
-// TODO: Return TilePtr
-DataPtr FeatureStore::fetchTile(Tip tip)
+// TODO: Return TilePtr?
+TilePtr FeatureStore::fetchTile(Tip tip) const
 {
-	TileIndexEntry entry((tileIndex() + (tip * 4)).getUnsignedInt());
+	TileIndexEntry entry(tileIndex_[tip]);
 	if(!entry.isLoadedAndCurrent())	[[unlikely]]
 	{
-		return DataPtr();
-		// TODO: load tiles?
+		return TilePtr();
 	}
-	return pagePointer(entry.page());
+	return TilePtr(pagePointer(entry.page()));
 }
 
 
@@ -158,7 +167,7 @@ std::vector<std::string_view> FeatureStore::indexedKeyStrings() const
 // TODO: inefficient, should store strign table size when initializing
 std::span<byte> FeatureStore::stringTableData() const
 {
-	DataPtr pTable (mainMapping() + header()->stringTablePtr);
+	DataPtr pTable (data() + header()->stringTablePtr);
 	int count = pTable.getUnsignedShort();
 	byte* p = pTable.bytePtr();
 	p += 2;
@@ -171,7 +180,7 @@ std::span<byte> FeatureStore::stringTableData() const
 
 std::span<byte> FeatureStore::propertiesData() const
 {
-	DataPtr pTable (mainMapping() + header()->propertiesPointer);
+	DataPtr pTable (data() + header()->propertiesPtr);
 	int count = pTable.getUnsignedShort();
 	byte* p = pTable.bytePtr();
 	p += 2;
@@ -189,7 +198,7 @@ const MatcherHolder* FeatureStore::getMatcher(const char* query)
 
 #ifdef GEODESK_PYTHON
 
-PyObject* FeatureStore::getEmptyTags()
+PyObject* FeatureStore2::getEmptyTags()
 {
 	if (!emptyTags_)
 	{
@@ -199,7 +208,7 @@ PyObject* FeatureStore::getEmptyTags()
 	return Python::newRef(emptyTags_);
 }
 
-PyFeatures* FeatureStore::getEmptyFeatures()
+PyFeatures* FeatureStore2::getEmptyFeatures()
 {
 	if (!emptyFeatures_)
 	{
@@ -225,78 +234,19 @@ std::mutex& FeatureStore::getOpenStoresMutex()
 	return openStoresMutex;
 }
 
-
-void FeatureStore::Transaction::addTile(Tip tip, ByteSpan data)
+bool FeatureStore::isTileValid(const byte* pTile)
 {
-	PageNum page = addBlob(data);
-	MutableDataPtr ptr = dataPtr(tileIndexOfs_ + tip * 4);
-	assert(ptr.getUnsignedInt() == 0);
-	ptr.putUnsignedInt(TileIndexEntry(page, TileIndexEntry::CURRENT));
-	getHeaderBlock()->tileCount++;
-	LOGS << "TileCount is now " << getHeaderBlock()->tileCount << "\n";
+	DataPtr p(pTile);
+	Crc32C checksum;
+	uint32_t payloadSize = p.getUnsignedInt();
+	checksum.update(p.ptr(), payloadSize);
+	return checksum.get() == (p + payloadSize).getUnsignedIntUnaligned();
 }
 
-
-void FeatureStore::Transaction::setup(const Metadata& metadata)
+void FeatureStore::gatherUsedRanges(std::vector<uint64_t>& ranges)
 {
-	BlobStore::Transaction::setup();
-	Header* header = getHeaderBlock();
-	header->subtypeMagic = SUBTYPE_MAGIC;
-	header->subtypeVersionHigh = 2;
-	header->subtypeVersionLow = 0;
-	header->flags = metadata.flags;
-	header->guid = metadata.guid;
-	header->revision = metadata.revision;
-	header->revisionTimestamp = metadata.revisionTimestamp;
-	header->settings = *metadata.settings;
-	header->tileCount = 0;
-
-	// Place the Tile Index
-	byte* mainMapping = store()->mainMapping();
-	const size_t tileIndexSize = (*metadata.tileIndex + 1) * 4;
-	const size_t tileIndexOfs = HEADER_BLOCK_SIZE;
-	memcpy(mainMapping + tileIndexOfs, metadata.tileIndex, tileIndexSize);
-
-	// Place the Indexed Keys Schema
-	size_t indexedKeysOfs = tileIndexOfs + tileIndexSize;
-	size_t indexedKeysSize = (*metadata.indexedKeys + 1) * 4;
-	memcpy(mainMapping + indexedKeysOfs, metadata.indexedKeys, indexedKeysSize);
-
-	// Place the Global String Table
-	size_t stringTableOfs = indexedKeysOfs + indexedKeysSize;
-	memcpy(mainMapping + stringTableOfs, metadata.stringTable, metadata.stringTableSize);
-
-	// Place the Properties Table
-	size_t propertiesOfs = stringTableOfs + metadata.stringTableSize;
-	propertiesOfs += propertiesOfs & 1;
-		// properties must be 2-byte aligned
-	memcpy(mainMapping + propertiesOfs, metadata.properties, metadata.propertiesSize);
-
-	size_t metadataSize = propertiesOfs + metadata.propertiesSize;
-
-	header->tileIndexPtr = static_cast<int>(tileIndexOfs);
-	header->indexSchemaPtr = static_cast<int>(indexedKeysOfs);
-	header->stringTablePtr = static_cast<int>(stringTableOfs);
-	header->propertiesPointer = static_cast<int>(propertiesOfs);
-	tileIndexOfs_ = static_cast<uint32_t>(tileIndexOfs);
-	setMetadataSize(header, metadataSize);
-
-	store()->zoomLevels_ = ZoomLevels(header->settings.zoomLevels);
-	store()->readIndexSchema(mainMapping + indexedKeysOfs);
-		// TODO: This assumes we've written the metadata directly
-		//  into the store, without journaling
-		//  Block 0, which contains the pointer to the IndexSchema,
-		//  has not been committed at this point, hence we need to
-		//  explicitly pass the pointer
-		// TODO: We should consolidate the store initialization?
-
-	// TODO: We're not reading the string table, so this approach
-	//  is inconsistent
-	//  Idea: Since we only journal the root block, use common
-	//  initialization that uses pointer to header (real or journaled)
-	//  to perform initialization
+	// TODO
 }
 
 } // namespace geodesk
 
-#endif

@@ -1,8 +1,7 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifdef GEODESK_LIBERO
-#include <geodesk/feature/FeatureStore2_Transaction.h>
+#include <geodesk/feature/FeatureStore_Transaction.h>
 #include <geodesk/feature/TileIndexEntry.h>
 #include <filesystem>
 #include <random>
@@ -81,4 +80,3 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 
 } // namespace geodesk
 
-#endif

@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
-#ifdef GEODESK_LIBERO
 
-
-#include <geodesk/feature/FeatureStore2.h>
+#include <geodesk/feature/FeatureStore.h>
 #include <clarisma/libero/FreeStore_Transaction.h>
 
 namespace geodesk {
@@ -57,4 +55,3 @@ protected:
 
 // \endcond
 
-#endif

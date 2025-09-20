@@ -85,7 +85,7 @@ public:
             {
                 if(!pExports_)
                 {
-                    DataPtr pTile = store_->fetchTile(currentTip_);
+                    TilePtr pTile = store_->fetchTile(currentTip_);
                     if(!pTile)  [[unlikely]]
                     {
                         // TODO: set flag to indicate missing tiles

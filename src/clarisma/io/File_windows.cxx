@@ -261,14 +261,6 @@ void File::remove(const char* fileName)
     }
 }
 
-void File::rename(const char* from, const char* to)
-{
-    if (!MoveFileEx(from, to, MOVEFILE_REPLACE_EXISTING))
-    {
-        throw IOException();
-    }
-}
-
 /*
 std::string File::path(FileHandle handle)
 {

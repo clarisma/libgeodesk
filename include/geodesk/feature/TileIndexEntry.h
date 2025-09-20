@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <clarisma/store/BlobStore.h>
-
 namespace geodesk {
 
 // \cond internal
@@ -19,11 +17,11 @@ public:
         CURRENT_WITH_MODIFIED = 3
     };
 
-    TileIndexEntry(uint32_t data) :  data_(data) {}
-    TileIndexEntry(clarisma::BlobStore::PageNum page, Status status) :
+    explicit TileIndexEntry(uint32_t data) :  data_(data) {}
+    TileIndexEntry(uint32_t page, Status status) :
         data_((page << 2) | status) {}
 
-    clarisma::BlobStore::PageNum page() const { return data_ >> 2; }
+    uint32_t page() const { return data_ >> 2; }
     Status status() const { return static_cast<Status>(data_ & 3); }
     operator uint32_t() const { return data_; } // NOLINT implicit conversion
     bool isLoadedAndCurrent() const { return (data_ & 3) != 0; }

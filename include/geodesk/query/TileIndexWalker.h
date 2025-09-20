@@ -58,7 +58,10 @@ public:
 
     Tip currentTip() const { return Tip(currentTip_); }
     Tile currentTile() const { return currentTile_; }
-    TileIndexEntry currentEntry() const { return pIndex_[currentTip_ << 2]; }
+    TileIndexEntry currentEntry() const
+    {
+        return TileIndexEntry(pIndex_[currentTip_ << 2]);
+    }
     uint32_t northwestFlags() const { return northwestFlags_; }
     uint32_t turboFlags() const { return turboFlags_; }
     const Box& bounds() const { return box_; }

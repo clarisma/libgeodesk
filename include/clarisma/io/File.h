@@ -52,6 +52,7 @@ public:
 
     static bool exists(const char* fileName);
     static void remove(const char* fileName);
+    static bool tryRename(const char* from, const char* to);
     static void rename(const char* from, const char* to);
 
     /*
@@ -94,5 +95,10 @@ public:
     }
 };
 
-
 } // namespace clarisma
+
+#if defined(_WIN32)
+#include "detail/File_win.inl"
+#else
+#include "detail/File_posix.inl"
+#endif
