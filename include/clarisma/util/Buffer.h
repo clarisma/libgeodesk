@@ -276,9 +276,9 @@ Buffer& operator<<(Buffer& buf, const T& value)
 
 template<typename B, typename T>
 B& operator<<(B& b, const T& value)
-	requires std::is_base_of_v<Buffer, std::remove_reference_t<B>> &&
-		 !std::is_same_v<std::remove_reference_t<B>, Buffer> &&
-		 BufferFormattable<T>
+	requires (std::is_base_of_v<Buffer, std::remove_reference_t<B>>) &&
+		 (!std::is_same_v<std::remove_reference_t<B>, Buffer> &&
+		 BufferFormattable<T>)
 {
 	// Call the Buffer& core (no payload template here), then return B&.
 	static_cast<Buffer&>(b) << value;
