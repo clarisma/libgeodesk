@@ -198,7 +198,7 @@ const MatcherHolder* FeatureStore::getMatcher(const char* query)
 
 #ifdef GEODESK_PYTHON
 
-PyObject* FeatureStore2::getEmptyTags()
+PyObject* FeatureStore::getEmptyTags()
 {
 	if (!emptyTags_)
 	{
@@ -208,7 +208,7 @@ PyObject* FeatureStore2::getEmptyTags()
 	return Python::newRef(emptyTags_);
 }
 
-PyFeatures* FeatureStore2::getEmptyFeatures()
+PyFeatures* FeatureStore::getEmptyFeatures()
 {
 	if (!emptyFeatures_)
 	{
