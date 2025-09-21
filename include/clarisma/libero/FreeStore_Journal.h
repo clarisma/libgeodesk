@@ -12,7 +12,7 @@ namespace clarisma {
 class FreeStore::Journal
 {
 public:
-	FreeStore::Journal() {}
+	Journal() {}
 
 	void open(const char* fileName, uint32_t bufSize = 64 * 1024);
 	void close();

@@ -220,7 +220,7 @@ public:
     template <typename C>
     void writeAllAt(uint64_t ofs, const C& c)
     {
-        writeAllAt(ofs, c.data(), c.size() * sizeof(C::value_type));
+        writeAllAt(ofs, c.data(), c.size() * sizeof(typename C::value_type));
     }
 
     // TODO: Allow these forms for now for backward compatibility
