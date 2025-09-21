@@ -6,6 +6,25 @@
 #include <cstdint>
 #include <cstring>
 
+#if defined(_MSC_VER)
+// MSVC: no per-function target attribute needed/available.
+#define CLARISMA_TARGET_SSE42
+#define CLARISMA_TARGET_ARM_CRC
+#elif defined(__GNUC__) || defined(__clang__)
+// GCC/Clang: enable intrinsics only for these functions
+#define CLARISMA_TARGET_SSE42 __attribute__((target("sse4.2")))
+#if defined(__aarch64__) || defined(_M_ARM64)
+  // On AArch64, CRC is an optional extension; enable just for armRaw
+  #define CLARISMA_TARGET_ARM_CRC __attribute__((target("+crc")))
+#else
+  #define CLARISMA_TARGET_ARM_CRC
+#endif
+#else
+#define CLARISMA_TARGET_SSE42
+#define CLARISMA_TARGET_ARM_CRC
+#endif
+
+
 // CRC32C (Castagnoli, 0x1EDC6F41) with HW fast paths:
 // - x86-64: SSE4.2 _mm_crc32_*
 // - ARM64 : __crc32c*
@@ -81,9 +100,9 @@ public:
 
 protected:
     /// @brief Raw CRC32C using SSE4.2 (no final XOR).
-    static inline uint32_t x86Raw(const void* data,
-                                  size_t n,
-                                  uint32_t crc) noexcept
+    CLARISMA_TARGET_SSE42
+    static uint32_t x86Raw(const void* data,
+        size_t n, uint32_t crc) noexcept
     {
     #if defined(__x86_64__) || defined(_M_X64)
         const uint8_t* p = static_cast<const uint8_t*>(data);
@@ -124,9 +143,9 @@ protected:
     }
 
     /// @brief Raw CRC32C using ARMv8 CRC (no final XOR).
-    static inline uint32_t armRaw(const void* data,
-                                  size_t n,
-                                  uint32_t crc) noexcept
+    CLARISMA_TARGET_ARM_CRC
+    static uint32_t armRaw(const void* data,
+        size_t n, uint32_t crc) noexcept
     {
     #if defined(__aarch64__) || defined(_M_ARM64)
         const uint8_t* p = static_cast<const uint8_t*>(data);
