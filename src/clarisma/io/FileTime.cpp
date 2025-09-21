@@ -41,7 +41,7 @@ FileTime::FileTime(const char* filename)
 	struct stat file_stat;
 	if (stat(filename, &file_stat) == -1)
 	{
-		IOException::checkAndThrow();
+		throw IOException();
 	}
 
 	modified_ = DateTime(static_cast<int64_t>(file_stat.st_mtime));

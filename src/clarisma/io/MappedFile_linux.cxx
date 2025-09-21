@@ -17,7 +17,7 @@ void* MappedFile::map(uint64_t offset, uint64_t length, int mode)
     if (mappedAddress == MAP_FAILED)
     {
         // Error mapping file
-        IOException::checkAndThrow();
+        throw IOException();
     }
     return mappedAddress;
 }
@@ -29,7 +29,7 @@ void MappedFile::sync(const void* addr, uint64_t length)
 
     if (msync(const_cast<void*>(addr), length, MS_SYNC | MS_INVALIDATE) == -1)
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
@@ -42,7 +42,7 @@ void MappedFile::prefetch(void* address, uint64_t length)
 {
     if (madvise(address, length, MADV_WILLNEED) != 0)
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
 }
 
