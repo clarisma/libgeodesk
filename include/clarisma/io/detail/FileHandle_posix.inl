@@ -36,7 +36,7 @@ inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
     // Access mode: use bits 0 & 1 of OpenMode
     int flags = ACCESS_MODES[static_cast<int>(mode) & 3];
 
-    static DWORD OPEN_MODES[] =
+    static int OPEN_MODES[] =
     {
         0,                  // none (default: open if exists)
         O_CREAT,            // CREATE
@@ -79,7 +79,7 @@ inline bool FileHandle::tryClose() noexcept
 {
     int res = ::close(handle_);
     handle_ = INVALID;
-    return res;
+    return res == 0;
 }
 
 inline void FileHandle::close()

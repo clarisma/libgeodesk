@@ -83,7 +83,7 @@ public:
 
     // Keep the values of READ,WRITE and CREATE stable for
     // use in other classes
-    // Bits 0-5 are used for value mapping in open(), keep values in sync
+    // Bits 0-7 are used for value mapping in open(), keep values in sync
 
     enum class OpenMode
     {
@@ -206,7 +206,7 @@ public:
     template <typename C>
     [[nodiscard]] bool tryWriteAll(const C& c) noexcept
     {
-        return tryWriteAll(c.data(), c.size() * sizeof(C::value_type));
+        return tryWriteAll(c.data(), c.size() * sizeof(typename C::value_type));
     }
 
     template <typename C>
