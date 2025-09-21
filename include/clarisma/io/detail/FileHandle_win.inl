@@ -13,8 +13,70 @@
 #include <cstddef>
 #include <cstdint>
 #include <clarisma/io/IOException.h>
+#include <winioctl.h>   // For FSCTL_SET_SPARSE
 
 namespace clarisma {
+
+inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
+{
+    static DWORD ACCESS_MODES[] =
+    {
+        GENERIC_READ,                   // none (default to READ)
+        GENERIC_READ,                   // READ
+        GENERIC_WRITE,                  // WRITE
+        GENERIC_READ | GENERIC_WRITE    // READ + WRITE
+    };
+
+    // Access mode: use bits 0 & 1 of OpenMode
+    DWORD access = ACCESS_MODES[static_cast<int>(mode) & 3];
+
+    static DWORD OPEN_MODES[] =
+    {
+        OPEN_EXISTING,      // none (default: open if exists)
+        OPEN_ALWAYS,        // CREATE
+        CREATE_NEW,         // NEW
+        CREATE_NEW,         // CREATE + NEW
+        TRUNCATE_EXISTING,  // TRUNCATE (does not create)
+        CREATE_ALWAYS,      // CREATE + TRUNCATE
+        CREATE_NEW,         // NEW + TRUNCATE (nonsensical, fall back to create)
+        CREATE_NEW,         // CREATE + NEW + TRUNCATE (nonsensical, fall back to create)
+    };
+
+    // Create disposition: use bits 2, 3 & 4 of OpenMode
+    DWORD creationDisposition = OPEN_MODES[
+        (static_cast<int>(mode) >> 2) & 7];
+
+    static DWORD ATTRIBUTE_FLAGS[] =
+    {
+        FILE_ATTRIBUTE_NORMAL,
+        FILE_ATTRIBUTE_TEMPORARY,
+        FILE_FLAG_DELETE_ON_CLOSE,
+        FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE
+    };
+
+    // Other attribute flags: use bits 5 & 6 of OpenMode
+    DWORD attributes = ATTRIBUTE_FLAGS[
+        (static_cast<int>(mode) >> 5) & 3];
+
+    handle_ = CreateFileA(fileName, access,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL, creationDisposition,
+        attributes, NULL);
+
+    // TODO: only do this if file did not exist
+    if (has(mode, OpenMode::SPARSE))
+    {
+        if (handle_ != INVALID)
+        {
+            DWORD bytesReturned;
+            /* return */ DeviceIoControl(handle_, FSCTL_SET_SPARSE,
+                NULL, 0, NULL, 0, &bytesReturned, NULL);
+            // TODO: Fix this, does not always succeed
+
+        }
+    }
+    return handle_ != INVALID;
+}
 
 inline FileError FileHandle::error()
 {

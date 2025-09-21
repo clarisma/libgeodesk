@@ -83,7 +83,7 @@ public:
 	FileHandle fileHandle() const { return file_; }
 
 	void open(const char* filename, File::OpenMode mode =
-		File::OpenMode::CREATE | File::OpenMode::WRITE | File::OpenMode::REPLACE_EXISTING)
+		File::OpenMode::CREATE | File::OpenMode::WRITE | File::OpenMode::TRUNCATE)
 	{
 		close();
 		file_.open(filename, mode);
@@ -91,7 +91,7 @@ public:
 	}
 
 	void open(const std::filesystem::path& path, File::OpenMode mode =
-		File::OpenMode::CREATE | File::OpenMode::WRITE | File::OpenMode::REPLACE_EXISTING)
+		File::OpenMode::CREATE | File::OpenMode::WRITE | File::OpenMode::TRUNCATE)
 	{
 		std::string strFile = path.string();
 		open(strFile.c_str(), mode);

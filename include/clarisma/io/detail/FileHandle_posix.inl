@@ -36,16 +36,20 @@ inline bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
     // Access mode: use bits 0 & 1 of OpenMode
     int flags = ACCESS_MODES[static_cast<int>(mode) & 3];
 
-    static int CREATE_MODES[] =
+    static DWORD OPEN_MODES[] =
     {
-        0,                   // none (default: open if exists)
-        O_CREAT,             // CREATE
-        O_TRUNC,             // REPLACE_EXISTING (implies CREATE)
-        O_CREAT | O_TRUNC,   // CREATE + REPLACE_EXISTING
+        0,                  // none (default: open if exists)
+        O_CREAT,            // CREATE
+        O_CREAT | O_EXCL,   // NEW
+        O_CREAT | O_EXCL,   // CREATE + NEW
+        O_TRUNC,            // TRUNCATE (does not create)
+        O_CREAT | O_TRUNC,  // CREATE + TRUNCATE
+        O_CREAT | O_EXCL,   // NEW + TRUNCATE (nonsensical, fall back to non-replace create)
+        O_CREAT | O_EXCL,   // CREATE + NEW + TRUNCATE (nonsensical, fall back to non-replace create)
     };
 
-    // Create disposition: use bits 4 & 5 of OpenMode
-    flags |= CREATE_MODES[(static_cast<int>(mode) >> 2) & 3];
+    // Create disposition: use bits 2, 3 & 4 of OpenMode
+    flags |= OPEN_MODES[(static_cast<int>(mode) >> 2) & 7];
 
     // Ignore TEMPORARY flag (Windows only)
 

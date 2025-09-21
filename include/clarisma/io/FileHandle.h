@@ -88,30 +88,34 @@ public:
     enum class OpenMode
     {
         /// @brief Open file for reading
-        READ = 1,                   // Access
+        READ = 1 << 0,                   // Access
 
         /// @brief Open file for writing
-        WRITE = 2,
+        WRITE = 1 << 1,
 
         /// @brief Create file if it does not exist
-        CREATE = 4,                 // Creation
+        CREATE = 1 << 2,                 // Creation
+
+        /// @brief File must be new; used
+        /// with CREATE, fails if file exists
+        NEW = 1 << 3,
 
         /// @brief Truncate any existing file
-        /// (typically used with CREATE)
-        REPLACE_EXISTING = 8,
+        /// (typically used with CREATE, opposite of NEW)
+        TRUNCATE = 1 << 4,
 
         /// @brief The file's lifetime (hint for caching;
         /// only used by Windows, ignored by others)
-        TEMPORARY = 16,             // Flags for Windows
+        TEMPORARY = 1 << 5,
 
         /// @brief File is deleted once its last open
         /// handle is closed
-        DELETE_ON_CLOSE = 32,
+        DELETE_ON_CLOSE = 1 << 6,
 
         /// Create as sparse file. Only used by Windows
         /// (Linux/MacOS ignores this flag since files
         /// are sparse by default)
-        SPARSE = 64                 // Special action for Windows;
+        SPARSE = 1 << 7
 
         // TODO: If adding more flags, modify Store::OpenMode !!!
     };

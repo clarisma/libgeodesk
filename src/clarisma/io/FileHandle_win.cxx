@@ -6,65 +6,6 @@
 
 namespace clarisma {
 
-bool FileHandle::tryOpen(const char* fileName, OpenMode mode) noexcept
-{
-    static DWORD ACCESS_MODES[] =
-    {
-        GENERIC_READ,                   // none (default to READ)
-        GENERIC_READ,                   // READ
-        GENERIC_WRITE,                  // WRITE
-        GENERIC_READ | GENERIC_WRITE    // READ + WRITE
-    };
-
-    // Access mode: use bits 0 & 1 of OpenMode
-    DWORD access = ACCESS_MODES[static_cast<int>(mode) & 3];
-
-    static DWORD CREATE_MODES[] =
-    {
-        OPEN_EXISTING,      // none (default: open if exists)
-        OPEN_ALWAYS,        // CREATE
-        TRUNCATE_EXISTING,  // REPLACE_EXISTING (does not create)
-        CREATE_ALWAYS,      // CREATE + REPLACE_EXISTING
-    };
-
-    // Create disposition: use bits 2 & 3 of OpenMode
-    DWORD creationDisposition = CREATE_MODES[
-        (static_cast<int>(mode) >> 2) & 3];
-
-    static DWORD ATTRIBUTE_FLAGS[] =
-    {
-        FILE_ATTRIBUTE_NORMAL,
-        FILE_ATTRIBUTE_TEMPORARY,
-        FILE_FLAG_DELETE_ON_CLOSE,
-        FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE
-    };
-
-    // Other attribute flags: use bits 4 & 5 of OpenMode
-    DWORD attributes = ATTRIBUTE_FLAGS[
-        (static_cast<int>(mode) >> 4) & 3];
-
-    handle_ = CreateFileA(fileName, access,
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL, creationDisposition,
-        attributes, NULL);
-
-    // TODO: only do this if file did not exist
-    if (has(mode, OpenMode::SPARSE))
-    {
-        if (handle_ != INVALID)
-        {
-            DWORD bytesReturned;
-            /* return */ DeviceIoControl(handle_, FSCTL_SET_SPARSE,
-                NULL, 0, NULL, 0, &bytesReturned, NULL);
-            // TODO: Fix this, does not always succeed
-
-        }
-    }
-
-    return handle_ != INVALID;
-}
-
-
 void FileHandle::open(const char* fileName, OpenMode mode)
 {
     if (!tryOpen(fileName, mode))

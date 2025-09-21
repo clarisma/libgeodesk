@@ -43,7 +43,7 @@ std::string File::readString(const char* filename)
 void File::writeAll(const char* filename, const void* data, size_t size)
 {
     File file;
-    file.open(filename, OpenMode::WRITE | OpenMode::CREATE | OpenMode::REPLACE_EXISTING);
+    file.open(filename, OpenMode::WRITE | OpenMode::CREATE | OpenMode::TRUNCATE);
     file.FileHandle::writeAll(data, size);
 }
 

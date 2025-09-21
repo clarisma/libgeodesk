@@ -47,7 +47,7 @@ void PileFile::create(const char* fileName, uint32_t pileCount,
 
 		File file;
 		file.open(fileName, File::OpenMode::READ | File::OpenMode::WRITE | 
-			File::OpenMode::CREATE | File::OpenMode::REPLACE_EXISTING);
+			File::OpenMode::CREATE | File::OpenMode::TRUNCATE);
 		
 		size_t size = static_cast<size_t>(pageSize) * (pageCount + preallocatePages);
 		file.setSize(size);
@@ -61,7 +61,7 @@ void PileFile::create(const char* fileName, uint32_t pileCount,
 	}
 	else
 	{
-		openMode |= File::OpenMode::CREATE | File::OpenMode::REPLACE_EXISTING;
+		openMode |= File::OpenMode::CREATE | File::OpenMode::TRUNCATE;
 	}
 	file_.open(fileName, openMode);
 		// Open mode is implicitly sparse
