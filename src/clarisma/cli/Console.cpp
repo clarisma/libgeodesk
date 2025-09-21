@@ -225,7 +225,7 @@ size_t Console::printWithStatus(char* buf, char* p,
 	std::chrono::steady_clock::duration elapsed,
 	int percentage, const char* task)
 {
-	int secs = std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+	int secs = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(elapsed).count());
 	const char* end = formatStatus(p, secs, percentage, task);
 	size_t size = end - buf;
 	print(Stream::STDERR, buf, size);

@@ -7,6 +7,7 @@
 #include <clarisma/util/Pointers.h>
 #include <cassert>
 #include <cstring>
+#include <limits>       // For std::numeric_limits
 #include <stdexcept>
 #include <vector>
 
@@ -36,7 +37,7 @@ TextTemplate::Ptr TextTemplate::compile(std::string_view text)
         {
             len = Pointers::nearOffset(p, literalStart);
             totalTextLen += len;
-            parts.emplace_back(literalStart-start, len);
+            parts.emplace_back(Pointers::nearOffset(literalStart, start), len);
             ++p;
             while (p < end && *p <= 32) // Skip whitespace
             {
@@ -72,14 +73,14 @@ TextTemplate::Ptr TextTemplate::compile(std::string_view text)
 
             len = Pointers::nearOffset(paramEnd, paramStart);
             totalTextLen += len;
-            parts.emplace_back(paramStart-start, len);
+            parts.emplace_back(Pointers::nearOffset(paramStart,start), len);
             literalStart = p + 1;
         }
         ++p;
     }
-    len = p-literalStart;
+    len = static_cast<uint32_t>(p-literalStart);
     totalTextLen += len;
-    parts.emplace_back(literalStart-start, len);
+    parts.emplace_back(Pointers::nearOffset(literalStart,start), len);
 
     size_t textOfs =
         sizeof(uint32_t) +
@@ -97,7 +98,7 @@ TextTemplate::Ptr TextTemplate::compile(std::string_view text)
 
     uint32_t* pMeta = reinterpret_cast<uint32_t*>(bytes);
     char* pText = bytes + textOfs;
-    *pMeta++ = textOfs;
+    *pMeta++ = static_cast<uint32_t>(textOfs);
     for (auto part : parts)
     {
         *pMeta++ = part.len;
