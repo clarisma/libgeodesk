@@ -174,25 +174,6 @@ std::string File::path(FileHandle handle)
 */
 
 
-/*
-bool File::tryLock(uint64_t ofs, uint64_t length, bool shared)
-{
-    OVERLAPPED overlapped;
-    overlapped.Offset = ofs & 0xFFFFFFFF;
-    overlapped.OffsetHigh = ofs >> 32;
-    DWORD lockFlags = shared ? LOCKFILE_FAIL_IMMEDIATELY : LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY;
-    return LockFileEx(fileHandle_, lockFlags, 0, length & 0xFFFFFFFF, length >> 32, &overlapped);
-}
-
-bool File::tryUnlock(uint64_t ofs, uint64_t length)
-{
-    OVERLAPPED overlapped;
-    overlapped.Offset = ofs & 0xFFFFFFFF;
-    overlapped.OffsetHigh = ofs >> 32;
-    return UnlockFileEx(fileHandle_, 0, length & 0xFFFFFFFF, length >> 32, &overlapped);
-}
-*/
-
 std::string FileHandle::errorMessage()
 {
     LPSTR buffer = nullptr;

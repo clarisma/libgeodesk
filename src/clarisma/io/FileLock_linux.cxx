@@ -20,7 +20,7 @@ void FileLock::lock(FileHandle fileHandle, uint64_t offset, uint64_t length, boo
     // F_SETLKW waits indefinitely for lock
     if (fcntl(fileHandle.native(), F_SETLKW, &fl) == -1)
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
     fileHandle_ = fileHandle;
     lockOffset_ = offset;
@@ -39,7 +39,7 @@ bool FileLock::tryLock(FileHandle fileHandle, uint64_t offset, uint64_t length, 
     if (fcntl(fileHandle.native(), F_SETLK, &fl) == -1)
     {
         if (errno == EACCES || errno == EAGAIN) return false;
-        IOException::checkAndThrow();
+        throw IOException();
     }
     fileHandle_ = fileHandle;
     lockOffset_ = offset;
@@ -58,7 +58,7 @@ void FileLock::release()
 
     if (fcntl(fileHandle_.native(), F_SETLK, &fl) == -1)
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
     fileHandle_ = -1;
     lockLength_ = 0;

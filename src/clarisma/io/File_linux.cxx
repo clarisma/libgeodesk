@@ -13,20 +13,6 @@
 namespace clarisma {
 
 
-std::string File::fileName() const
-{
-    char fdPath[1024];
-    char filePath[1024];
-    snprintf(fdPath, sizeof(fdPath), "/proc/self/fd/%d", handle_);
-    ssize_t len = readlink(fdPath, filePath, sizeof(filePath) - 1);
-    if (len != -1) 
-    {
-        filePath[len] = '\0'; // Null-terminate the result
-        return std::string(filePath);
-    }
-    return "<invalid file>";
-}
-
 /*
 
 void File::allocate(uint64_t ofs, size_t length)
