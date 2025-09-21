@@ -36,6 +36,7 @@ void FreeStore::Journal::addBlock(uint64_t marker, const void* content, size_t s
 {
     assert(size <= BLOCK_SIZE);
     assert((size % 8) == 0);
+    const byte* src = static_cast<const byte*>(content);
     byte* p = buf_.get() + bufPos_;
 
     // Since buffer is always a multiple of 4KB (8 KB minimum),
@@ -50,16 +51,16 @@ void FreeStore::Journal::addBlock(uint64_t marker, const void* content, size_t s
     if (p + size >= end_)
     {
         auto remaining = Pointers::delta32(end_, p);
-        memcpy(p, content, remaining);
+        memcpy(p, src, remaining);
         bufPos_ += remaining;
-        content += remaining;
+        src += remaining;
         computeChecksum();
         writeToFile();
         assert(bufPos_ == 0);   // writeFile() resets bufPos_
         p = buf_.get();
         size -= remaining;
     }
-    memcpy(p, content, size);
+    memcpy(p, src, size);
     bufPos_ += size;
 }
 
