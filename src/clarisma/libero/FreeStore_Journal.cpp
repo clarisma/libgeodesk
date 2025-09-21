@@ -35,21 +35,32 @@ void FreeStore::Journal::reset(uint64_t marker, const Header* header)
 void FreeStore::Journal::addBlock(uint64_t marker, const void* content, size_t size)
 {
     assert(size <= BLOCK_SIZE);
+    assert((size % 8) == 0);
     byte* p = buf_.get() + bufPos_;
+
+    // Since buffer is always a multiple of 4KB (8 KB minimum),
+    // and size of content is always evenly divisible by 8
+    // (either a 512-byte header of a 4KB data block),
+    // we're always guaranteed that there is room for the
+    // 8-byte marker, and that it is properly aligned
+
     *reinterpret_cast<uint64_t*>(p) = marker;
     bufPos_ += 8;
     p += 8;
     if (p + size >= end_)
     {
-        auto remaining = Pointers::nearDelta(end_, p);
+        auto remaining = Pointers::delta32(end_, p);
         memcpy(p, content, remaining);
         bufPos_ += remaining;
+        content += remaining;
         computeChecksum();
         writeToFile();
+        assert(bufPos_ == 0);   // writeFile() resets bufPos_
+        p = buf_.get();
         size -= remaining;
     }
-    memcpy(buf_.get(), content, size);
-    bufPos_ = size;
+    memcpy(p, content, size);
+    bufPos_ += size;
 }
 
 void FreeStore::Journal::seal()

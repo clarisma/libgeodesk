@@ -35,9 +35,9 @@ TextTemplate::Ptr TextTemplate::compile(std::string_view text)
     {
         if (*p == '{')
         {
-            len = Pointers::nearOffset(p, literalStart);
+            len = Pointers::offset32(p, literalStart);
             totalTextLen += len;
-            parts.emplace_back(Pointers::nearOffset(literalStart, start), len);
+            parts.emplace_back(Pointers::offset32(literalStart, start), len);
             ++p;
             while (p < end && *p <= 32) // Skip whitespace
             {
@@ -71,16 +71,16 @@ TextTemplate::Ptr TextTemplate::compile(std::string_view text)
                 throw std::runtime_error("Empty parameter name");
             }
 
-            len = Pointers::nearOffset(paramEnd, paramStart);
+            len = Pointers::offset32(paramEnd, paramStart);
             totalTextLen += len;
-            parts.emplace_back(Pointers::nearOffset(paramStart,start), len);
+            parts.emplace_back(Pointers::offset32(paramStart,start), len);
             literalStart = p + 1;
         }
         ++p;
     }
     len = static_cast<uint32_t>(p-literalStart);
     totalTextLen += len;
-    parts.emplace_back(Pointers::nearOffset(literalStart,start), len);
+    parts.emplace_back(Pointers::offset32(literalStart,start), len);
 
     size_t textOfs =
         sizeof(uint32_t) +
