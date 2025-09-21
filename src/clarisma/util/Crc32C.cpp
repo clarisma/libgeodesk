@@ -9,8 +9,16 @@
 #endif
 
 #if defined(__linux__)
-    #include <sys/auxv.h>
-    #include <asm/hwcap.h>
+	#include <sys/auxv.h>
+	#if defined(__aarch64__) || defined(_M_ARM64)
+		#if __has_include(<asm/hwcap.h>)
+			#include <asm/hwcap.h>
+		#endif
+		#ifndef HWCAP_CRC32
+			// Linux AArch64 UAPI: CRC32 feature bit is (1 << 7)
+			#define HWCAP_CRC32 (1UL << 7)
+		#endif
+	#endif
 #endif
 
 #if defined(__x86_64__) || defined(_M_X64)
