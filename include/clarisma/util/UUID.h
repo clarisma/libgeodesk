@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <clarisma/util/streamable.h> // for << operator support
