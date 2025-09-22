@@ -261,6 +261,13 @@ namespace Format
         writeReplacedString(out, s, find, NF-1, replaceWith, replaceLen);
     }
 
+    inline char* put(char* buf, const char *s)
+    {
+        while (*s) *buf++ = *s++;
+        return buf;
+    }
+
+
 }
 
 class FormattedLong

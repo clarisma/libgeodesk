@@ -13,7 +13,7 @@ namespace clarisma {
 class FreeStore::Transaction
 {
 public:
-	Transaction(FreeStore& store) :
+	explicit Transaction(FreeStore& store) :
 		store_(store)
 	{
 	}

@@ -7,6 +7,7 @@
 #include <cassert>
 
 #include "clarisma/io/MemoryMapping.h"
+#include "clarisma/util/StringBuilder.h"
 
 namespace clarisma {
 
@@ -238,9 +239,29 @@ int FreeStore::ensureIntegrity(
         FileError error = File::error();
         if (error == FileError::NOT_FOUND)
         {
-            if (!isHeaderValid && header->magic != 0)
+            if (!isHeaderValid)
             {
-                throw FreeStoreException("Missing journal; unable to restore header");
+                // TODO: Move this into separate, customizable method
+
+                if (header->magic == 0)     // blank slate
+                {
+                    return 0;
+                }
+                if (header->magic == 0x7ADA0BB1)     // v1 format
+                {
+                    throw FreeStoreException("Unsupported Store Format (Version 1.0)");
+                }
+                if (header->magic == 0x1CE50D6E)     // v2 format, but invalid
+                {
+                    char buf[1024];
+                    Crc32C crc;
+                    crc.update(header, CHECKSUMMED_HEADER_SIZE);
+                    Format::unsafe(buf,
+                        "Store corrupted: Header checksum mismatch "
+                        "(%08X vs %08X)", header->checksum, crc.get());
+                    throw FreeStoreException(buf);
+                }
+                throw FreeStoreException("Unrecognized file format");
             }
             return 0;
         }

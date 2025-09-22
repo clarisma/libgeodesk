@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/cli/CliApplication.h>
@@ -64,12 +64,33 @@ void signalHandler(int signal)
 
 void terminateHandler()
 {
+	if (auto eptr = std::current_exception())
+	{
+		try
+		{
+			std::rethrow_exception(eptr);
+		}
+		catch (const std::exception& e)
+		{
+			CliApplication::shutdown(e.what());
+			std::abort();
+		}
+		catch (...)
+		{
+			CliApplication::shutdown("Failed due to unknown exception.");
+			std::abort();
+		}
+	}
 	CliApplication::shutdown("Abnormal termination.");
 	std::abort();
 }
 
+static std::atomic_bool shuttingDown_(false);
+
 void CliApplication::shutdown(const char* msg)
 {
+	if (shuttingDown_.exchange(true)) return;
+
 	CliApplication* theApp = get();
 	if(theApp)
 	{
@@ -114,7 +135,7 @@ CliApplication::~CliApplication()
 	theApp_ = nullptr;
 }
 
-void CliApplication::fail(std::string msg)
+void CliApplication::fail(std::string_view msg)
 {
 	console_.end().failed().writeString(msg);
 }
