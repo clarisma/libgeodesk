@@ -228,7 +228,7 @@ inline Buffer& operator<<(Buffer& buf, int n)
 	return buf;
 }
 
-inline Buffer& operator<<(Buffer& buf, uint64_t n)
+inline Buffer& operator<<(Buffer& buf, unsigned long long n)
 {
 	char tmp[32];
 	char* end = tmp + sizeof(tmp);
@@ -238,6 +238,12 @@ inline Buffer& operator<<(Buffer& buf, uint64_t n)
 }
 
 inline Buffer& operator<<(Buffer& buf, uint32_t n)
+{
+	buf << static_cast<uint64_t>(n);
+	return buf;
+}
+
+inline Buffer& operator<<(Buffer& buf, unsigned long n)
 {
 	buf << static_cast<uint64_t>(n);
 	return buf;

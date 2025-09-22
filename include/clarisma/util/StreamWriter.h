@@ -52,7 +52,7 @@ public:
   		return static_cast<S&>(*this);
   	}
 
-	S& operator<<(uint64_t n)
+	S& operator<<(unsigned long long n)
   	{
   		formatUnsignedInt(n);
   		return static_cast<S&>(*this);
