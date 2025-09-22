@@ -213,7 +213,11 @@ inline Buffer& operator<<(Buffer& buf, char ch)
 	return buf;
 }
 
-inline Buffer& operator<<(Buffer& buf, int64_t n)
+// signed integrals (NOT char types)
+template<std::signed_integral T>
+	requires (!std::is_same_v<T, char> &&
+			  !std::is_same_v<T, signed char>)
+Buffer& operator<<(Buffer& buf, T n)
 {
 	char tmp[32];
 	char* end = tmp + sizeof(tmp);
@@ -222,30 +226,15 @@ inline Buffer& operator<<(Buffer& buf, int64_t n)
 	return buf;
 }
 
-inline Buffer& operator<<(Buffer& buf, int n)
-{
-	buf << static_cast<int64_t>(n);
-	return buf;
-}
-
-inline Buffer& operator<<(Buffer& buf, unsigned long long n)
+// unsigned integrals (includes size_t; NOT unsigned char)
+template<std::unsigned_integral T>
+	requires (!std::is_same_v<T, unsigned char>)
+Buffer& operator<<(Buffer& buf, T n)
 {
 	char tmp[32];
 	char* end = tmp + sizeof(tmp);
 	char* start = Format::unsignedIntegerReverse(n, end);
 	buf.write(start, end - start);
-	return buf;
-}
-
-inline Buffer& operator<<(Buffer& buf, uint32_t n)
-{
-	buf << static_cast<uint64_t>(n);
-	return buf;
-}
-
-inline Buffer& operator<<(Buffer& buf, unsigned long n)
-{
-	buf << static_cast<uint64_t>(n);
 	return buf;
 }
 
@@ -257,14 +246,6 @@ inline Buffer& operator<<(Buffer& buf, double d)
 	buf.write(start, end - start);
 	return buf;
 }
-
-/*
-inline Buffer& operator<<(Buffer& buf, Decimal d)
-{
-	d.format(buf);
-	return buf;
-}
-*/
 
 template<typename T>
 concept BufferFormattable =

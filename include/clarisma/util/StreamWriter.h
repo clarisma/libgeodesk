@@ -40,33 +40,22 @@ public:
   		return static_cast<S&>(*this);
   	}
 
-	S& operator<<(int n)
+	// signed integrals (NOT char types)
+	template<std::signed_integral T>
+		requires (!std::is_same_v<T, char> &&
+				  !std::is_same_v<T, signed char>)
+	S& operator<<(T n)
   	{
   		formatInt(n);
   		return static_cast<S&>(*this);
   	}
 
-	S& operator<<(uint32_t n)
+	// unsigned integrals (includes size_t; NOT unsigned char)
+	template<std::unsigned_integral T>
+		requires (!std::is_same_v<T, unsigned char>)
+	S& operator<<(T n)
   	{
   		formatUnsignedInt(n);
-  		return static_cast<S&>(*this);
-  	}
-
-	S& operator<<(unsigned long long n)
-  	{
-  		formatUnsignedInt(n);
-  		return static_cast<S&>(*this);
-  	}
-
-	S& operator<<(unsigned long n)
-  	{
-  		formatUnsignedInt(n);
-  		return static_cast<S&>(*this);
-  	}
-
-	S& operator<<(int64_t n)
-  	{
-  		formatInt(n);
   		return static_cast<S&>(*this);
   	}
 
