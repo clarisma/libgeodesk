@@ -375,7 +375,10 @@ inline void FileHandle::writeAllAt(
 /// @brief Flush file data only if available; else full metadata flush.
 inline bool FileHandle::trySyncData() noexcept
 {
-#if defined(_POSIX_SYNCHRONIZED_IO) || defined(__APPLE__) || defined(__linux__)
+#if defined(__APPLE__)
+    // macOS: fdatasync() is not reliable/portable; use fsync().
+    return ::fsync(handle_) == 0;
+#elif defined(_POSIX_SYNCHRONIZED_IO) || defined(__linux__)
     return ::fdatasync(handle_) == 0;
 #else
     return ::fsync(handle_) == 0;
