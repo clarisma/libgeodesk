@@ -58,6 +58,14 @@ public:
   		return static_cast<S&>(*this);
   	}
 
+#if SIZE_MAX != UINT64_MAX
+	S& operator<<(size_t n)
+  	{
+  		formatUnsignedInt(n);
+  		return static_cast<S&>(*this);
+  	}
+#endif
+
 	S& operator<<(int64_t n)
   	{
   		formatInt(n);
