@@ -66,9 +66,19 @@ public:
 
     // TODO: Should we make conversions explicit?
 
-    constexpr operator int32_t () const
+    constexpr explicit operator int32_t () const
     {
         return tex_;
+    }
+
+    constexpr explicit operator uint32_t () const
+    {
+        return static_cast<uint32_t>(tex_);
+    }
+
+    constexpr explicit operator uint64_t () const
+    {
+        return static_cast<uint64_t>(tex_);
     }
 
     Tex& operator+=(TexDelta delta)
@@ -80,6 +90,11 @@ public:
     TexDelta operator-(Tex other) const noexcept
     {
         return TexDelta(tex_ - other.tex_);
+    }
+
+    bool operator==(Tex other) const noexcept
+    {
+        return tex_ == other.tex_;
     }
 
     static constexpr int32_t MEMBERS_START_TEX = 0x400;

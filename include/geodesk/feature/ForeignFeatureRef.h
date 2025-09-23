@@ -25,7 +25,7 @@ struct ForeignFeatureRef
 	{
 		tip.format(buf);
 		buf[6] = '#';
-		return clarisma::Format::integer(&buf[7], tex);
+		return clarisma::Format::integer(&buf[7], static_cast<int>(tex));
 	}
 
 	template<typename Stream>

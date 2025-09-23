@@ -93,7 +93,7 @@ public:
                     }
                     pExports_ = (pTile + TileConstants::EXPORTS_OFS).follow();
                 }
-                feature = FeaturePtr((pExports_ + currentTex_ * 4).follow());
+                feature = FeaturePtr((pExports_ + static_cast<int>(currentTex_) * 4).follow());
             }
             else
             {
