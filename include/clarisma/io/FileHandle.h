@@ -21,9 +21,9 @@
 #include <windows.h>
 #endif
 
-using std::byte;
-
 namespace clarisma {
+
+using std::byte;
 
 /// @brief Lightweight wrapper for a native file handle on Windows,
 /// Linux and macOS.
@@ -46,9 +46,13 @@ namespace clarisma {
 class FileHandle
 {
 public:
-#ifdef _WIN32
+#if defined(_WIN32)
     using Native = HANDLE;
+#if defined(_MSC_VER)
     static constexpr Native INVALID = INVALID_HANDLE_VALUE;
+#else
+    inline static const Native INVALID = INVALID_HANDLE_VALUE;
+#endif
 #else
     using Native = int;
     static constexpr Native INVALID = -1;

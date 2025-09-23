@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#pragma once
-
 #include <clarisma/text/TextTemplate.h>
 #include <clarisma/util/Pointers.h>
 #include <cassert>

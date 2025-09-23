@@ -9,9 +9,9 @@
 
 #include "FileHandle.h"
 
-using std::byte;
-
 namespace clarisma {
+
+using std::byte;
 
 /// @brief A memory-mapped portion of a file. Unmaps automatically
 /// upon destruction.
