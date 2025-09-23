@@ -15,7 +15,7 @@ class MappedFile : public File
 public:
     ~MappedFile()
     {
-        close();
+        tryClose();
     }
 
     // TODO: Ensure these are the same values as OpenMode

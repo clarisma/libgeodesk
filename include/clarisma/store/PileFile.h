@@ -11,8 +11,11 @@ class PileFile
 {
 public:
 	PileFile();
-	~PileFile() { close(); }
-		// TODO: currently, this does not unmap!!!
+	~PileFile()
+    {
+        if(file_.isOpen()) file_.tryClose();
+        // TODO: currently, this does not unmap!!!
+    }
 
 	struct Data
 	{

@@ -62,6 +62,7 @@ void FreeStore::Transaction::commit(bool isFinal)
     Crc32C crc;
     crc.update(&header_, CHECKSUMMED_HEADER_SIZE);
     header_.checksum = crc.get();
+    LOGS << "Calculated header checksum: " << header_.checksum;
 
     if (!store_.created_)   [[likely]]
     {

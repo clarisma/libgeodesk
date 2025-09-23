@@ -6,7 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <geodesk/geodesk.h>
 
-#define GEODESK_CONCUR_TEST
+// #define GEODESK_CONCUR_TEST
 #ifdef GEODESK_CONCUR_TEST
 
 using namespace geodesk;

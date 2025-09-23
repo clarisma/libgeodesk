@@ -90,7 +90,7 @@ protected:
 		uint32_t totalPages;
 		uint32_t freeRangeIndex;
 		uint32_t freeRanges;
-		uint32_t reserved[6];
+		uint32_t reserved[7];
 	};
 
 	static_assert(sizeof(Header) == 64);
@@ -108,6 +108,8 @@ protected:
 		uint32_t checksum;
 		uint32_t unused;
 	};
+
+    static_assert(offsetof(HeaderBlock,checksum) == 504);
 
 	static_assert(sizeof(HeaderBlock) == HEADER_SIZE);
 
