@@ -38,7 +38,7 @@ public:
     {
         if (this != &other)
         {
-            close();
+            if(isOpen()) close();
             handle_ = other.handle_;
             other.handle_ = INVALID;
         }
