@@ -134,10 +134,18 @@ PyObject* TagTablePtr::valueAsString(TagBits value, StringTable& strings) const
 	if (type == TagValueType::NARROW_NUMBER)
 	{
 		return PyUnicode_FromFormat("%d", narrowNumber(value));
+
+		/*	TODO -- maybe replace with:
+		 *
+		char buf[32];
+		char* end = buf + sizeof(buf);
+		char* start = Format::integerReverse(narrowNumber(value), end);
+		return PyUnicode_FromStringAndSize(start, end-start);
+		 */
 	}
 	assert(type == TagValueType::WIDE_NUMBER);
 	DataPtr pValue = valuePtr(value);
-	uint32_t rawValue = pValue.getUnsignedInt();
+	uint32_t rawValue = pValue.getUnsignedIntUnaligned();
 	Decimal d = TagValues::decimalFromWideNumber(rawValue);
 	char buf[32];
 	char* p = d.format(buf);
@@ -166,7 +174,7 @@ PyObject* TagTablePtr::valueAsObject(TagBits value, StringTable& strings) const
 	}
 	assert(type == TagValueType::WIDE_NUMBER);
 	Decimal d = wideNumber(value);
-	if(d.scale() == 0) PyLong_FromLong(d.mantissa());
+	if(d.scale() == 0) return PyLong_FromLong(d.mantissa());
 	return PyFloat_FromDouble(static_cast<double>(d));
 }
 
@@ -182,7 +190,7 @@ PyObject* TagTablePtr::valueAsNumber(TagBits value, StringTable& strings) const
 	if (type == TagValueType::WIDE_NUMBER)
 	{
 		Decimal d = wideNumber(value);
-		if (d.scale() == 0) PyLong_FromLong(d.mantissa());
+		if (d.scale() == 0) return PyLong_FromLong(d.mantissa());
 		return PyFloat_FromDouble(static_cast<double>(d));
 	}
 	if (type == TagValueType::LOCAL_STRING)
