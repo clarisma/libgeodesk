@@ -28,7 +28,7 @@ void LeafletFormatter::writeHeader(Buffer& out, const LeafletSettings& settings,
 	out <<  "\"></script>\n<style>\n#map {height: 100%;}\nbody {margin:0;}\n";
 	if(extraStyles) out << extraStyles;
 	out << "</style>\n</head>\n<body>\n<div id=\"map\">"
-		"<a class='logo' href='https://docs.geodesk.com/gol/map' target='_blank'></a></div>\n<script>"
+		"<a class='logo' href='https://docs2.geodesk.com/gol/map' target='_blank'></a></div>\n<script>"
 		"var map = L.map('map');\n"
 		"var tilesUrl='";
 	out << settings.basemapUrl;
