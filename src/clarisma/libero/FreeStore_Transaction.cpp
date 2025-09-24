@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/libero/FreeStore_Transaction.h>
-#include <clarisma/util/Crc32.h>
 #include <cassert>
 #include <cstdio>
 #include <random>
