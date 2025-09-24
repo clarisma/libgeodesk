@@ -32,12 +32,6 @@ endif()
 
 include(FetchContent)
 
-FetchContent_Declare(boost_crc
-    GIT_REPOSITORY https://github.com/boostorg/crc.git
-    GIT_TAG boost-1.86.0
-)
-FetchContent_MakeAvailable(boost_crc)
-
 FetchContent_Declare(gtl
     GIT_REPOSITORY https://github.com/greg7mdp/gtl.git
     GIT_TAG v1.2.0)
