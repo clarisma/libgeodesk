@@ -63,7 +63,7 @@ public:
 	size_t size() const { return size_; }
 	void fill(const uint8_t* src)
 	{
-		memcpy(this->data(), src, size);
+		memcpy(this->data(), src, this->size());
 	}
 
 protected:
