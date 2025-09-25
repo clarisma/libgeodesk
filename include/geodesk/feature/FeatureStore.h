@@ -83,7 +83,9 @@ public:
         int32_t propertiesPtr;
         Settings settings;
         uint32_t tipCount;
-        uint32_t reserved[4];
+        uint32_t metadataChecksum;
+        uint32_t tileIndexChecksum;
+        uint32_t reserved[2];
         Snapshot snapshots[2];
         uint8_t urlLength;
         char url[245];

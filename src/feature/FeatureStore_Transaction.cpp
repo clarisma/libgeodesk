@@ -48,20 +48,30 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 	header.settings = *metadata.settings;
 	header.snapshots[0].tileCount = 0;
 
+	Crc32C metadataChecksum;
+
 	// Write the Indexed Keys Schema
 	size_t indexedKeysOfs = BLOCK_SIZE;
 	size_t indexedKeysSize = (*metadata.indexedKeys + 1) * 4;
 	file().writeAllAt(indexedKeysOfs, metadata.indexedKeys, indexedKeysSize);
+	metadataChecksum.update(metadata.indexedKeys, indexedKeysSize);
 
 	// Place the Global String Table
 	size_t stringTableOfs = indexedKeysOfs + indexedKeysSize;
 	file().writeAllAt(stringTableOfs, metadata.stringTable, metadata.stringTableSize);
+	metadataChecksum.update(metadata.stringTable, metadata.stringTableSize);
 
 	// Place the Properties Table
 	size_t propertiesOfs = stringTableOfs + metadata.stringTableSize;
+
+	/*
+	 // TODO: We're foregoing alignment for now to simplify
+	 //  the checksum calculation of the metadata
 	propertiesOfs += propertiesOfs & 1;
 		// properties must be 2-byte aligned
+	*/
 	file().writeAllAt(propertiesOfs, metadata.properties, metadata.propertiesSize);
+	metadataChecksum.update(metadata.properties, metadata.propertiesSize);
 
 	size_t metaSectionSize = propertiesOfs + metadata.propertiesSize - BLOCK_SIZE;
 
@@ -69,6 +79,8 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 	header.stringTablePtr = static_cast<int>(stringTableOfs);
 	header.propertiesPtr = static_cast<int>(propertiesOfs);
 	setMetaSectionSize(static_cast<uint32_t>(metaSectionSize));
+
+	header.metadataChecksum = metadataChecksum.get();
 
 	store().zoomLevels_ = ZoomLevels(header.settings.zoomLevels);
 	store().readIndexSchema(reinterpret_cast<const byte*>(metadata.indexedKeys));
