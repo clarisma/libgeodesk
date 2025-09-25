@@ -64,8 +64,8 @@ public:
         uint32_t modifiedSinceRevision;
         DateTime revisionTimestamp;
         DateTime modifiedSinceTimestamp;
-        uint32_t tileCount;
         uint32_t tileIndex;
+        uint32_t tileCount;
         uint32_t reserved[8];
     };
 
