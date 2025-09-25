@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 
+#ifdef CLARISMA_EXPERIMENTAL
+
 #include <iostream>
 #include <memory>
 #include <random>
@@ -186,3 +188,4 @@ TEST_CASE("Random BlobStoreTree")
 
 }
 
+#endif

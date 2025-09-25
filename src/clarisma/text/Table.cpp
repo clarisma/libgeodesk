@@ -20,7 +20,7 @@ void Table::distributeColumns(std::span<const Cell> data, int maxCols, int maxWi
     for(; colCount > 0; colCount--)
     {
         columns_.resize(colCount);
-        rowCount = (data.size() + colCount - 1) / colCount;
+        rowCount = static_cast<int>((data.size() + colCount - 1) / colCount);
         int tableWidth = 0;
         int colWidth = 0;
         int col = 0;

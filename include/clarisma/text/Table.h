@@ -52,8 +52,8 @@ public:
 
     Table();
 
-    int colCount() const { return columns_.size(); }
-    int rowCount() const { return cells_.size() / colCount(); }    // TODO
+    int colCount() const { return static_cast<int>(columns_.size()); }
+    int rowCount() const { return static_cast<int>(cells_.size() / colCount()); }    // TODO
 
     std::span<Cell> operator[](size_t row)
     {

@@ -65,11 +65,11 @@ void KeySchema::addKey(std::string_view key)
     int code = strings_->getCode(key);
     if (code >= 0 && code <= FeatureConstants::MAX_COMMON_KEY)
     {
-        globals_[code] = columns_.size();
+        globals_[code] = static_cast<uint16_t>(columns_.size());
     }
     else
     {
-        locals_[key] = columns_.size();
+        locals_[key] = static_cast<uint16_t>(columns_.size());
     }
 }
 
