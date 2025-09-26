@@ -57,8 +57,8 @@ cmake --build .
 
 ### Create a GOL
 
-Create a Geographic Object Library based on any `.osm.pbf` file, using the 
-[GOL Tool](https://www.geodesk.com/download) (Requires Java 16+).
+Create a Geo-Object Library based on any `.osm.pbf` file, using the 
+[GOL Tool](https://www.geodesk.com/download).
 
 For example:
 
@@ -134,7 +134,7 @@ int numberOfEntrances = building.nodes("[entrance]").count();
 
 - [geodesk](http://www.github.com/clarisma/geodesk) &mdash; GeoDesk for Java
 - [geodesk-py](http://www.github.com/clarisma/geodesk) &mdash; GeoDesk for Python
-- [gol-tool](http://www.github.com/clarisma/gol-tool) &mdash; command-line utility for building, maintaining and querying GOL files
+- [geodesk-gol](http://www.github.com/clarisma/geodesk-gol) &mdash; command-line utility for building, maintaining and querying GOL files
 
 ---
 

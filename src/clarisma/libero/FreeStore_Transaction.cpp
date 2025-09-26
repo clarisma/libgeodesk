@@ -147,7 +147,7 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
         freeByStart_.insert(it,
             (static_cast<uint64_t>(leftoverStart) << 32) |
             (leftoverSize << 1) |
-            garbageFlag);
+            static_cast<uint64_t>(garbageFlag));
         // TODO: hint asserts
 
         freeBySize_.insert((static_cast<uint64_t>(leftoverSize) << 32) | leftoverStart);

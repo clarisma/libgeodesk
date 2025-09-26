@@ -20,7 +20,8 @@ void Parser::error(const char* format, ...)
 	StringBuilder sb;
 	sb << buf;
 	sb.writeByte('\n');
-	Highlighter::highlight(sb, pStart_, pNext_ - pStart_, 1, 31);
+	Highlighter::highlight(sb, pStart_,
+		static_cast<int>(pNext_ - pStart_), 1, 31);
 	throw ParseException(sb.toString());
 }
 
