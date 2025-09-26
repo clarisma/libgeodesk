@@ -4,53 +4,89 @@
 #include <clarisma/cli/Console.h>
 // #define NOMINMAX
 #include <windows.h>
-#include <io.h> 
+#include <conio.h>  // For getch on Windows
+#ifdef _MSC_VER
+#include <corecrt_io.h> // For MSVC's _isatty
+#else
+#include <unistd.h>     // For GCC/MinGW's isatty
+#endif
+
+// Define a cross-platform alias for isatty
+#ifdef _MSC_VER
+#define isatty _isatty
+#endif
+
+#include <fcntl.h>
 
 namespace clarisma {
 
-void Console::init()
+void Console::initStream(int streamNo)
 {
-	hConsole_ = GetStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE hConsole = GetStdHandle((streamNo==0) ?
+		STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
+	handle_[streamNo] = hConsole;
+	isTerminal_[streamNo] = isatty(_fileno(streamNo == 0 ? stdout : stderr));
+	if(!isTerminal_[streamNo])
+	{
+		hasColor_[streamNo] = false;
+		return; // No further init
+	}
+	hasColor_[streamNo] = true;
+	// TODO: use GETENV to check for NOCOLOR
+
+	// setvbuf(stdout, nullptr, _IONBF, 0); // 64 * 1024);	// TODO
+	// setvbuf(stdout, nullptr, _IOFBF, 1024 * 1024);	// TODO
+	// _setmode(_fileno(stdout), _O_BINARY);
 
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	
-	if (GetConsoleScreenBufferInfo(hConsole_, &csbi))
+	if (GetConsoleScreenBufferInfo(hConsole, &csbi))
 	{
 		consoleWidth_ = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 	}
-		
+
 	DWORD consoleMode;
-	GetConsoleMode(hConsole_, &consoleMode);
-	prevConsoleMode_ = consoleMode;
+	GetConsoleMode(hConsole, &consoleMode);
+	prevConsoleMode_[streamNo] = consoleMode;
 	consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 	// consoleMode &= ~ENABLE_PROCESSED_INPUT;
-	SetConsoleMode(hConsole_, consoleMode);
+	SetConsoleMode(hConsole, consoleMode);
 	if (!SetConsoleOutputCP(CP_UTF8))
 	{
 		printf("Failed to enable UTF-8 support.\n");  // TODO
 	}
+
 	CONSOLE_CURSOR_INFO cursorInfo;
-	GetConsoleCursorInfo(hConsole_, &cursorInfo);
+	GetConsoleCursorInfo(hConsole, &cursorInfo);
 	cursorInfo.bVisible = false; // Set the cursor visibility
-	SetConsoleCursorInfo(hConsole_, &cursorInfo);
+	SetConsoleCursorInfo(hConsole, &cursorInfo);
 }
 
 
-void Console::restore()
+void Console::restoreStream(int streamNo)
 {
+	if(!isTerminal_[streamNo]) return;
+
 	// Restore the old console mode
-	SetConsoleMode(hConsole_, prevConsoleMode_);
+	SetConsoleMode(handle_[streamNo].native(), prevConsoleMode_[streamNo]);
 	// Re-enable the cursor
 	CONSOLE_CURSOR_INFO cursorInfo;
-	GetConsoleCursorInfo(hConsole_, &cursorInfo);
+	GetConsoleCursorInfo(handle_[streamNo].native(), &cursorInfo);
 	cursorInfo.bVisible = true; 
-	SetConsoleCursorInfo(hConsole_, &cursorInfo);
+	SetConsoleCursorInfo(handle_[streamNo].native(), &cursorInfo);
 }
 
-void Console::print(const char* s, size_t len)
+void Console::print(Stream stream, const char* s, size_t len)
 {
+	int streamNo = static_cast<int>(stream);
 	DWORD written;
-	WriteConsoleA(hConsole_, s, static_cast<DWORD>(len), &written, NULL);
+	// WriteConsoleA(hConsole_, s, static_cast<DWORD>(len), &written, NULL);
+	WriteFile(handle_[streamNo].native(), s, static_cast<DWORD>(len), &written, NULL);
+}
+
+char Console::readKeyPress()
+{
+	return _getch();  // Read a single key on Windows
 }
 
 } // namespace clarisma

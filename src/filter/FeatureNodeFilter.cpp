@@ -14,8 +14,7 @@ bool FeatureNodeFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilt
     // LOG("Checking %s...", feature.toString().c_str());
     assert(feature.isWay());
     WayPtr way(feature);
-    FeatureNodeIterator iter(store);
-    iter.start(way.bodyptr(), way.flags(), store->borrowAllMatcher(), nullptr);
+    FeatureNodeIterator iter(store, way.bodyptr(), way.flags(), store->borrowAllMatcher(), nullptr);
     for (;;)
     {
         NodePtr node = iter.next();

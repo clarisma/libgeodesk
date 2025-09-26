@@ -11,6 +11,7 @@
 #include <limits>
 #include <string>
 #include <utility>
+#include <clarisma/util/streamable.h> // for << operator support
 #include <geodesk/export.h>
 #include <geodesk/geom/Coordinate.h>
 #ifdef GEODESK_WITH_GEOS
@@ -18,6 +19,8 @@
 #endif
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 /// @brief An axis-aligned bounding box. A Box represents minimum and
 /// maximum X and Y coordinates in a Mercator-projected plane. It can
@@ -165,7 +168,7 @@ public:
 	 * This method assumes both are non-empty.
 	 * Returns an empty Box if the boxes don't intersect.
 	 */
-	inline static Box simpleIntersection(const Box& a, const Box& b) 
+	static Box simpleIntersection(const Box& a, const Box& b)
 	{
 		assert(a.isSimple());
 		assert(b.isSimple());
@@ -192,14 +195,14 @@ public:
 	}
 
 
-	inline double area() const
+	double area() const
 	{
 		double w = (double)maxX() - (double)minX();
 		double h = (double)maxY() - (double)minY();
 		return w * h;
 	}
 
-	inline static const Box& simpleSmaller(const Box& a, const Box& b)
+	static const Box& simpleSmaller(const Box& a, const Box& b)
 	{
 		assert(a.isSimple());
 		assert(b.isSimple());
@@ -207,7 +210,7 @@ public:
 	}
 
 	// TODO: define and test Antimeridian behaviour
-	inline void buffer(int32_t b)
+	void buffer(int32_t b)
 	{
 		if (isEmpty()) return;
 		m_minX -= b;
@@ -318,6 +321,15 @@ public:
 	GEODESK_API void format(char* buf) const;
 	GEODESK_API std::string toString() const;
 
+	template<typename Stream>
+	void format(Stream& out) const
+	{
+		char buf[64];
+		format(buf);
+		std::string_view sv = buf;
+		out.write(sv.data(), sv.size());
+	}
+
 private:
 	/**
 	 * Overflow-safe subtraction
@@ -354,15 +366,5 @@ private:
 	int32_t m_maxX;
 	int32_t m_maxY;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const Box& box)
-{
-	char buf[64];
-	box.format(buf);
-	std::string_view sv = buf;
-	out.write(sv.data(), sv.size());
-	return static_cast<Stream&>(out);
-}
 
 } // namespace geodesk

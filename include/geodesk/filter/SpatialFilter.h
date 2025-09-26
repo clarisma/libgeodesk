@@ -19,7 +19,7 @@ public:
     SpatialFilter() :
         Filter(FilterFlags::USES_BBOX, FeatureTypes::ALL),
         bounds_(Box::ofWorld()) {}
-    SpatialFilter(const Box& bounds) :
+    explicit SpatialFilter(const Box& bounds) :
         Filter(FilterFlags::USES_BBOX, FeatureTypes::ALL),
         bounds_(bounds) {}
     SpatialFilter(int flags, FeatureTypes acceptedTypes, const Box& bounds) :

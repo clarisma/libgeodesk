@@ -4,6 +4,7 @@
 #include <geodesk/feature/FastMemberIterator.h>
 #include <geodesk/feature/FeatureStore.h>
 
+/*
 namespace geodesk {
 
 
@@ -70,3 +71,5 @@ FeaturePtr FastMemberIterator::next()
 }
 
 } // namespace geodesk
+
+*/

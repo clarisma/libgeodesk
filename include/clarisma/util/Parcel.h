@@ -39,7 +39,7 @@ public:
 		return *this;
 	}
 
-	operator bool() const noexcept
+	operator bool() const noexcept	// NOLINT implicit
 	{
 		return p_ != nullptr;
 	}
@@ -63,7 +63,7 @@ public:
 	size_t size() const { return size_; }
 	void fill(const uint8_t* src)
 	{
-		memcpy(data(), src, size);
+		memcpy(this->data(), src, this->size());
 	}
 
 protected:

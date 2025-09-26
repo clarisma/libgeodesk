@@ -13,8 +13,7 @@ size_t FileSystem::getBlockSize(const char* path)
 
     if (!GetDiskFreeSpaceA(path, &sectorsPerCluster, &bytesPerSector, &numberOfFreeClusters, &totalNumberOfClusters)) 
     {
-        IOException::checkAndThrow();
-        return 0;
+        throw IOException();
     }
     return sectorsPerCluster * bytesPerSector;
 }
@@ -25,7 +24,7 @@ size_t FileSystem::getAvailableDiskSpace(const char* path)
     ULARGE_INTEGER freeBytesAvailable;
     if (!GetDiskFreeSpaceExA(path, &freeBytesAvailable, nullptr, nullptr)) 
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
     return freeBytesAvailable.QuadPart;
 }

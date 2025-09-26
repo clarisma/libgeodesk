@@ -5,6 +5,7 @@
 
 #include <limits>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
 #include <geodesk/geom/Box.h>
 
 namespace clarisma
@@ -15,26 +16,23 @@ class BufferWriter;
 namespace geodesk {
 
 typedef int32_t ZoomLevel;
+using clarisma::operator<<;
 
 /// \cond lowlevel
 
 class Tile
 {
 public:
-	Tile() : tile_(EMPTY) {}
-	explicit Tile(uint32_t v) : tile_(v) {}
-	Tile(const Tile& other) : tile_(other.tile_) {}
+	constexpr Tile() : tile_(EMPTY) {}
+	constexpr explicit Tile(uint32_t v) : tile_(v) {}
+	constexpr Tile(const Tile& other) = default;
 
 	bool isNull() const
 	{
 		return tile_ == EMPTY;
 	}
 
-	Tile& operator=(const Tile& other) 
-	{
-		tile_ = other.tile_;
-		return *this;
-	}
+	Tile& operator=(const Tile& other) = default;
 
 	explicit operator uint32_t() const
 	{
@@ -140,18 +138,21 @@ public:
 
 	std::string toString() const
 	{
-		char buf[80];
-		format(buf);
-		return {buf};
+		char buf[64];
+		buf[sizeof(buf) - 1] = '\0';
+		char* p = formatReverse(&buf[sizeof(buf) - 1]);
+		return {p};
 	}
 
 	char* formatReverse(char* end) const;
-	void write(clarisma::BufferWriter& out) const;
 
-	// TODO: conform
-	void format(char* buf) const
+	template<typename S>
+	void format(S& out) const
 	{
-		clarisma::Format::unsafe(buf, "%d/%d/%d", zoom(), column(), row());
+		char buf[64];
+		char* end = &buf[sizeof(buf)];
+		char* start = formatReverse(end);
+		out.write(start, end - start);
 	}
 
 	/**
@@ -233,16 +234,6 @@ protected:
 	
 	uint32_t tile_;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, Tile tile)
-{
-	char buf[64];
-	tile.format(buf);
-	std::string_view sv = buf;
-	out.write(sv.data(), sv.size());
-	return static_cast<Stream&>(out);
-}
 
 } // namespace geodesk
 

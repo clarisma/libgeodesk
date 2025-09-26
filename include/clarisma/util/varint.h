@@ -187,4 +187,51 @@ inline int32_t fromZigzag(uint32_t v)
 {
 	return static_cast<int32_t>((v >> 1) ^ -static_cast<int32_t>(v & 1));
 }
+
+/*
+
+class Varint
+{
+public:
+    explicit Varint(uint64_t value) : value_(value) {}
+    uint64_t value() const { return value_; }
+
+private:
+    uint64_t value_;
+};
+
+class SignedVarint
+{
+public:
+	explicit SignedVarint(int64_t value) : value_(value) {}
+	int64_t value() const { return value_; }
+
+private:
+	int64_t value_;
+};
+
+template<typename Stream>
+Stream& operator<<(Stream& out, Varint v)
+{
+	uint8_t buf[16];
+	uint8_t* p = buf;
+	writeVarint(p, v.value());
+	out.write(reinterpret_cast<const char*>(buf), p-buf);
+	return static_cast<Stream&>(out);
+}
+
+template<typename Stream>
+Stream& operator<<(Stream& out, SignedVarint v)
+{
+	uint8_t buf[16];
+	uint8_t* p = buf;
+	writeSignedVarint(p, v.value());
+	out.write(reinterpret_cast<const char*>(buf), p-buf);
+	return static_cast<Stream&>(out);
+}
+
+*/
+
+
+
 } // namespace clarisma

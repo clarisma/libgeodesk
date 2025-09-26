@@ -3,18 +3,25 @@
 
 #pragma once
 
+#include <span>
 #include <unordered_map>
 #ifdef GEODESK_PYTHON
 #include <Python.h>
 #endif
-#include <clarisma/store/BlobStore.h>
+#include <clarisma/libero/FreeStore.h>
 #include <clarisma/thread/ThreadPool.h>
+#include <clarisma/util/DateTime.h>
+#include <clarisma/util/UUID.h>
 #include <geodesk/export.h>
 #include <geodesk/feature/Key.h>
 #include <geodesk/feature/StringTable.h>
+#include <geodesk/feature/TilePtr.h>
+#include <geodesk/feature/ZoomLevels.h>
 #include <geodesk/match/Matcher.h>
 #include <geodesk/match/MatcherCompiler.h>
 #include <geodesk/query/TileQueryTask.h>
+
+// \cond
 
 class PyFeatures;       // not namespaced for now
 
@@ -25,27 +32,72 @@ class MatcherHolder;
 //  Possible threadpool alternatives:
 //  - https://github.com/progschj/ThreadPool (Zlib license, header-only)
 
+using std::byte;
 using clarisma::DataPtr;
+using clarisma::DateTime;
+
+
 
 /// @brief A Geographic Object Library.
 ///
 /// This class if part of the **Low-Level API**. It is not intended to
 /// be used directly by applications.
 ///
-class GEODESK_API FeatureStore final : public clarisma::BlobStore
+class GEODESK_API FeatureStore final : public clarisma::FreeStore
 {
 public:
     using IndexedKeyMap = std::unordered_map<uint16_t, uint16_t>;
+
+    struct Settings
+    {
+        uint16_t    zoomLevels;
+        uint16_t    reserved;
+        uint16_t    rtreeBranchSize;
+        uint8_t     rtreeAlgo;
+        uint8_t     maxKeyIndexes;
+        uint32_t    keyIndexMinFeatures;
+    };
+
+    struct Snapshot
+    {
+        uint32_t revision;
+        uint32_t modifiedSinceRevision;
+        DateTime revisionTimestamp;
+        DateTime modifiedSinceTimestamp;
+        uint32_t tileIndex;
+        uint32_t tileCount;
+        uint32_t reserved[8];
+    };
+
+    struct Header : FreeStore::Header
+    {
+        enum Flags
+        {
+            WAYNODE_IDS = 1
+        };
+
+        clarisma::UUID guid;
+        uint32_t flags;
+        int32_t stringTablePtr;
+        int32_t indexSchemaPtr;
+        int32_t propertiesPtr;
+        Settings settings;
+        uint32_t tipCount;
+        uint32_t metadataChecksum;
+        uint32_t tileIndexChecksum;
+        uint32_t reserved[2];
+        Snapshot snapshots[2];
+        uint8_t urlLength;
+        char url[245];
+        uint8_t unused[2];
+    };
+
+    static_assert(sizeof(Header) == HEADER_SIZE - 8);
 
     FeatureStore();
     ~FeatureStore() override;
 
     static FeatureStore* openSingle(std::string_view fileName);
-
-    void open(const char* fileName)
-    {
-        BlobStore::open(fileName, 0);   // TODO: open mode
-    }
 
 #ifdef GEODESK_MULTITHREADED
     void addref()
@@ -66,17 +118,26 @@ public:
     size_t refcount() const { return refcount_; }
 #endif
 
-    DataPtr tileIndex() const
-    { 
-        return getPointer(TILE_INDEX_PTR_OFS);
-    }
+    const clarisma::UUID& guid() const { return header()->guid; }
+    const Snapshot& snapshot() const { return header()->snapshots[header()->activeSnapshot]; }
+    uint32_t revision() const { return snapshot().revision; }
+    DateTime revisionTimestamp() const { return snapshot().revisionTimestamp; }
+    uint32_t tileCount() const { return snapshot().tileCount; }
 
-    uint32_t zoomLevels() const { return zoomLevels_; }
+    bool hasWaynodeIds() const { return header()->flags & Header::Flags::WAYNODE_IDS; }
+    ZoomLevels zoomLevels() const { return zoomLevels_; }
     StringTable& strings() { return strings_; }
     const IndexedKeyMap& keysToCategories() const { return keysToCategories_; }
+    std::vector<std::string_view> indexedKeyStrings() const;
     int getIndexCategory(int keyCode) const;
-    const MatcherHolder* getMatcher(const char* query);
+    const Header* header() const
+    {
+        return reinterpret_cast<const Header*>(data());
+    }
+    std::span<byte> stringTableData() const;
+    std::span<byte> propertiesData() const;
 
+    const MatcherHolder* getMatcher(const char* query);
     const MatcherHolder* borrowAllMatcher() const { return &allMatcher_; }
     const MatcherHolder* getAllMatcher() 
     { 
@@ -95,6 +156,10 @@ public:
             code > TagValues::MAX_COMMON_KEY ? -1 : code);
     }
 
+    // const uint32_t* tileIndex() const noexcept { return tileIndex_; }
+    DataPtr tileIndex() const noexcept { return DataPtr(reinterpret_cast<byte*>(tileIndex_)); }
+        // TODO: standardize on const uint32_t*?
+
     #ifdef GEODESK_PYTHON
     PyObject* getEmptyTags();
     PyFeatures* getEmptyFeatures();
@@ -102,27 +167,27 @@ public:
 
     clarisma::ThreadPool<TileQueryTask>& executor() { return executor_; }
 
-    DataPtr fetchTile(Tip tip);
+    TilePtr fetchTile(Tip tip) const;
+    static bool isTileValid(const byte* p);
+
+    struct Metadata;
+    class Transaction;
 
 protected:
-    void initialize() override;
+    void initialize(const byte* data) override;
+    void gatherUsedRanges(std::vector<uint64_t>& ranges) override;
 
     DataPtr getPointer(int ofs) const
     {
-        return DataPtr(mainMapping() + ofs).follow();
+        return DataPtr(data() + ofs).follow();
     }
 
 private:
-	static const uint32_t SubtypeMagic = 0x1CE50D6E;
+	static constexpr uint32_t MAGIC = 0x1CE50D6E;
+    static constexpr uint16_t VERSION_HIGH = 2;
+    static constexpr uint16_t VERSION_LOW = 0;
 
-    static const uint32_t ZOOM_LEVELS_OFS = 40;
-    static const uint32_t TILE_INDEX_PTR_OFS = 44;
-    static const uint32_t STRING_TABLE_PTR_OFS = 52;
-    static const uint32_t INDEX_SCHEMA_PTR_OFS = 56;
-
-    void readIndexSchema();
-
-    void readTileSchema();
+    void readIndexSchema(DataPtr pSchema);
 
     static std::unordered_map<std::string, FeatureStore*>& getOpenStores();
     static std::mutex& getOpenStoresMutex();
@@ -135,6 +200,7 @@ private:
 
     StringTable strings_;
     IndexedKeyMap keysToCategories_;
+    uint32_t* tileIndex_ = nullptr;
     MatcherCompiler matchers_;
     MatcherHolder allMatcher_;
     #ifdef GEODESK_PYTHON
@@ -147,8 +213,12 @@ private:
         // requires a FeatureStore
     #endif
     clarisma::ThreadPool<TileQueryTask> executor_;
-    uint32_t zoomLevels_;
+    ZoomLevels zoomLevels_;
+
+    friend class Transaction;
 };
 
-
 } // namespace geodesk
+
+// \endcond
+

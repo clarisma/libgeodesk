@@ -4,14 +4,64 @@
 #pragma once
 
 #include <chrono>
+#include <iomanip>
+#include <istream>
+#include <clarisma/util/StringViewBuffer.h>
+#include <clarisma/util/streamable.h> // for << operator support
+
+// TODO: Use std::time_t instead?
 
 namespace clarisma {
 
 class DateTime
 {
 public:
-	DateTime() : timestamp_(0) {}
+	DateTime() : timestamp_(0) {}	// NOLINT: implicit conv ok
 	explicit DateTime(int64_t millisecondsSinceEpoch) : timestamp_(millisecondsSinceEpoch) {}
+	explicit DateTime(uint64_t millisecondsSinceEpoch) : timestamp_(
+		static_cast<int64_t>(millisecondsSinceEpoch)) {}
+
+	/*
+	DateTime(std::string_view s, const char* format)
+	{
+		using namespace std::chrono;
+
+		StringViewBuffer buf(s);
+		std::istream in(&buf);
+		sys_time<milliseconds> tp;
+		in >> parse(format, tp);
+		// from_stream(in, format, tp);
+		timestamp_ = duration_cast<milliseconds>(tp.time_since_epoch()).count();
+	}
+	*/
+
+	// workaroudn for older compilers
+
+	DateTime(std::string_view s, const char* format)
+	{
+		std::tm tm = {};
+		StringViewBuffer buf(s);
+		std::istream in(&buf);
+		in >> std::get_time(&tm, format);
+		if (in.fail())
+		{
+			throw std::runtime_error("Invalid date/time format");
+		}
+
+		std::time_t time = std::mktime(&tm);
+		if (time == -1)
+		{
+			throw std::runtime_error("Failed to convert time");
+		}
+
+		timestamp_ = static_cast<int64_t>(time) * 1000; // seconds to ms
+	}
+
+	// TODO: Should 0 really be "null" as it is a valid timestamp?
+	bool isNull() const
+	{
+		return timestamp_ == 0;
+	}
 
 	static DateTime now()
 	{
@@ -20,8 +70,19 @@ public:
 		return DateTime(duration.count());
 	}
 
-	operator int64_t() const { return timestamp_; }
-	
+	operator int64_t() const { return timestamp_; }		// NOLINT: implicit conv ok
+	void format(char* buf, size_t bufSize, const char* format) const;
+	void format(char* buf) const;
+
+	template<typename Stream>
+	void format(Stream& out) const
+	{
+		char buf[32];
+		format(buf);
+		std::string_view sv = buf;
+		out.write(sv.data(), sv.size());
+	}
+
 private:
 	int64_t timestamp_;
 };

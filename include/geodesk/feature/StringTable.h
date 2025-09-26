@@ -47,16 +47,14 @@ public:
     const clarisma::ShortVarString* getGlobalString(int code) const noexcept
     {
         assert(code >= 0 && code < static_cast<int>(stringCount_));
-        if(code == 0)
-        {
-            // TODO: In v2, "" is a member of the GOL's string table,
-            //  so we won't need this check
-            return clarisma::ShortVarString::empty();
-        }
         return reinterpret_cast<const clarisma::ShortVarString*>(stringBase_ + entries_[code].relPointer);
     }
     bool isValidCode(int code);
     int getCode(const char* str, size_t len) const;
+    int getCode(std::string_view s) const
+    {
+        return getCode(s.data(), s.size());
+    }
 #ifdef GEODESK_PYTHON
     int getCode(PyObject* strObj) const
     {

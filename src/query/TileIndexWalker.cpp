@@ -9,16 +9,23 @@ namespace geodesk {
 
 using namespace clarisma;
 
+// TODO: Check single-tile GOLs
+
 TileIndexWalker::TileIndexWalker(
     DataPtr pIndex, uint32_t zoomLevels, const Box& box, const Filter* filter) :
-	pIndex_(pIndex),
-	currentLevel_(0),
     box_(box),
     filter_(filter),
+    pIndex_(pIndex),
+	currentLevel_(0),
+    currentTile_(Tile::fromColumnRowZoom(0,0,0)),
+    currentTip_(1),
+    northwestFlags_(0),
+    turboFlags_(0),
     tileBasedAcceleration_(false),
     trackAcceptedTiles_(false)
 {
-	int zoom = -1;
+	int zoom = 0;
+    zoomLevels >>= 1;
     Level* level = levels_;
     for (;;)
     {
@@ -42,7 +49,7 @@ TileIndexWalker::TileIndexWalker(
             }
         }
     }
-    startRoot();
+    startLevel(&levels_[0], 1);
 }
 
 bool TileIndexWalker::next()
@@ -52,7 +59,10 @@ bool TileIndexWalker::next()
     for (;;)
     {
         // TODO: could restructure so we don't overflow uint16
-        // by checking *before* incrementing
+        //  by checking *before* incrementing
+        //  (only relevant if we ever support zoom levels up to 16,
+        //  because then we'll need a uint16_t to represent all
+        //  columns and rows
 
         level->currentCol++;
         if (level->currentCol > level->endCol)
@@ -71,10 +81,7 @@ bool TileIndexWalker::next()
                 childTileMask = level->childTileMask;
                 continue;
             }
-            else
-            {
-                level->currentCol = level->startCol;
-            }
+            level->currentCol = level->startCol;
         }
         int childNumber = (level->currentRow << level->step) + level->currentCol;
         if ((childTileMask & (1LL << childNumber)) != 0)
@@ -111,7 +118,12 @@ bool TileIndexWalker::next()
             if (tileBasedAcceleration_)
             {
                 // TODO: Don't call acceptTile() if all turbo-flags are
-                // set for the current tile
+                //  set for the current tile
+                //  If the parent is fast-accept, children by definition
+                //  are fast-accept as well
+                //  It's more complicated if there are multiple
+                //  spatial filters, as a tile may be accelerated for
+                //  some but not others
                 
                 int turboFlags = filter_->acceptTile(currentTile_);
                 if (turboFlags < 0) continue;
@@ -156,17 +168,17 @@ bool TileIndexWalker::next()
             }
             int tip = level->pChildEntries + childEntry;
             uint32_t pageOrPtr = (pIndex_ + (tip << 2)).getUnsignedInt();
-            if ((pageOrPtr & 1) != 0)
+            if ((pageOrPtr & 3) == 1)
             {
-                // TODO: This changes for v2: The lowest 2 bits
+                // Changed for v2: The lowest 2 bits
                 //  are flags. A value of 01 indicates a pointer
                 //  to a child level
-                //  Use TileIndexEntry class
+                //  TODO: Use TileIndexEntry class
 
                 // current tile has children: prepare to move up to the
                 // next level in the tile tree
 
-                currentLevel_++;;
+                currentLevel_++;
                 tip += (static_cast<int32_t>(pageOrPtr) ^ 1) >> 2;
                 startLevel(level+1, tip);
             }
@@ -178,8 +190,6 @@ bool TileIndexWalker::next()
 
 void TileIndexWalker::startLevel(Level* level, int tip)
 {
-    // this.filter = filter; // TODO
-
     int zoom = level->topLeftChildTile.zoom();
     int step = level->step;
     int extent = 1 << step;     
@@ -198,24 +208,9 @@ void TileIndexWalker::startLevel(Level* level, int tip)
     level->currentRow = startRow;
 
     level->childTileMask = (pIndex_ + (tip + 1) * 4).getUnsignedLong();
+        // TODO: Is this unaligned???
     level->pChildEntries = tip + (step == 3 ? 3 : 2);
     level->turboFlags = 0; // TODO
-}
-
-void TileIndexWalker::startRoot()
-{
-    // this.filter = filter; // TODO
-
-    Level* level = &levels_[0];
-
-    level->topLeftChildTile = Tile::fromColumnRowZoom(0,0,0);
-    level->startCol = 0;
-    level->endCol = 0;
-    level->endRow = 0;
-    level->currentCol = -1;
-    level->currentRow = 0;
-    level->childTileMask = ~0;
-    level->pChildEntries = 1;   // TODO: not used for root?
 }
 
 } // namespace geodesk

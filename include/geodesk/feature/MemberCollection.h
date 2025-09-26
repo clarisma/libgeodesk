@@ -8,6 +8,7 @@
 
 namespace geodesk {
 
+// TODO: not used, remove
 /// \cond lowlevel
 ///
 class MemberCollection : public std::vector<FeaturePtr>

@@ -22,6 +22,14 @@ public:
     {
         return RelationPtr(pTile_ + localHandle());
     }
+
+    bool next()
+    {
+        if(isLast()) return false;
+        fetchNext();
+        ofs_ += 2;
+        return true;
+    }
 };
 
 // \endcond

@@ -2,12 +2,13 @@
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
- 
-# Define _WIN32_WINNT to be at least Windows 8.1
-# (Needed for virtual memory management)
+
+# Define _WIN32_WINNT to be at least Windows 8.1, Update 1 (KBSPRING14)
+# (Needed for advanced virtual memory management)
 add_compile_definitions(_WIN32_WINNT=0x0603)
+add_compile_definitions(WINBLUE_KBSPRING14)
 if (MSVC)
-    add_compile_options(/Zc:__cplusplus)
+    add_compile_options(/Zc:__cplusplus /std:c++20)
 endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -21,6 +22,7 @@ option(GEODESK_PYTHON "Build GeoDesk with Python support" OFF)
 option(GEODESK_PYTHON_WHEELS "Enable Support for Python Wheels" OFF)
 option(GEODESK_EXAMPLES "Build example applications" ON)
 option(GEODESK_MULTITHREADED "Allow multiple threads to use the same GOL" OFF)
+option(GEODESK_LIBERO "Enable Libero storage engine" ON)
 
 # Option to choose between static or shared library
 # Only set the option if BUILD_SHARED_LIBS is not already defined
@@ -30,15 +32,15 @@ endif()
 
 include(FetchContent)
 
-FetchContent_Declare(boost_crc
-    GIT_REPOSITORY https://github.com/boostorg/crc.git
-    GIT_TAG boost-1.86.0
-)
-FetchContent_MakeAvailable(boost_crc)
+FetchContent_Declare(gtl
+    GIT_REPOSITORY https://github.com/greg7mdp/gtl.git
+    GIT_TAG v1.2.0)
+FetchContent_MakeAvailable(gtl)
 
 set(PREVIOUS_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF)
 set(CATCH_BUILD_STATIC_LIBRARY ON)
+set(GEODESK_LIBERO ON)
 # Fetch Catch2 from its GitHub repository
 FetchContent_Declare(Catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -61,7 +63,13 @@ if(GEODESK_MULTITHREADED)
 else()
     message(STATUS "GeoDesk: Single-threaded query access")
 endif()
-target_compile_features(geodesk INTERFACE cxx_std_20)
+if(GEODESK_LIBERO)
+    message(STATUS "GeoDesk: Libero storage engine enabled")
+    target_compile_definitions(geodesk PUBLIC GEODESK_LIBERO)
+else()
+    message(STATUS "GeoDesk: Legacy BlobStore storage engine enabled")
+endif()
+target_compile_features(geodesk PUBLIC cxx_std_20)
 set_target_properties(geodesk PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set(INCLUDES include src ${boost_crc_SOURCE_DIR}/include)
 if(GEODESK_WITH_GEOS)
@@ -116,6 +124,8 @@ target_include_directories(geodesk PUBLIC
     $<INSTALL_INTERFACE:include>)
 target_include_directories(geodesk PRIVATE ${GEODESK_EXTRA_INCLUDE_DIRS} src ${boost_crc_SOURCE_DIR}/include)
 
+target_link_libraries(geodesk PUBLIC gtl)
+
 # Define where the library and public headers should be installed
 install(TARGETS geodesk
         RUNTIME DESTINATION bin
@@ -140,3 +150,6 @@ if(NOT GEODESK_PYTHON AND NOT BUILD_SHARED_LIBS)
         add_subdirectory(examples)
     endif()
 endif()
+
+message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER}")
+message(STATUS "MSVC_VERSION: ${MSVC_VERSION}")

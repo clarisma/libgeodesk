@@ -4,7 +4,7 @@
 #pragma once
 
 #include <geodesk/geom/polygon/Polygonizer.h>
-#include "Ring.h"
+#include <geodesk/geom/polygon/Ring.h>
 
 namespace geodesk {
 

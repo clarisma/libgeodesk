@@ -12,17 +12,13 @@ namespace geodesk {
 
 Query::Query(FeatureStore* store, const Box& box, FeatureTypes types,
     const MatcherHolder* matcher, const Filter* filter) :
-    AbstractQuery(store),
-    types_(types),
-    matcher_(matcher),
-    filter_(filter),
+    QueryBase(store, box, types, matcher, filter, &Query::consumeResults),
+    completedTiles_(0),
+    queuedResults_(QueryResults::EMPTY),
     pendingTiles_(0),
     currentResults_(QueryResults::EMPTY),
     currentPos_(QueryResults::EMPTY->count),
-    allTilesRequested_(false),
-    tileIndexWalker_(store->tileIndex(), store->zoomLevels(), box, filter),
-    queuedResults_(QueryResults::EMPTY),
-    completedTiles_(0)
+    allTilesRequested_(false)
 {
     /*
     // Don't add refcount to store, wrapper object is responsible for liveness
@@ -33,7 +29,8 @@ Query::Query(FeatureStore* store, const Box& box, FeatureTypes types,
                             // are guaranteed to be kept alive for duration of the
                             // query's lifetime
     */
-    tileIndexWalker_.next();
+    // tileIndexWalker_.next();
+        // *** changed from v1 ***
         // move the TIW to the root tile (This is not needed in v2,
         // since next() is called *after* each tile, not before)
     requestTiles();
@@ -127,52 +124,67 @@ void Query::requestTiles()
     int submitCount = std::max(store_->executor().minimumRemainingCapacity(), 1);
     while (submitCount > 0)
     {
+        if(tileIndexWalker_.currentEntry().isLoadedAndCurrent()) [[likely]]
+        {
+            TileQueryTask task(this,
+                (tileIndexWalker_.currentTip() << 8) |
+                tileIndexWalker_.northwestFlags(),
+                FastFilterHint(tileIndexWalker_.turboFlags(), tileIndexWalker_.currentTile()));
+            store_->executor().post(task);
+            pendingTiles_++;
+            submitCount--;
+        }
+        else
+        {
+            tileIndexWalker_.skipChildren();
+        }
         if (!tileIndexWalker_.next())
         {
             allTilesRequested_ = true;
             break;
         }
-        TileQueryTask task(this,
-            (tileIndexWalker_.currentTip() << 8) |
-            tileIndexWalker_.northwestFlags(),
-            FastFilterHint(tileIndexWalker_.turboFlags(), tileIndexWalker_.currentTile()));
-        store_->executor().post(task);
-        pendingTiles_++;
-        submitCount--;
     }
     */
 
     bool postedAny = false;
     for (;;)
     {
-        TileQueryTask task(this,
-            (tileIndexWalker_.currentTip() << 8) |
-            tileIndexWalker_.northwestFlags(),
-            FastFilterHint(tileIndexWalker_.turboFlags(), tileIndexWalker_.currentTile()));
-
-        // LOG("Trying to submit %06X...", tileIndexWalker_.currentTip());
-
-        if (!store_->executor().tryPost(task))
+        if(tileIndexWalker_.currentEntry().isLoadedAndCurrent()) [[likely]]
         {
-            // If the queue is full and we haven't been able to
-            // post at least one task, we'll run the task on the main
-            // thread; otherwise, we'll end up waiting for a tile
-            // that will never arrive = deadlock
+            TileQueryTask task(this,
+                (tileIndexWalker_.currentTip() << 8) |
+                tileIndexWalker_.northwestFlags(),
+                FastFilterHint(tileIndexWalker_.turboFlags(), tileIndexWalker_.currentTile()));
 
-            if (postedAny)  [[likely]]
+            // LOG("Trying to submit %06X...", tileIndexWalker_.currentTip());
+
+            if (!store_->executor().tryPost(task))
             {
-                break;
+                // If the queue is full and we haven't been able to
+                // post at least one task, we'll run the task on the main
+                // thread; otherwise, we'll end up waiting for a tile
+                // that will never arrive = deadlock
+
+                if (postedAny)  [[likely]]
+                {
+                    break;
+                }
+                pendingTiles_++;
+                // LOG("Running %06X on main thread...", tileIndexWalker_.currentTip());
+                task();
             }
-            pendingTiles_++;
-            // LOG("Running %06X on main thread...", tileIndexWalker_.currentTip());
-            task();
+            else
+            {
+                pendingTiles_++;
+                // LOG("  Submitted %06X", tileIndexWalker_.currentTip());
+            }
+            postedAny = true;
         }
         else
         {
-            pendingTiles_++;
-            // LOG("  Submitted %06X", tileIndexWalker_.currentTip());
+            tileIndexWalker_.skipChildren();
         }
-        postedAny = true;
+
         if (!tileIndexWalker_.next())
         {
             // LOG("All tiles submitted.");
@@ -221,16 +233,13 @@ FeaturePtr Query::next()
         }
         uint32_t item = currentResults_->items[currentPos_++];
         DataPtr pTile = currentResults_->pTile;
-        if (item & REQUIRES_DEDUP)
-        {
-            FeaturePtr pFeature (pTile + (item & ~REQUIRES_DEDUP));
-            uint64_t idBits = pFeature.idBits();  // getUnsignedLong() & 0xffff'ffff'ffff'ff18LL;
-            if (potentialDupes_.count(idBits)) continue;
-            potentialDupes_.insert(idBits);
-            return pFeature;
-        }
         return FeaturePtr(pTile + item);
     }
+}
+
+void Query::consumeResults(QueryBase* query, QueryResults* res)
+{
+    reinterpret_cast<Query*>(query)->offer(res);
 }
 
 

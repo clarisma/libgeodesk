@@ -71,7 +71,7 @@ struct ParsedString
 class Parser
 {
 public:
-	Parser(const char* pInput) :
+	explicit Parser(const char* pInput) :
 		pNext_(pInput), pStart_(pInput)
 	{
 	}
@@ -86,7 +86,7 @@ protected:
 		const CharSchema& validSubsequentChars);
 	double number();
 	
-	bool end() 
+	bool end() const
 	{
 		return *pNext_ == 0;
 	}
@@ -108,7 +108,7 @@ protected:
 
 	void expect(char ch);
 	
-	const char* pNext_;		// slighly more efficient placing pNext first
+	const char* pNext_;		// slightly more efficient placing pNext first
 	const char* pStart_;	
 };
 

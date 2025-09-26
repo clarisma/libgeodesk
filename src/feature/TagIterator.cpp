@@ -13,9 +13,7 @@ TagIterator::TagIterator(TagTablePtr tags, StringTable& strings) :
 	p_(tags.ptr()),
 	strings_(strings)
 {
-	// TODO: can just read the key, no need for whole tag (which
-	//  is unaligned)
-	if (p_.getUnsignedIntUnaligned() == TagValues::EMPTY_TABLE_MARKER)
+	if (p_.getUnsignedShort() == TagValues::EMPTY_TABLE_KEY)
 	{
 		p_ = tags.hasLocalKeys() ? (tags.ptr() - 6) : DataPtr();
 	}

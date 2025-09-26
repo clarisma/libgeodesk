@@ -17,6 +17,10 @@ public:
 
     explicit ValueException(const std::string& message)
         : std::runtime_error(message) {}
+
+    template <typename... Args>
+    explicit ValueException(const char* message, Args... args)
+        : std::runtime_error(Format::format(message, args...)) {}
 };
 
 
@@ -40,9 +44,10 @@ public:
     static int64_t longValue(const char* s)
     {
         char* pEnd;
-        int64_t v = std::strtol(s, &pEnd, 10);
+        int64_t v = std::strtoll(s, &pEnd, 10);
         if (pEnd == s)
         {
+            if(*s == 0) throw ValueException(Format::format("Expected number", s));
             throw ValueException(Format::format("Expected number instead of %s", s));
         }
         return v;
@@ -75,6 +80,15 @@ public:
     static int intValue(const char* s, int32_t min, int32_t max)
     {
         return intValue(intValue(s), min, max);
+    }
+
+    static double doubleValue(double v, double min, double max)
+    {
+        if (v < min || v > max)
+        {
+            throw ValueException(Format::format("Must be %f to %f", min, max));
+        }
+        return v;
     }
 };
 

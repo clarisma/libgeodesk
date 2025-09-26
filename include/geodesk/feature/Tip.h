@@ -5,8 +5,11 @@
 
 #include <cstdint>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 // internal; needed by GOL
 
@@ -18,11 +21,12 @@ class TipDelta
 {
 public:
     constexpr TipDelta() : delta_(0) {}
-    constexpr TipDelta(int32_t delta) : delta_(delta) {}
+    constexpr TipDelta(int32_t delta) :     // NOLINT implicit conversion
+        delta_(delta) {}
 
-    operator int32_t() const { return delta_; }
+    operator int32_t() const { return delta_; }     // NOLINT implicit conversion
 
-    bool isWide()
+    bool isWide() const
     {
         // 15 bits signed
         return (delta_ << 17 >> 17) != delta_;
@@ -52,7 +56,7 @@ public:
         return tip_ == 0;
     }
 
-    operator uint32_t() const
+    constexpr operator uint32_t() const
     {
         return tip_;
     }
@@ -79,24 +83,27 @@ public:
         return buf;
     }
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        char buf[8];
+        format(buf);
+        out.write(buf, 6);
+    }
+
     std::string toString() const
     {
         char buf[8];
         return std::string(format(buf));
     }
 
+    static const Tip ROOT;
+
 private:
     uint32_t tip_;
 };
 
-template<typename Stream>
-Stream& operator<<(Stream& out, const Tip& tip)
-{
-    char buf[8];
-    tip.format(buf);
-    out.write(buf, 6);
-    return out;
-}
+inline constexpr Tip Tip::ROOT{1};
 
 } // namespace geodesk
 

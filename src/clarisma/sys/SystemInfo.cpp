@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifdef _WIN32
+
 #include <clarisma/sys/SystemInfo.h>
 #include <windows.h>
 #include <clarisma/cli/Console.h>

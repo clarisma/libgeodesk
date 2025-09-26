@@ -35,6 +35,8 @@ public:
 	char quoteChar() const { return quoteChar_; }
 	void pretty(bool b) { pretty_ = b; }
 	void flush() { GeometryWriter::flush(); }	// TODO: needed?
+	const char* pos() const { return p_; }
+	void setFirstFeature(bool b) { firstFeature_ = b; }
 
 	virtual void writeFeature(FeatureStore* store, FeaturePtr feature) = 0;
 	virtual void writeAnonymousNodeNode(Coordinate point) = 0;

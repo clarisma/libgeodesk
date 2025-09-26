@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <clarisma/io/FileError.h>
 #include <clarisma/text/Format.h>
 
 namespace clarisma {
@@ -12,6 +13,8 @@ namespace clarisma {
 class IOException : public std::runtime_error 
 {
 public:
+    IOException();
+
     explicit IOException(const char* message)
         : std::runtime_error(message) {}
 
@@ -22,16 +25,12 @@ public:
     explicit IOException(const char* message, Args... args)
         : std::runtime_error(Format::format(message, args...)) {}
 
-    // static void getError(char* buf);
+    // explicit IOException(FileError error);
 
-    /**
-     * On Linux, this function must only be called if the caller
-     * is certain that an error occurred (errno is set) -- typically,
-     * because a system call returned -1.
-     */
-    static void checkAndThrow();
-    static void alwaysThrow();
-    // static void alwaysThrow(const char* msg);
+#ifdef _WIN32
+    static std::string getMessage(const char* moduleName, int errorCode);
+#endif
+
 };
 
 
@@ -43,7 +42,5 @@ public:
     explicit FileNotFoundException(std::string filename)
         : FileNotFoundException(filename.c_str()) {}
 };
-
-
 
 } // namespace clarisma

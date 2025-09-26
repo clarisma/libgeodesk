@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
@@ -6,6 +6,7 @@
 #include <limits>
 #include <clarisma/math/Math.h>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace clarisma {
 
@@ -20,7 +21,7 @@ namespace clarisma {
 class Decimal
 {
 public:
-	Decimal(std::string_view s, bool strict = false) :
+	explicit Decimal(std::string_view s, bool strict = false) :
 		value_(parse(s, strict))
 	{
 	}
@@ -43,14 +44,24 @@ public:
 		return static_cast<int>(value_ & 15);
 	}
 
-	operator int64_t() const noexcept
+	explicit operator int64_t() const noexcept
 	{
 		if (value_ == INVALID) return value_;
 		if (scale() == 0) return mantissa();
 		return mantissa() / static_cast<int64_t>(Math::POWERS_OF_10[scale()]);
 	}
 
-	operator double() const noexcept 
+	explicit operator int() const noexcept
+	{
+		return static_cast<int>(static_cast<int64_t>(*this));
+	}
+
+	explicit operator uint32_t() const noexcept
+	{
+		return static_cast<uint32_t>(static_cast<int64_t>(*this));
+	}
+
+	explicit operator double() const noexcept
 	{
 		if (value_ == INVALID) return std::numeric_limits<double>::quiet_NaN();
 		double m = static_cast<double>(mantissa());
@@ -78,6 +89,14 @@ public:
 
 	char* format(char* buf) const noexcept;
 
+	template<typename Stream>
+	void format(Stream& out) const
+	{
+		char buf[32];
+		char* p = format(buf);
+		out.write(buf, p - buf);
+	}
+
 	bool operator==(int val) const noexcept
 	{
 		return static_cast<int64_t>(*this) == val;
@@ -95,15 +114,5 @@ private:
 
 	int64_t value_;
 };
-
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const Decimal& d)
-{
-	char buf[32];
-	char* p = d.format(buf);
-	out.write(buf, p - buf);
-	return out;
-}
 
 } // namespace clarisma

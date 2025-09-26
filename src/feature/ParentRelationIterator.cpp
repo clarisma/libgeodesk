@@ -5,6 +5,8 @@
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/filter/Filter.h>
 
+/*
+
 namespace geodesk {
 
 
@@ -66,3 +68,5 @@ RelationPtr ParentRelationIterator::next()
 
 
 } // namespace geodesk
+
+*/

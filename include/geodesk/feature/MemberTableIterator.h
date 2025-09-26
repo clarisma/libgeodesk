@@ -24,6 +24,7 @@ public:
 	{
 		if (isLast()) return false;
 		fetchNext();
+		ofs_ += 2;
 		if (member_ & MemberFlags::DIFFERENT_ROLE)
 		{
 			// TODO: could read without branching if over-reading is allowed
@@ -65,8 +66,18 @@ public:
 	{
 		// This differs from base implementation; we need to mask
 		// bits in addition to the shift
+
+        /*
+        int_fast32_t adjustedOffset = (currentOfs_ & 0xffff'fffc);
+        int_fast32_t adjustedMember =
+            (static_cast<int_fast32_t>(member_ & 0xffff'fff8) >> 1);
+        printf("adjustedOffset = %d, adjustedMember = %d",
+            adjustedOffset, adjustedMember);
+        */
+
 		return (currentOfs_ & 0xffff'fffc) + 
-			(static_cast<int_fast32_t>(member_ & 0xffff'fff8) >> 1);
+			((static_cast<int_fast32_t>(member_) &
+                static_cast<int32_t>(0xffff'fff8)) >> 1);
 	}
 
 	FeaturePtr localMember() const

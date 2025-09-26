@@ -25,6 +25,16 @@ public:
 		return TypedFeatureId(id << 2);
 	}
 
+	static constexpr TypedFeatureId ofWay(uint64_t id) noexcept
+	{
+		return ofTypeAndId(FeatureType::WAY, id);
+	}
+
+	static constexpr TypedFeatureId ofRelation(uint64_t id) noexcept
+	{
+		return ofTypeAndId(FeatureType::RELATION, id);
+	}
+
 	explicit operator uint64_t() const noexcept
 	{
 		return typedId_;
@@ -38,13 +48,14 @@ public:
 	uint64_t id() const noexcept { return typedId_ >> 2; }
 	FeatureType type() const noexcept { return static_cast<FeatureType>(typedId_ & 3); }
 	bool isNode() const { return type() == FeatureType::NODE; }
+	bool isWay() const { return type() == FeatureType::WAY; }
+	bool isRelation() const { return type() == FeatureType::RELATION; }
 
-	// TODO: will change in 2.0
+	// TODO: Change if reassigning FeatureFlags
 	uint64_t asIdBits() const noexcept
 	{
-		uint64_t hi = (typedId_ >> 34) << 8;
-		uint64_t lo = (typedId_ >> 2) << 32;
-		return hi | lo | (static_cast<int>(type()) << 3);
+		int typeCode = typedId_ & 3;
+		return ((typedId_ ^ typeCode) << 10) | (typeCode << 3);
 	}
 	 
 	char* format(char* buf) const
@@ -66,18 +77,25 @@ public:
 	bool operator==(const TypedFeatureId&) const = default;
 	bool operator!=(const TypedFeatureId&) const = default;
 
+	bool operator<(const TypedFeatureId& other) const noexcept
+	{
+		uint64_t collateThis = typedId_ | ((typedId_ & 3) << 62);
+		uint64_t collateOther = other.typedId_ | ((other.typedId_ & 3) << 62);
+		return collateThis < collateOther;
+	}
+
 private:
 	uint64_t typedId_;
 };
 
 template<typename Stream>
-Stream&& operator<<(Stream&& out, TypedFeatureId tid)
+Stream& operator<<(Stream& out, TypedFeatureId tid)
 {
 	char buf[32];
 	char* p = tid.format(buf);
 	assert(p-buf < sizeof(buf));
 	out.write(buf, p-buf);
-	return std::forward<Stream>(out);
+	return static_cast<Stream&>(out);
 }
 
 } // namespace geodesk

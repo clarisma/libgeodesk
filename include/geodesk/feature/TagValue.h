@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <iosfwd>
 #include <clarisma/text/Format.h>
 #include <clarisma/compile/unreachable.h>
 #include <clarisma/math/Math.h>
@@ -10,6 +11,7 @@
 #include <geodesk/feature/TagValues.h>
 
 namespace geodesk {
+
 /// @brief The value of a Tag. Converts implicitly to `std::string`,
 /// `double`, `int` or `bool`.
 ///
@@ -76,7 +78,7 @@ public:
         case 0:     // narrow number
             return TagValues::intFromNarrowNumber(rawNumberValue());
         case 2:     // wide number
-            return TagValues::decimalFromWideNumber(rawNumberValue());
+            return static_cast<double>(TagValues::decimalFromWideNumber(rawNumberValue()));
         default:
             UNREACHABLE_CASE
         }
@@ -96,6 +98,25 @@ public:
         return static_cast<int>(static_cast<double>(*this));
     }
 
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    operator clarisma::Decimal() const noexcept
+    {
+        switch (type())
+        {
+        case 1:     // global string
+        case 3:     // local string (fall through)
+            return clarisma::Decimal(stringValue_);
+            // TODO: wrong, Decimal() does not ignore non-numeric trailing chars
+        case 0:     // narrow number
+            return clarisma::Decimal(TagValues::intFromNarrowNumber(
+                rawNumberValue()), 0);
+        case 2:     // wide number
+            return TagValues::decimalFromWideNumber(rawNumberValue());
+        default:
+            UNREACHABLE_CASE
+        }
+    }
+
     // NOLINTNEXTLINE implicit conversion
     operator bool() const noexcept
     {
@@ -105,6 +126,7 @@ public:
         case 3:     // local string (fall through)
             return stringValue_.size() != 0 && stringValue_ != "no";
             // TODO: Use fixed constant in v2
+            // TODO: are "000", "0.00000000" true or false?
         case 0:     // narrow number
             return TagValues::intFromNarrowNumber(rawNumberValue()) != 0;
         case 2:     // wide number
@@ -242,8 +264,75 @@ public:
         return static_cast<int>(*this) >= val;
     }
 
+    /// @brief Counts the number of UTF-8 characters (*not* bytes)
+    /// that this TagValue represents. Numeric values are
+    /// assumed to be formatted in their canonical representation.
+    ///
+    int charCount() const noexcept;
+
+    /// `true` if the value's native storage format is numeric.
+    ///
+    bool isStoredNumeric() const noexcept
+    {
+        return (static_cast<int>(taggedNumberValue_) & 1) == 0;
+    }
+
+    /// @brief The tag value as a string, if its native storage format
+    /// is string. If the value is stored as a number, returns an
+    /// empty string.
+    ///
+    StringValue storedString() const noexcept { return stringValue_; }
+
+    /// @brief The tag value as a Decimal, if its native storage format
+    /// is numeric. If the value is stored as a string, returns its
+    /// global-string code (or 0 for a local string).
+    ///
+    clarisma::Decimal storedNumber() const noexcept
+    {
+        if (type() == TagValues::Type::WIDE_NUMBER)
+        {
+            return TagValues::decimalFromWideNumber(rawNumberValue());
+        }
+        return TagValues::decimalFromNarrowNumber(rawNumberValue());
+    }
+
+    /// @brief Writes the tag value to the given Buffer,
+    /// XMl/HTML-encoded.
+    ///
+    /// @tparam out  a Buffer
+    ///
+    // void writeXml(clarisma::Buffer& out);
+        // TODO
+
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        switch (type())
+        {
+        case 1:     // global string
+        case 3:     // local string (fall through)
+            stringValue_.format(out);
+            break;
+        case 0:     // narrow number
+        {
+            // TODO: make more efficient by encoding in reverse
+            char buf[32];
+            char* end = clarisma::Format::integer(buf,
+                TagValues::intFromNarrowNumber(rawNumberValue()));
+            out.write(buf, end - buf);
+            break;
+        }
+        case 2:     // wide number
+            TagValues::decimalFromWideNumber(
+                rawNumberValue()).format(out);
+            break;
+        default:
+            UNREACHABLE_CASE
+        }
+    }
+
 private:
-    int type() const { return taggedNumberValue_ & 3; }
+    int type() const { return static_cast<int>(taggedNumberValue_) & 3; }
     uint_fast32_t rawNumberValue() const
     {
         return static_cast<uint_fast32_t>(taggedNumberValue_ >> 2);
@@ -251,35 +340,20 @@ private:
 
     uint64_t taggedNumberValue_;
     StringValue stringValue_;
-
-    template<typename Stream>
-    friend Stream& operator<<(Stream& out, const TagValue& v);
 };
 
-template<typename Stream>
-Stream& operator<<(Stream& out, const TagValue& v)
+inline std::ostream& operator<<(std::ostream& out, const TagValue& v)
 {
-    switch (v.type())
-    {
-    case 1:     // global string
-    case 3:     // local string (fall through)
-        out << v.stringValue_;
-        break;
-    case 0:     // narrow number
-    {
-        char buf[32];
-        char* end = clarisma::Format::integer(buf,
-            TagValues::intFromNarrowNumber(v.rawNumberValue()));
-        out.write(buf, end - buf);
-        break;
-    }
-    case 2:     // wide number
-        out << TagValues::decimalFromWideNumber(v.rawNumberValue());
-        break;
-    default:
-        UNREACHABLE_CASE
-    }
+    v.format(out);
     return out;
 }
+
+/*
+inline clarisma::Buffer& operator<<(clarisma::Buffer& out, const TagValue& v)
+{
+    v.format(out);
+    return out;
+}
+*/
 
 } // namespace geodesk

@@ -5,7 +5,7 @@
 
 #include <geodesk/geom/GeometryBuilder.h>
 #include <geodesk/geom/polygon/Polygonizer.h>
-#include "geom/polygon/Ring.h"
+#include <geodesk/geom/polygon/Ring.h>
 
 namespace geodesk {
 

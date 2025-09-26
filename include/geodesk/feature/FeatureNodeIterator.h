@@ -3,29 +3,36 @@
 
 #pragma once
 
+#include <geodesk/feature/RelatedIterator.h>
 #include <geodesk/feature/WayPtr.h>
 
 namespace geodesk {
 
 /// \cond lowlevel
 ///
-class FeatureNodeIterator
+class   FeatureNodeIterator : public RelatedIterator<FeatureNodeIterator,NodePtr,0,-2>
 {
 public:
-    explicit FeatureNodeIterator(FeatureStore* store);
-    FeatureStore* store() const { return store_; }
-    void start(DataPtr pBody, int flags, const MatcherHolder* matcher, const Filter* filter);
-    NodePtr next();
+    FeatureNodeIterator(FeatureStore* store, DataPtr pBody,
+        int flags, const MatcherHolder* matcher, const Filter* filter) :
+        RelatedIterator(store, pBody - (flags & FeatureFlags::RELATION_MEMBER) - 2,
+            Tex::WAYNODES_START_TEX, matcher, filter)
+    {
+        member_ = (flags & FeatureFlags::WAYNODE) ? 0 : MemberFlags::LAST;
+    }
 
-private:
-    FeatureStore* store_;
-    const MatcherHolder* matcher_;
-    const Filter* filter_;
-    Tip currentTip_;
-    int32_t currentNode_;
-    DataPtr p_;
-    DataPtr pForeignTile_;
+    FeatureNodeIterator(FeatureStore* store, WayPtr way,
+        const MatcherHolder* matcher, const Filter* filter = nullptr) :
+        FeatureNodeIterator(store, way.bodyptr(), way.flags(), matcher, filter)
+    {
+    }
+
+    FeatureNodeIterator(FeatureStore* store, WayPtr way) :
+        FeatureNodeIterator(store, way, store->borrowAllMatcher())
+    {
+    }
 };
+
 
 // \endcond
 } // namespace geodesk

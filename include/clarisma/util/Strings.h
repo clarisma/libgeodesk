@@ -42,6 +42,60 @@ namespace Strings
     {
         return hash(str.data(), str.length());
     }
+
+    inline std::string combine(const char* s1, const char* s2)
+    {
+        size_t len1 = std::strlen(s1);
+        size_t len2 = std::strlen(s2);
+
+        std::string result;
+        result.reserve(len1 + len2);
+        result.append(s1, len1);
+        result.append(s2, len2);
+
+        return result;
+    }
+
+    inline std::string combine(std::string_view s1, std::string_view s2)
+    {
+        std::string result;
+        result.reserve(s1.size() + s2.size());
+            // Single allocation for combined size
+        result.append(s1);
+        result.append(s2);
+        return result;
+    }
+
+    inline void removeChar(char* buf, char removeChar)
+    {
+        char* s = buf;
+        char* d = buf;
+        while (*s)
+        {
+            char ch = *s++;
+            if(ch != removeChar) *d++ = ch;
+        }
+    }
+
+    inline std::string_view trim(std::string_view sv)
+    {
+        // Find the first non-whitespace character
+        size_t start = 0;
+        while (start < sv.size() && sv[start] <= 32)
+        {
+            ++start;
+        }
+
+        size_t end = sv.size();
+        while (end > start && sv[end - 1] <= 32)
+        {
+            --end;
+        }
+
+        // Create a substring with the trimmed content
+        return sv.substr(start, end - start);
+    }
+
 }
 
 /**

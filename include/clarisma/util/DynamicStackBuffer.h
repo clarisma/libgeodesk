@@ -17,7 +17,7 @@ public:
 		end_ = buf_ + N;
     }
 
-	~DynamicStackBuffer() override
+	~DynamicStackBuffer() noexcept override
     {
 		if (buf_ != stackBuf) delete[] buf_;
     }
@@ -37,7 +37,7 @@ public:
 		size_t len = length();
 		char* newBuf = new char[newCapacity];
 		memcpy(newBuf, buf_, len);
-		p_ += newBuf - buf_;
+		p_ = newBuf + len;
 		if(buf_ != stackBuf) delete[] buf_;
 		buf_ = newBuf;
 		end_ = newBuf + newCapacity;

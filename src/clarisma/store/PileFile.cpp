@@ -39,12 +39,15 @@ void PileFile::create(const char* fileName, uint32_t pileCount,
 	// No need to use -1, because count includes the metadata (which 
 	// has the same size as an index entry)
 
-	int openMode = File::OpenMode::READ | File::OpenMode::WRITE;
+	File::OpenMode openMode = File::OpenMode::READ | File::OpenMode::WRITE;
 	if (preallocatePages)
 	{
+		// TODO: Check this logic. Shouldn't it do the opposite,
+		//  don't make sparse file if preallocating pages???
+
 		File file;
 		file.open(fileName, File::OpenMode::READ | File::OpenMode::WRITE | 
-			File::OpenMode::CREATE | File::OpenMode::REPLACE_EXISTING);
+			File::OpenMode::CREATE | File::OpenMode::TRUNCATE);
 		
 		size_t size = static_cast<size_t>(pageSize) * (pageCount + preallocatePages);
 		file.setSize(size);
@@ -58,7 +61,7 @@ void PileFile::create(const char* fileName, uint32_t pileCount,
 	}
 	else
 	{
-		openMode |= File::OpenMode::CREATE | File::OpenMode::REPLACE_EXISTING;
+		openMode |= File::OpenMode::CREATE | File::OpenMode::TRUNCATE;
 	}
 	file_.open(fileName, openMode);
 		// Open mode is implicitly sparse
@@ -223,4 +226,10 @@ PileFile::Chunk* PileFile::getChunk(uint32_t page)
 	return reinterpret_cast<Chunk*>(file_.translate(
 		static_cast<uint64_t>(page) << pageSizeShift_));
 }
+
+void PileFile::clear()
+{
+	file_.clear();
+}
+
 } // namespace clarisma

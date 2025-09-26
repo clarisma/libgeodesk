@@ -29,9 +29,10 @@ private:
 
 int main()
 {
-    std::cout << "Timing v1\n";
+    std::cout << "Timing v2\n";
 
     Timer timer;
+
     Features world(R"(c:\geodesk\tests\de.gol)");
     timer.stop("Opening GOL");
 
@@ -61,7 +62,7 @@ int main()
         count = testSet.count();
         timer.stop("Query");
 
-        printf("v1: Found %lld ways in Germany\n", count);
+        printf("v2: Found %lld ways in Germany\n", count);
         */
 
         timer.start();
@@ -93,8 +94,6 @@ int main()
         std::cout << count1 << " named, "
             << count2 << " highways, "
             << count3 << " buildings\n";
-
-
     }
     return 0;
 }

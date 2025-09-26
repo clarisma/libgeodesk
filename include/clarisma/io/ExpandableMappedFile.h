@@ -12,6 +12,7 @@ using std::byte;
 
 // TODO: Allow setting initial size, may be more efficient to access?
 
+// TODO: Currently does not automatically unmap if closed or destroyed!
 /**
  * A MappedFile that grows on demand (if opened in writable mode).
  * The main mapping covers the entire current file (rounded up to nearest 1 GB
@@ -30,7 +31,7 @@ class ExpandableMappedFile : public MappedFile
 public:
 	ExpandableMappedFile();
 
-	void open(const char* filename, int /* OpenMode */ mode);
+	void open(const char* filename, OpenMode mode);
 	
 	/**
 	 * Obtains a pointer to the data which begins at the given 
@@ -49,9 +50,15 @@ public:
 	 */
 	byte* translate(uint64_t ofs);
 	byte* mainMapping() const { return mainMapping_; }
+	size_t mainMappingSize() { return mainMappingSize_; }
 	byte* mapping(int n);
 	size_t mappingSize(int n) const;
 	int mappingNumber(uint64_t ofs) const;
+	void syncMapping(int n);
+
+	/// @brief Set file size to zero and remove all mappings.
+	///
+	void clear();
 
 public:
 	static const uint64_t SEGMENT_LENGTH = 1024 * 1024 * 1024;		// 1 GB
@@ -62,6 +69,7 @@ protected:
 	static const int EXTENDED_MAPPINGS_SLOT_COUNT = 16;
 	static const uint64_t MAX_FILE_SIZE = 64ULL * 1024 * 1024 * 1024 * 1024;		// 64 TB
 
+	void discard();
 	void unmapSegments();
 
 private:

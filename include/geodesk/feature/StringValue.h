@@ -4,9 +4,12 @@
 #pragma once
 #include <clarisma/util/ShortVarString.h>
 #include <clarisma/util/Strings.h>
+#include <clarisma/util/streamable.h> // for << operator support
 #include <geodesk/export.h>
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 /// @brief A string pointer (used for keys, values and roles).
 /// Character data is encoded as UTF-8.
@@ -64,6 +67,11 @@ public:
         return *str_ != sv;
     }
 
+    bool operator<(const StringValue& other) const noexcept
+    {
+        return *str_ < *other.str_;
+    }
+
     operator bool() const noexcept { return !isEmpty(); }   // NOLINT implicit conversion
 
     /// @fn operator std::string_view() const noexcept
@@ -87,17 +95,16 @@ public:
     ///
     const uint8_t* rawBytes() const noexcept { return str_->rawBytes(); }
 
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        std::string_view sv = str_->toStringView();
+        out.write(sv.data(), sv.size());
+    }
+
 private:
     const clarisma::ShortVarString* str_;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const StringValue& s)
-{
-    std::string_view sv = s; // static_cast<const std::string_view&>(s);
-    out.write(sv.data(), sv.size());
-    return out;
-}
 
 } // namespace geodesk
 

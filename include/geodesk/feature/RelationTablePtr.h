@@ -5,6 +5,8 @@
 
 #include <clarisma/util/DataPtr.h>
 
+using clarisma::DataPtr;
+
 namespace geodesk {
 
 /// \cond lowlevel
@@ -12,7 +14,7 @@ namespace geodesk {
 class RelationTablePtr
 {
 public:
-	RelationTablePtr(DataPtr p) : p_(p) {}
+	RelationTablePtr(DataPtr p) : p_(p) {}	// NOLINT allow implicit conversion
 	DataPtr ptr() const { return p_; }
 
 private:

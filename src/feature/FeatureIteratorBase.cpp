@@ -64,8 +64,8 @@ void FeatureIteratorBase::initNodeIterator(const View& view)
     if(way.hasFeatureNodes())
     {
         type_ = view.usesMatcher() ? WAYNODES_FEATURES : WAYNODES_ALL;
-        new(&storage_.nodes.featureNodes) FeatureNodeIterator(view.store());
-        storage_.nodes.featureNodes.start(way.bodyptr(), way.flags(),
+        new(&storage_.nodes.featureNodes) FeatureNodeIterator(
+            view.store(), way.bodyptr(), way.flags(),
             view.matcher(), view.filter());
         storage_.nodes.nextFeatureNode = storage_.nodes.featureNodes.next();
         current_.setType(Feature::ExtendedFeatureType::NODE);

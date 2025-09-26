@@ -23,6 +23,12 @@ public:
 
     operator int32_t() const { return delta_; }
 
+    bool isWide(int narrowBitsAvailable) const
+    {
+        int shift = 32 - narrowBitsAvailable;
+        return ((delta_ << shift) >> shift) != delta_;
+    }
+
     // TODO: Fix sign extension!!!
     int wideFlagInNodeTable()
     {
@@ -56,10 +62,23 @@ class Tex
 public:
     constexpr Tex() : tex_(0) {}
     constexpr Tex(int32_t tex) : tex_(tex) {}
-    
-    operator int32_t () const
+    constexpr Tex(uint32_t tex) : tex_(static_cast<int32_t>(tex)) {}
+
+    // TODO: Should we make conversions explicit?
+
+    constexpr explicit operator int32_t () const
     {
         return tex_;
+    }
+
+    constexpr explicit operator uint32_t () const
+    {
+        return static_cast<uint32_t>(tex_);
+    }
+
+    constexpr explicit operator uint64_t () const
+    {
+        return static_cast<uint64_t>(tex_);
     }
 
     Tex& operator+=(TexDelta delta)
@@ -73,9 +92,18 @@ public:
         return TexDelta(tex_ - other.tex_);
     }
 
+    bool operator==(Tex other) const noexcept
+    {
+        return tex_ == other.tex_;
+    }
+
     static constexpr int32_t MEMBERS_START_TEX = 0x400;
     static constexpr int32_t RELATIONS_START_TEX = 0x800;
     static constexpr int32_t WAYNODES_START_TEX = 0x800;
+
+    static constexpr int32_t MEMBERS_TEX_BITS = 11;
+    static constexpr int32_t RELATIONS_TEX_BITS = 12;
+    static constexpr int32_t WAYNODES_TEX_BITS = 12;
 
 private:
     int32_t tex_;

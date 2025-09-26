@@ -24,6 +24,8 @@ public:
     void start(const uint8_t* p, int32_t prevX, int32_t prevY, bool duplicateFirst);
     void start(FeaturePtr way, int flags);
     Coordinate next();
+    // Coordinate current() const { return Coordinate(x_, y_); }
+        // TODO: This is bad
 
     // does not include any duplicated last coordinate
     int storedCoordinatesRemaining() const { return remaining_; }
@@ -31,6 +33,13 @@ public:
     int coordinatesRemaining() const
     {
         return remaining_ + (duplicateFirst_ ? 1 : 0);
+    }
+
+    const uint8_t* wayNodeIDs() const
+    {
+        const uint8_t* pIDs = p_;
+        clarisma::skipVarints(pIDs, (remaining_-1) * 2);
+        return pIDs;
     }
 
 private:

@@ -16,5 +16,7 @@ namespace Threads
 		ss << std::this_thread::get_id();
 		return ss.str();
 	}
+
+	void kill(std::thread& thread);
 }
 } // namespace clarisma

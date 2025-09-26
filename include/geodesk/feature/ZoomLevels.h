@@ -6,10 +6,11 @@
 #include <clarisma/text/Format.h>
 #include <clarisma/util/BitIterator.h>
 #include <clarisma/util/Bits.h>
-#include <clarisma/validate/Validate.h>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace geodesk {
 
+using clarisma::operator<<;
 
 ///
 /// \cond lowlevel
@@ -22,6 +23,12 @@ public:
 
     static const uint32_t DEFAULT = 0b1010101010101;
     using Iterator = clarisma::BitIterator<uint32_t>;
+
+    void add(int level)
+    {
+        assert(level >= 0 && level <= 12);
+        levels_ |= (1 << level);
+    }
 
     int count() const noexcept
     {
@@ -38,29 +45,7 @@ public:
         return (levels_ & (1 << zoom)) != 0;
     }
 
-    void check() const
-    {
-        if (count() > 8)
-        {
-            throw clarisma::ValueException("Maximum 8 zoom levels");
-        }
-
-        if ((levels_ & 1) == 0)
-        {
-            throw clarisma::ValueException("Must include root zoom level (0)");
-        }
-        
-        uint32_t v = levels_;
-        while (v)
-        {
-            int skip = clarisma::Bits::countTrailingZerosInNonZero(v);
-            if (skip > 2)
-            {
-                throw clarisma::ValueException("Must not skip more than 2 levels");
-            }
-            v >>= (skip + 1);
-        }
-    }
+    void check() const;
 
     /**
      * Returns the number of levels that are skipped following the given
@@ -85,7 +70,7 @@ public:
         return parentZoom;
     }
 
-    void format(char* buf) const
+    char* format(char* buf) const
     {
         Iterator it = iter();
         char* p = buf;
@@ -94,9 +79,18 @@ public:
             int zoom = it.next();
             if (zoom < 0) break;
             if (p > buf) *p++ = '/';
-            clarisma::Format::integer(p, zoom);
+            p = clarisma::Format::integer(p, zoom);
         }
         *p = 0;
+        return p;
+    }
+
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        char buf[64];
+        char* end = format(buf);
+        out.write(buf, end-buf);
     }
 
     std::string toString() const
@@ -106,7 +100,7 @@ public:
         return std::string(buf);
     }
 
-    operator uint32_t() const { return levels_; }
+    operator uint32_t() const { return levels_; }     // NOLINT implicit conversion
 
 private:
     uint32_t levels_;

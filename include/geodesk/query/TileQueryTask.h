@@ -11,14 +11,19 @@
 
 namespace geodesk {
 
-class Query;
+class QueryBase;
 
 /// \cond lowlevel
+///
+/// Instead of passing a pointer to the tile, we could let the task
+/// retrieve it based on the TIP; however, this would require accessing
+/// the Tile Index, which may not be in the cache of the core that is
+/// executing the task.
 ///
 class TileQueryTask
 {
 public:
-    TileQueryTask(Query* query, uint32_t tipAndFlags, FastFilterHint fastFilterHint) :
+    TileQueryTask(QueryBase* query, uint32_t tipAndFlags, FastFilterHint fastFilterHint) :
         query_(query),
         tipAndFlags_(tipAndFlags),
         fastFilterHint_(fastFilterHint),     
@@ -33,16 +38,14 @@ public:
 
 private:
     void searchNodeIndexes();
-    void searchNodeRoot(DataPtr ppRoot);
     void searchNodeBranch(DataPtr p);
     void searchNodeLeaf(DataPtr p);
     void searchIndexes(FeatureIndexType indexType);
-    void searchRoot(DataPtr ppRoot);
     void searchBranch(DataPtr p);
     void searchLeaf(DataPtr p);
     void addResult(uint32_t item);
 
-    Query* query_;
+    QueryBase* query_;
     uint32_t tipAndFlags_;
     FastFilterHint fastFilterHint_;
     DataPtr pTile_;

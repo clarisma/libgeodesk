@@ -41,15 +41,21 @@ inline int32_t avg(int32_t a, int32_t b)
 /// Fast standard rounding and truncating to int32, without support
 /// for NaN and infinity. Uses intrinsics if supported.
 ///
-inline int32_t roundFastToInt32(double x)
+inline int32_t roundFastToInt32_intrin(double x)
 {
 #if defined(__SSE2__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
     // Use SSE2 intrinsics if available
+    // Fast SSE2 rounding to nearest, ties to even
     return _mm_cvtsd_si32(_mm_set_sd(x));
 #else
-    // Fallback to portable code
+    // Portable fallback: round to nearest, ties away from zero
     return static_cast<int32_t>(x + (x >= 0.0 ? 0.5 : -0.5));
 #endif
+}
+
+inline int32_t roundFastToInt32(double x)
+{
+    return static_cast<int32_t>(x + (x >= 0.0 ? 0.5 : -0.5));
 }
 
 extern double POWERS_OF_10[];

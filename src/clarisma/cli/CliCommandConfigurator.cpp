@@ -7,6 +7,16 @@
 
 namespace clarisma {
 
+bool CliCommandConfigurator::isPotentialOptionValue(const char* s)
+{
+    if(s)
+    {
+        if(s[0] == '-') return std::isdigit(s[1]);
+        return true;
+    }
+    return false;
+}
+
 bool CliCommandConfigurator::configure(char* argv[])
 {
     int paramCount = 0;
@@ -43,7 +53,7 @@ bool CliCommandConfigurator::configure(char* argv[])
             if(value.empty())
             {
                 // For "-o", we try to use the following argument (if any) as value
-                if(argv[n+1])
+                if(isPotentialOptionValue(argv[n+1]))
                 {
                     // Try "-o <value>"
                     try
@@ -58,23 +68,52 @@ bool CliCommandConfigurator::configure(char* argv[])
                     }
                     catch (const std::exception& ex)
                     {
-                        // If <value> is invalid, try if the option is accepted
-                        // without value
-                        accepted = command_.setOption(name, std::string_view());
-                        if(accepted == 0) continue;		// option accepted without value
-                        assert(accepted > 0);
                         failed(name, ex.what());
                         n++;
                         continue;
                     }
                     failed(name, "Invalid option");
                     continue;
+
+                    /*
+                    catch (const std::exception& ex)
+                    {
+                        // If <value> is invalid, try if the option is accepted
+                        // without value
+                        // TODO: This is problematic, value could be
+                        //  optional but invalid
+
+                        try
+                        {
+                            accepted = command_.setOption(name, std::string_view(""));
+                            if(accepted == 0) continue;		// option accepted without value
+                            assert(accepted > 0);
+                        }
+                        catch(const std::exception& ex2)
+                        {
+                            // do nothing, fall through and report the
+                            // original exception
+                        }
+                        failed(name, ex.what());
+                        n++;
+                        continue;
+                    }
+                    failed(name, "Invalid option");
+                    continue;
+                    */
                 }
             }
             try
             {
                 accepted = command_.setOption(name, value);
-                if(accepted == 1) continue;
+                if(accepted == 1)
+                {
+                    if(value.empty())
+                    {
+                        failed(name, "Missing value");
+                    }
+                    continue;
+                }
                 if(accepted == 0)
                 {
                     // Return value 0 means the option does not allow a value
@@ -96,9 +135,16 @@ bool CliCommandConfigurator::configure(char* argv[])
         else
         {
             // Positional parameter
-            if (!command_.setParam(paramCount++, pArg))
+            try
             {
-                failed(pArg, "Invalid parameter");
+                if (!command_.setParam(paramCount++, pArg))
+                {
+                    failed(pArg, "Invalid parameter");
+                }
+            }
+            catch (const std::exception& ex)
+            {
+                failed(pArg, ex.what());
             }
         }
     }

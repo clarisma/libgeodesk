@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/io/ExpandableMappedFile.h>
+#include <algorithm>
 #include <cassert>
 #include <clarisma/cli/Console.h>
 #include <clarisma/util/Bits.h>
@@ -19,12 +20,12 @@ ExpandableMappedFile::ExpandableMappedFile() :
 }
 
 
-void ExpandableMappedFile::open(const char* filename, int /* OpenMode */ mode)
+void ExpandableMappedFile::open(const char* filename, OpenMode mode)
 {
 	File::open(filename, mode | OpenMode::SPARSE);
 		// must always be a sparse file
-	uint64_t fileSize = size();
-	if (mode & OpenMode::WRITE)
+	uint64_t fileSize = getSize();
+	if (has(mode, OpenMode::WRITE))
 	{
         uint64_t segmentLen = SEGMENT_LENGTH;
             // This gets around the odr issue of using SEGMENT_LENGTH in call
@@ -41,7 +42,8 @@ void ExpandableMappedFile::open(const char* filename, int /* OpenMode */ mode)
 		mainMappingSize_ = fileSize;
 	}
 	mainMapping_ = reinterpret_cast<byte*>(map(0, mainMappingSize_,
-		mode & (MappingMode::READ | MappingMode::WRITE)));
+		static_cast<int>(mode & (OpenMode::READ | OpenMode::WRITE))));
+		// TODO: assumes OpenMode and MappingMode have same r/w flags, check!
 	// Console::msg("Created main mapping at %p (size %llu)", mainMapping_, mainMappingSize_);
 }
 
@@ -108,7 +110,7 @@ byte* ExpandableMappedFile::createExtendedMapping(int slot)
 
 void ExpandableMappedFile::unmapSegments()
 {
-	std::unique_lock<std::mutex> lock(extendedMappingsMutex_);
+	std::unique_lock lock(extendedMappingsMutex_);
 	if (mainMapping_)
 	{
 		unmap(mainMapping_, mainMappingSize_);
@@ -123,6 +125,26 @@ void ExpandableMappedFile::unmapSegments()
 			byte* mapping = extendedMappings_[slot].load();
 			unmap(mapping, mappingSize);
 			extendedMappings_[slot].store(nullptr);
+		}
+	}
+}
+
+// TODO: consolidate with unmapSegments?
+void ExpandableMappedFile::discard()
+{
+	std::unique_lock lock(extendedMappingsMutex_);
+	if (mainMapping_)
+	{
+		MappedFile::discard(mainMapping_, mainMappingSize_);
+	}
+
+	uint64_t mappingSize = SEGMENT_LENGTH;
+	for (auto& extendedMapping : extendedMappings_)
+	{
+		if (extendedMapping)
+		{
+			byte* mapping = extendedMapping.load();
+			MappedFile::discard(mapping, mappingSize);
 		}
 	}
 }
@@ -148,6 +170,19 @@ int ExpandableMappedFile::mappingNumber(uint64_t ofs) const
 	int slot = 63 - Bits::countLeadingZerosInNonZero64(ofsBits);
 	assert(slot < EXTENDED_MAPPINGS_SLOT_COUNT);
 	return slot + 1;
+}
+
+
+void ExpandableMappedFile::syncMapping(int n)
+{
+	sync(mapping(n), mappingSize(n));
+}
+
+void ExpandableMappedFile::clear()
+{
+	discard();
+	unmapSegments();
+	truncate(0);
 }
 
 

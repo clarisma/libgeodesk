@@ -27,31 +27,31 @@ namespace clarisma {
 class IndexFile : protected ExpandableMappedFile
 {
 public:
-	IndexFile() : bits_(0) {}
-	void bits(int bits)
-	{
-		assert(bits_ == 0);  // Can only be called once
-		assert(bits >= 1 && bits <= 24);
-		assert(!isOpen());
-		bits_ = bits;
-		slotsPerBlock_ = BLOCK_SIZE * 8 / bits;
-		mask_ = (1 << bits) - 1;
-	}
+	IndexFile();
 
-	void open(const char* filename, int /* OpenMode */ mode)
-	{
-		ExpandableMappedFile::open(filename, mode);
-	}
+	void open(const char* filename, OpenMode mode, int valueWidth);
+
 
 	uint32_t get(uint64_t key);
 	void put(uint64_t key, uint32_t value);
 
-private:
-	static const uint32_t BLOCK_SIZE = 4096;
+	void clear() { ExpandableMappedFile::clear(); }
 
-	int bits_;
-	uint32_t slotsPerBlock_;
-	uint32_t mask_;
+private:
+	struct CellRef
+	{
+		uint64_t* p;
+		int bitOffset;
+	};
+
+	CellRef getCell(int64_t key);
+
+    int64_t slotsPerSegment_;
+		// has to be 64 bit to support 1-bit indexes
+		// could avoid by limiting to 4B slots per segment, for 1-bit indexes
+		// each segment will only be half-filled, but that's ok since index files are sparse
+    int64_t maxEntryCount_;
+	int valueWidth_;
 };
 
 } // namespace clarisma

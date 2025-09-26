@@ -7,6 +7,8 @@
 #include <clarisma/text/Format.h>
 #include <clarisma/util/log.h>
 
+#include "clarisma/cli/CliApplication.h"
+
 namespace clarisma {
 
 // TODO: Get rid of the vectors, just use simple arrays?
@@ -33,6 +35,14 @@ namespace clarisma {
 // The constructor of a Context must not access Derived, because
 // Derived won't be fully initialzied at that point
 // Use a "start" method that inits the contexts and starts the threads
+
+/*
+class WorkerBase
+{
+protected:
+
+};
+*/
 
 template <typename Derived, typename WorkContext, typename WorkTask, typename OutputTask>
 class TaskEngine
@@ -115,6 +125,8 @@ public:
         return workContexts_;
     }
 
+    int threadCount() const { return threadCount_; }
+
 protected:
     // TODO: rename to "submitWork()"
     void postWork(WorkTask&& task)
@@ -140,12 +152,19 @@ private:
         catch (std::exception& ex)
         {
             // TODO
-            printf(ex.what());
+            // Console::debug(ex.what());
+            CliApplication::shutdown(ex.what());
+            std::abort();
         }
+    }
+
+    void preProcessOutput()     // CRTP virtual
+    {
     }
     
     void processOutput()
     {
+        self()->preProcessOutput();
         outputQueue_.process((Derived*)this);
     }
 

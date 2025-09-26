@@ -3,10 +3,13 @@
 
 #pragma once
 
-#include <geodesk/geom/Coordinate.h>
 #include <clarisma/text/Format.h>
+#include <clarisma/util/streamable.h> // for << operator support
+#include <geodesk/geom/Coordinate.h>
 
 namespace geodesk {
+
+using clarisma::operator<<;
 
 /// @brief A WGS-84 coordinate pair.
 ///
@@ -17,9 +20,19 @@ public:
 		lon(Mercator::lonFromX(c.x)),
 		lat(Mercator::latFromY(c.y)) {}
 
-	void format(char* buf) const
+	char* format(char* buf, int prec = 7) const
 	{
-		clarisma::Format::unsafe(buf, "%.7f,%.7f", lon, lat);
+        char* p = clarisma::Format::formatDouble(buf, lon, prec);
+        *p++ = ',';
+		return clarisma::Format::formatDouble(p, lat, prec);
+	}
+
+	template<typename Stream>
+	void format(Stream& out) const
+	{
+		char buf[32];
+		char* end = format(buf);
+		out.write(buf, end - buf);
 	}
 
 	std::string toString() const
@@ -32,15 +45,5 @@ public:
 	double lon;
 	double lat;
 };
-
-template<typename Stream>
-Stream& operator<<(Stream& out, const LonLat& lonlat)
-{
-	char buf[32];
-	lonlat.format(buf);
-	out.write(buf, strlen(buf));
-	return out;
-}
-
 
 } // namespace geodesk

@@ -39,13 +39,6 @@ public:
 		return member_ >> (4 + ExtraFlags);
 	}
 
-	bool next()
-	{
-		if(isLast()) return false;
-		fetchNext();
-		return true;
-	}
-
 	int_fast32_t localHandle() const
 	{
 		return currentOfs_ + (static_cast<int_fast32_t>(member_) >> 1);
@@ -65,14 +58,13 @@ protected:
     {
 		currentOfs_ = ofs_;
 		uint16_t lowerWord = (pTile_ + ofs_).getUnsignedShort();
-		ofs_ += Step;
-  		if (lowerWord & MemberFlags::FOREIGN)
+		if (lowerWord & MemberFlags::FOREIGN)
         {
             if(lowerWord & (1 << (3 + ExtraFlags)))  [[unlikely]]
             {
             	// wide TEX delta
+				ofs_ += Step;
             	uint16_t upperWord = (pTile_ + ofs_).getUnsignedShort();
-            	ofs_ += Step;
                 member_ = (static_cast<int32_t>(upperWord) << 16) | lowerWord;
             }
             else
@@ -82,22 +74,22 @@ protected:
             if(isInDifferentTile())
             {
             	// foreign member in different tile
-            	tipDelta_ = (pTile_ + ofs_).getShort();
             	ofs_ += Step;
+            	tipDelta_ = (pTile_ + ofs_).getShort();
             	if (tipDelta_ & 1)
             	{
             		// wide TIP delta
+            		ofs_ += Step;
             		tipDelta_ = (tipDelta_ & 0xffff) |
 						(static_cast<int32_t>((pTile_ + ofs_).getShort()) << 16);
-            		ofs_ += Step;
             	}
             	tipDelta_ >>= 1;     // signed
             }
 		}
 		else
         {
-        	uint16_t upperWord = (pTile_ + ofs_).getUnsignedShort();
         	ofs_ += Step;
+        	uint16_t upperWord = (pTile_ + ofs_).getUnsignedShort();
         	member_ = (static_cast<int32_t>(upperWord) << 16) | lowerWord;
         }
     }

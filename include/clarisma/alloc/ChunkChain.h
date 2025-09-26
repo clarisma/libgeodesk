@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdint>
 
+/*
 namespace clarisma {
 
 class ChunkChain
@@ -54,3 +55,5 @@ private:
 };
 
 } // namespace clarisma
+
+ */

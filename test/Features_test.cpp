@@ -55,7 +55,7 @@ TEST_CASE_METHOD(GolFixture, "Features2")
 
 TEST_CASE_METHOD(GolFixture, "Features 3")
 {
-	Features france(R"(c:\geodesk\tests\fr-good.gol)");
+	Features france(R"(c:\geodesk\tests\frxx.gol)");
 	Feature paris = france("a[boundary=administrative][admin_level=8][name=Paris]").one();
 	Features museums = france("na[tourism=museum]");
 	Features subwayStops = france("n[railway=station][station=subway]");
@@ -146,6 +146,22 @@ TEST_CASE("Issue 21")
 	Box tileBounds = Box::ofWSEN(-10, -10, 10, 10);
 	Features tile = world(tileBounds);
 	Features features = tile("w");
+}
+
+TEST_CASE("WayNodes")
+{
+	Features features("c:\\geodesk\\tests\\liguria-libero4.gol");
+	uint64_t count = 0;
+	for (auto street : features("w[highway]"))
+	{
+		for(auto node : street.nodes("n"))
+		{
+			std::cout << street << ": " << node << '\n';
+			count++;
+		}
+		if (count == 10) break;
+	}
+	std::cout << count << " waynodes\n";
 }
 
 // TODO: Test if parent relation iterator respect types

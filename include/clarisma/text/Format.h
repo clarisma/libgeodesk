@@ -10,6 +10,7 @@
 #include <thread>
 #include <string>
 #include <cstdarg>
+#include <clarisma/util/streamable.h> // for << operator support
 
 namespace clarisma {
 
@@ -174,6 +175,35 @@ namespace Format
         return p;
     }
 
+    inline char* unsignedZeroFilled(char*start, long long d, int digits)
+	{
+	    char* end = start + digits;
+	    char* p = end;
+	    while(p > start)
+	    {
+	        lldiv_t result = lldiv(d, 10);
+	        *(--p) = static_cast<char>('0' + result.rem);
+	        d = result.quot;
+	    }
+        *end = 0;
+	    return end;
+	}
+
+    char* formatDouble(char* buf, double d, int precision=15, bool zeroFill=false);
+
+    inline char* fractionalReverse(unsigned long long d, char** pEnd, int precision, bool zeroFill);
+
+    char* doubleReverse(char** pEnd, double d, int precision=15, bool zeroFill=false);
+
+    char* integerNice(char* p, int64_t d);
+
+    // char* wholeOrSingleDigitPrecision(char * p, double d);
+
+    /// Formats a file size, with units (e.g. "8.1 GB")
+    /// A single fractional digit is printed only for values < 10
+    ///
+    char* fileSizeNice(char* p, uint64_t d);
+
     //char* formatDouble(char* buf, double d, int precision, bool zeroFill);
     //char* formatFractionalReverse(unsigned long long d, char** pEnd, int precision, bool zeroFill);
 
@@ -201,7 +231,65 @@ namespace Format
     {
         return hex(buf, v, nDigits, HEX_DIGITS_UPPER);
     }
+
+    char* timeAgo(char* buf, int64_t secs);
+
+    template<typename Stream>
+    void writeReplacedString(Stream& out, const char* s,
+        const char* find, size_t findLen,
+        const char* replaceWith, size_t replaceLen)
+    {
+        for (;;)
+        {
+            const char* next = strstr(s, find);
+            if (!next)
+            {
+                out << s;
+                return;
+            }
+            out.write(s, next - s);
+            out.write(replaceWith, replaceLen);
+            s = next + findLen;
+        }
+    }
+
+    template <typename Stream, size_t NF>
+    void writeReplacedString(Stream& out, const char* s, const char(&find)[NF],
+        const char* replaceWith)
+    {
+        size_t replaceLen = strlen(replaceWith);
+        writeReplacedString(out, s, find, NF-1, replaceWith, replaceLen);
+    }
+
+    inline char* put(char* buf, const char *s)
+    {
+        while (*s) *buf++ = *s++;
+        return buf;
+    }
+
+
 }
 
+class FormattedLong
+{
+public:
+    explicit FormattedLong(const int64_t value) : value_(value) {}
+
+    char* format(char* buf) const noexcept
+    {
+        return Format::integerNice(buf, value_);
+    }
+
+    template<typename Stream>
+    void format(Stream& out) const
+    {
+        char buf[32];
+        char* p = format(buf);
+        out.write(buf, p-buf);
+    }
+
+private:
+    int64_t value_;
+};
 
 } // namespace clarisma

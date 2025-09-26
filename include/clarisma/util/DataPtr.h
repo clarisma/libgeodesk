@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <functional>  // for std::hash
 
 namespace clarisma {
 
@@ -26,6 +27,7 @@ public:
 
     uint8_t* ptr() const noexcept { return p_; }
     std::byte* bytePtr() const noexcept { return reinterpret_cast<std::byte*>(p_); }
+    char* charPtr() const noexcept { return reinterpret_cast<char*>(p_); }
 
     DataPtr& operator=(const DataPtr& other) noexcept
     {
@@ -272,3 +274,12 @@ protected:
 };
 
 } // namespace clarisma
+
+template<>
+struct std::hash<clarisma::DataPtr>
+{
+    std::size_t operator()(const clarisma::DataPtr &p) const noexcept
+    {
+        return hash<uintptr_t>{}(p);
+    }
+};

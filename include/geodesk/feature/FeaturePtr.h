@@ -7,7 +7,9 @@
 #include <geodesk/feature/FeatureHeader.h>
 #include <geodesk/feature/FeatureTypes.h>
 #include <geodesk/feature/TagTablePtr.h>
+#include <geodesk/feature/TypedFeatureId.h>
 #include <geodesk/geom/Box.h>
+
 
 namespace geodesk {
 
@@ -33,14 +35,12 @@ public:
 
 	uint64_t id() const noexcept
 	{
-		uint32_t hi = p_.getUnsignedInt() >> 8;
-		uint32_t lo = (p_ + 4).getUnsignedInt();
-		return (static_cast<uint64_t>(hi) << 32) | lo;
+		return p_.getUnsignedLongUnaligned() >> 12;
 	}
 
-	uint64_t typedId() const noexcept
+	TypedFeatureId typedId() const noexcept
 	{
-		return (id() << 2) | typeCode();
+		return TypedFeatureId::ofTypeAndId(type(), id());
 	}
 
 	FeatureHeader header() const noexcept
@@ -55,6 +55,20 @@ public:
 		return Box((p_-16).getInt(), (p_-12).getInt(), (p_-8).getInt(), (p_-4).getInt());
 	}
 
+	Coordinate bottomLeft() const noexcept
+	{
+		return Coordinate(
+			(p_ - (isNode() ? 8 : 16)).getInt(),
+			(p_ - (isNode() ? 4 : 12)).getInt());
+	}
+
+	Coordinate topRight() const noexcept
+	{
+		return Coordinate(
+			(p_ - 8).getInt(),
+			(p_ - 4).getInt());
+	}
+
 	bool isNull() const noexcept { return !p_; }
 	int  flags() const noexcept	{ return p_.getInt();	}
 	bool isArea() const	noexcept { return p_.getUnsignedInt() & FeatureFlags::AREA; }
@@ -63,6 +77,20 @@ public:
 	bool isRelation() const	noexcept { return type() == FeatureType::RELATION; }
 	bool isRelationMember() const noexcept { return flags() & FeatureFlags::RELATION_MEMBER; }
 	bool isType(FeatureTypes types) const noexcept { return types.acceptFlags(flags()); }
+
+	// Placeholder features no longer exist in v2
+	// But we may need a similar mechanism once we introduce deleted features,
+	// so keep this for now but always return false
+	bool isPlaceholder() const { return false; }
+
+	// TODO: In v2, these bits are re-used for node flags
+	//  colocated_node / exception_node
+	//  No: these flags have been moved to bit 8 / bit 9
+	bool hasNorthwestTwin() const noexcept
+	{
+		return flags() & (FeatureFlags::MULTITILE_NORTH | FeatureFlags::MULTITILE_WEST);
+	}
+
 	bool intersects(const Box& bounds) const noexcept
 	{
 		assert(!isNode());
@@ -71,6 +99,8 @@ public:
 			(p_-8).getInt() < bounds.minX() ||
 			(p_-4).getInt() < bounds.minY()));
 	}
+
+
 
 	TagTablePtr tags() const noexcept
 	{
@@ -111,11 +141,11 @@ public:
 	 * A 64-bit value that uniquely identifies the feature based on its
 	 * type and ID.
 	 * 
-	 * TODO: Changes in 2.0
+	 * Clears all 12 flags, except for the type flags.
 	 */
 	int64_t idBits() const
 	{
-		return p_.getLong() & 0xffff'ffff'ffff'ff18;
+		return p_.getLong() & 0xffff'ffff'ffff'f018ULL;
 	}
 
 	int64_t hash() const
@@ -130,7 +160,7 @@ public:
 
 	int typeCode() const
 	{
-		return (p_.getUnsignedInt() >> 3) & 3;
+		return static_cast<int>((p_.getUnsignedInt() >> 3) & 3);
 	}
 
 	// TODO: not valid for NodeRef

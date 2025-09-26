@@ -21,28 +21,24 @@ void Highlighter::highlight(StringBuilder& buf, const char* text,
 		padding = 3;
 		start += excess + padding;
 		ofs -= excess + padding;
-		buf.writeConstString("...");
+		buf << "...";
 	}
-	buf.writeBytes(text + start, ofs);
+	buf.write(text + start, ofs);
 	if (colorize)
 	{
-		buf.writeConstString("\033[");
-		buf.formatInt(color);
-		buf.writeByte('m');
+		buf << "\033[" << color << 'm';
 	}
-	buf.writeBytes(text + ofs, len);
-	if (colorize) buf.writeConstString("\033[0m");
-	buf.writeString(text + ofs + len);
+	buf.write(text + ofs, len);
+	if (colorize) buf << "\033[0m";
+	buf << (text + ofs + len);
 	buf.writeByte('\n');
 	buf.writeRepeatedChar(' ', indent + padding + ofs);
 	if (colorize)
 	{
-		buf.writeConstString("\033[");
-		buf.formatInt(color);
-		buf.writeByte('m');
+		buf << "\033[" << color << 'm';
 	}
 	buf.writeRepeatedChar('^', len);
-	if (colorize) buf.writeConstString("\033[0m");
+	if (colorize) buf << "\033[0m";
 }
 
 } // namespace clarisma

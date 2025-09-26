@@ -2,62 +2,34 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/io/IOException.h>
+#include <clarisma/io/FileHandle.h>
 
 #if defined(_WIN32) 
 #include <Windows.h>
+#endif
 
 namespace clarisma {
 
-/*
-void IOException::getError(char* buf)
+IOException::IOException()
+    : std::runtime_error(FileHandle::errorMessage())
 {
-
 }
-*/
 
-void IOException::checkAndThrow()
+#if defined(_WIN32)
+std::string IOException::getMessage(const char* moduleName, int errorCode)
 {
-	DWORD errorCode = GetLastError();
-	if (errorCode == 0) return;
-
+    HMODULE hModule = LoadLibraryA(moduleName);
     LPSTR buffer = nullptr;
     size_t size = FormatMessageA(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | 
-        FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errorCode, 
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_HMODULE |
+        FORMAT_MESSAGE_IGNORE_INSERTS, hModule, errorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
         (LPSTR)&buffer, 0, NULL);
     std::string message(buffer, size);
     LocalFree(buffer);
-    throw IOException(message);
+    return message;
 }
-
-#elif defined(__linux__) || defined(__APPLE__) 
-
-#include <errno.h>
-#include <string.h>
-
-namespace clarisma {
-
-void IOException::checkAndThrow()
-{
-    if (errno)
-    {
-        // LOG("errno = %d", errno);
-        char buf[256];
-        strcpy(buf, "Error while retrieving message");
-        strerror_r(errno, buf, sizeof(buf));
-        throw IOException(buf);
-    }
-}
-
-#else
-#error "Platform not supported"
 #endif
 
-void IOException::alwaysThrow()
-{
-    checkAndThrow();
-    throw IOException("Unknown IO error");
-}
 
 } // namespace clarisma

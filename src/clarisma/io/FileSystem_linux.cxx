@@ -13,7 +13,7 @@ size_t FileSystem::getBlockSize(const char* path)
     struct statvfs buf;
     if (statvfs(path, &buf) != 0) 
     {
-        IOException::checkAndThrow(); 
+        throw IOException();
         return 0;
     }
     return buf.f_bsize;
@@ -25,7 +25,7 @@ size_t FileSystem::getAvailableDiskSpace(const char* path)
     struct statvfs buf;
     if (statvfs(path, &buf) != 0)
     {
-        IOException::checkAndThrow();
+        throw IOException();
     }
     return static_cast<size_t>(buf.f_bsize) * buf.f_bavail;
 }

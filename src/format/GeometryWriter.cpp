@@ -3,7 +3,7 @@
 
 #include <geodesk/format/GeometryWriter.h>
 #include <geodesk/geom/polygon/Polygonizer.h>
-#include "geom/polygon/Ring.h"
+#include <geodesk/geom/polygon/Ring.h>
 #include "geom/polygon/RingCoordinateIterator.h"
 #include <geodesk/geom/Mercator.h>
 #include <geodesk/geom/geos/GeosCoordinateIterator.h>

@@ -69,6 +69,9 @@ private:
 
     friend class WaySlicer;
     friend class CoordSequenceSlicer;
+
+    template<typename Source, typename Iter>
+    friend class MCSlicer;
 };
 
 } // namespace geodesk

@@ -1,0 +1,162 @@
+// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#pragma once
+
+#include <clarisma/io/File.h>
+#include <clarisma/io/FileBuffer3.h>
+#include <clarisma/io/MemoryMapping.h>
+#include <clarisma/util/DateTime.h>
+
+#include "clarisma/util/DataPtr.h"
+
+namespace clarisma {
+
+class FreeStoreException : public IOException
+{
+public:
+	explicit FreeStoreException(const char* message)
+		: IOException(message) {}
+
+	explicit FreeStoreException(const std::string& message)
+		: IOException(message) {}
+
+	explicit FreeStoreException(const std::string& fileName, const char* message)
+		: IOException(fileName + ": " + message) {}
+
+	explicit FreeStoreException(const std::string& fileName, const std::string& message)
+		: IOException(fileName + ": " + message) {}
+};
+
+
+class FreeStore
+{
+public:
+	class Journal;
+	class Transaction;
+
+	virtual ~FreeStore() {}
+
+	enum class OpenMode
+	{
+		READ = 0,		// TODO: should this be a flag?
+		WRITE = 1,
+		CREATE = 2,
+		EXCLUSIVE = 4,
+		TRY_EXCLUSIVE = 8
+	};
+
+	void open(const char* fileName, OpenMode mode = OpenMode::READ);
+	// void open(const char* fileName, Transaction* tx);
+	void close();
+
+	const std::string& fileName() const { return fileName_; }
+	bool isCreated() const { return created_; }
+	const byte* data() const { return mapping_.data(); }
+	uint64_t offsetOfPage(uint32_t page) const noexcept
+	{
+		return static_cast<uint64_t>(page) << pageSizeShift_;
+	}
+	DataPtr pagePointer(uint32_t page) const noexcept
+	{
+		return DataPtr(mapping_.data() + offsetOfPage(page));
+	}
+
+	uint32_t pagesForBytes(uint32_t bytes) const
+	{
+		return (bytes + (1 << pageSizeShift_) - 1) >> pageSizeShift_;
+	}
+
+	uint64_t allocatedSize() const
+	{
+		return file_.allocatedSize();
+	}
+
+protected:
+	struct BasicHeader
+	{
+		uint32_t magic;
+		uint16_t versionHigh;
+		uint16_t versionLow;
+		uint64_t commitId;
+		uint8_t pageSizeShift;
+		uint8_t activeSnapshot;
+		uint16_t reserved;
+		uint32_t metaSectionSize;
+	};
+
+	struct Header : BasicHeader
+	{
+		uint32_t totalPages;
+		uint32_t freeRangeIndex;
+		uint32_t freeRanges;
+		uint32_t reserved[7];
+	};
+
+	static_assert(sizeof(Header) == 64);
+
+	static constexpr int BLOCK_SIZE = 4096;
+	static constexpr int HEADER_SIZE = 512;
+	static constexpr uint64_t SEGMENT_LENGTH = 1024 * 1024 * 1024;	// 1 GB
+	static constexpr int LOCK_OFS = HEADER_SIZE;
+	static constexpr int CHECKSUMMED_HEADER_SIZE = HEADER_SIZE - sizeof(uint32_t) * 2;
+	static constexpr uint32_t INVALID_FREE_RANGE_INDEX = 0xffff'ffff;
+
+	struct HeaderBlock : Header
+	{
+		uint8_t reserved[CHECKSUMMED_HEADER_SIZE - sizeof(Header)];
+		uint32_t checksum;
+		uint32_t unused;
+	};
+
+    static_assert(offsetof(HeaderBlock,checksum) == 504);
+
+	static_assert(sizeof(HeaderBlock) == HEADER_SIZE);
+
+	enum class JournalStatus
+	{
+		NONE,
+		MISSING,
+		SKIPPED,
+		RETRY,
+		ROLLED_BACK
+	};
+
+	static constexpr uint64_t JOURNAL_END_MARKER_FLAG = 0x8000'0000'0000'0000ULL;
+
+	// 0 = no journaling needed
+	// 1 = applied journal, txid may be different
+	// -1 = need to retry (other process applying journal)
+	static int ensureIntegrity(
+		const char* storeFileName, FileHandle storeHandle,
+		const HeaderBlock* header,
+		const char* journalFileName, bool isWriter);
+	static bool verifyJournal(std::span<const byte> journal);
+	static void applyJournal(FileHandle writableStore,
+		std::span<const byte> journal);
+	static bool verifyHeader(const HeaderBlock* header);
+	const char* journalFileName() const
+	{
+		return journalFileName_.c_str();
+	}
+
+	virtual void initialize(const byte* data) {}
+	virtual void gatherUsedRanges(std::vector<uint64_t>& ranges) = 0;
+
+	FileHandle file() { return file_; }
+	uint32_t pageSizeShift() const { return pageSizeShift_; }
+
+private:
+	File file_;
+	uint32_t pageSizeShift_ = 12;	// TODO: default 4KB page
+	bool writeable_ = false;
+	bool lockedExclusively_ = false;
+	bool created_ = false;
+	MemoryMapping mapping_;
+	std::string fileName_;
+	std::string journalFileName_;
+};
+
+CLARISMA_ENUM_FLAGS(FreeStore::OpenMode)
+
+} // namespace clarisma

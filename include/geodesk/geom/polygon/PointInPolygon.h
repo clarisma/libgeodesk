@@ -84,6 +84,7 @@ public:
 			// TODO: do we need to check for inner/outer role?
 			// Can we establish that area relations must 
 			// not have non-boundary ways?
+			// No, admin areas often have sub-areas, which could be ways
 			if (testAgainstWay(way)) return true;
 		}
 		return false;

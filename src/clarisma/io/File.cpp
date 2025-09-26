@@ -11,55 +11,40 @@
 
 namespace clarisma {
 
-const char* File::extension(const char* filename, size_t len)
+ByteBlock File::readBlock(size_t length)
 {
-	const char* p = filename + len - 1;
-	while (p > filename && *p != '.' && *p != '/' && *p != '\\')
-	{
-		p--;
-	}
-	return *p == '.' ? p : "";
+    ByteBlock block(length);
+    FileHandle::readAll(block.data(), block.size());
+    return block;
 }
-
-
-std::string_view File::simpleName(std::string_view path)
-{
-    return path.substr(path.find_last_of("/\\:") + 1);
-}
-
-
-void File::error(const char* what)
-{
-
-}
-
 
 ByteBlock File::readAll(const char* filename)
 {
     File file;
-    file.open(filename, READ);
-    uint64_t size = file.size();
-    uint8_t* data = new uint8_t[size];
-    uint64_t bytesRead = file.read(data, size);
-    if (bytesRead != size)
-    {
-        throw IOException("%s: Expected to read %lld bytes instead of %lld",
-            filename, size, bytesRead);
-    }
-    return ByteBlock(data, size);
+    file.open(filename, OpenMode::READ);
+    uint64_t size = file.getSize();
+    return ByteBlock(file.readAll<uint8_t>(size), size);
+}
+
+
+std::string File::readString(const char* filename)
+{
+    File file;
+    file.open(filename, OpenMode::READ);
+    uint64_t size = file.getSize();
+    std::string s;
+    s.resize(size+1);
+    file.FileHandle::readAll(&s[0], size);
+    s[size] = '\0';
+    return s;
 }
 
 
 void File::writeAll(const char* filename, const void* data, size_t size)
 {
     File file;
-    file.open(filename, WRITE | CREATE | REPLACE_EXISTING);
-    uint64_t bytesWritten = file.write(data, size);
-    if (bytesWritten != size)
-    {
-        throw IOException("%s: Expected to write %lld bytes instead of %lld",
-            filename, size, bytesWritten);
-    }
+    file.open(filename, OpenMode::WRITE | OpenMode::CREATE | OpenMode::TRUNCATE);
+    file.FileHandle::writeAll(data, size);
 }
 
 } // namespace clarisma

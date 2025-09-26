@@ -26,6 +26,8 @@ private:
         failureReason_ = reason;
     }
 
+    static bool isPotentialOptionValue(const char* s);
+
     CliCommand& command_;
     std::string_view failedArg_;
     std::string failureReason_;

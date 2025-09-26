@@ -5,7 +5,6 @@
 
 #include <geodesk/feature/StringValue.h>
 #include <clarisma/util/Bits.h>
-#include <clarisma/util/PbfDecoder.h>
 #include <clarisma/util/Strings.h>
 #ifdef GEODESK_PYTHON
 #include <python/util/util.h>
@@ -50,9 +49,10 @@ StringTable::StringTable() :
 void StringTable::create(const uint8_t* pStrings)
 {
 	stringBase_ = pStrings;
-	PbfDecoder data(pStrings);
-	stringCount_ = data.readVarint32() + 1;
-	// currently, "" is not stored in string table
+	stringCount_ = *reinterpret_cast<const uint16_t*>(pStrings);
+		// v2 now stores empty string, so this is the real string count
+	const uint8_t* p = stringBase_ + 2;
+
 	unsigned long leadingZeroes;
 
 	// Round up string count to next-highest power-of-2, then double it
@@ -82,17 +82,20 @@ void StringTable::create(const uint8_t* pStrings)
 	// clear the entire arena
 	std::memset(arena_, 0, arenaSize);
 
-	for (uint32_t i = 1; i < stringCount_; i++)
+	for (uint32_t i = 0; i < stringCount_; i++)
 	{
-		entries_[i].relPointer = static_cast<uint32_t>(data.pointer() - pStrings);
+		entries_[i].relPointer = static_cast<uint32_t>(p - pStrings);
 		// next has already been initialized with 0
-		uint32_t len = data.readVarint32();
-		data.skip(len);
+		const ShortVarString* str = reinterpret_cast<const ShortVarString*>(p);
+		p += str->totalSize();
 	}
 
 	// We'll index strings starting with highest numbers first,
 	// so more commonly used strings will be placed towards the head
 	// of the collision list
+
+	// TODO: currently, we don't place the empty string into the lookup
+	//  Should this be changed?
 
 	for (int i = stringCount_ - 1; i > 0; i--)
 	{

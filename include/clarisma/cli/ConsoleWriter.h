@@ -14,18 +14,26 @@ class ConsoleWriter : public AbstractStreamWriter<ConsoleWriter>
 public:
 	using AbstractStreamWriter::operator<<;
 
-	explicit ConsoleWriter(int mode = 0);
+	explicit ConsoleWriter(Console::Stream stream = Console::Stream::STDOUT);
+	ConsoleWriter(const ConsoleWriter&) = delete;
 
 	~ConsoleWriter()
 	{
+		// printf("\n\n%p\nLength = %lld\n\n", this, length());
 		if(length()) flush();
+		// printf("\n\nFlushed CW\n\n");
 	}
 
+	ConsoleWriter& blank();
 	ConsoleWriter& timestamp();
-	void flush();
+	ConsoleWriter& success();
+	ConsoleWriter& failed();
+	ConsoleWriter& arrow();
+
+	void flush(bool forceDisplay = false);
 	void color(int color);
 	void normal();
-	bool hasColor() const noexcept { return console_->hasColor(); }
+	bool hasColor() const noexcept { return hasColor_; }
 
 	ConsoleWriter& operator<<(const AnsiColor& color)
 	{
@@ -33,21 +41,15 @@ public:
 		return *this;
 	}
 
-	enum
-	{
-		NONE = 0,
-		SUCCESS = 1,
-		FAILED = 2,
-		LOGGED = 3
-	};
+	int prompt(bool defaultYes);
 
 private:
-	void success();
-	void failed();
-
 	DynamicStackBuffer<1024> buf_;
 	Console* console_;
-	int indent_;
+	// uint16_t indent_;
+	uint8_t stream_;
+	bool isTerminal_;
+	bool hasColor_;
 	int timestampSeconds_;
 };
 

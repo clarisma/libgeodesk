@@ -16,23 +16,25 @@ void* MappedFile::map(uint64_t offset, uint64_t length, int mode)
     // to grow the file to that size in case we're mapping beyond the
     // current file size
     uint64_t maxSize = offset + length;
-    HANDLE mappingHandle = CreateFileMappingA(fileHandle_, NULL, protect, 
+    HANDLE mappingHandle = CreateFileMappingA(handle_, NULL, protect,
         static_cast<DWORD>(maxSize >> 32), static_cast<DWORD>(maxSize), NULL);
+    // TODO: Use SEC_RESERVE ?
     if (!mappingHandle)
     {
         // Error creating file mapping
-        IOException::checkAndThrow();
+        throw IOException();
     }
 
     void* mappedAddress = MapViewOfFile(mappingHandle, 
         (mode & MappingMode::WRITE) ? FILE_MAP_ALL_ACCESS : FILE_MAP_READ,
         (DWORD)((offset >> 32) & 0xFFFFFFFF), (DWORD)(offset & 0xFFFFFFFF), length);
     CloseHandle(mappingHandle);
+        // TODO: Check if it's legal to close this prior to unmapping views!
 
     if (!mappedAddress)
     {
         // Error mapping view of file
-        IOException::checkAndThrow();
+        throw IOException();
     }
     return mappedAddress;
 }
@@ -44,8 +46,8 @@ void MappedFile::unmap(void* mappedAddress, uint64_t /* length */)
 
 void MappedFile::sync(const void* address, uint64_t length)
 {
-    if (!FlushViewOfFile(address, length)) IOException::checkAndThrow();
-    if (!FlushFileBuffers(handle())) IOException::checkAndThrow();
+    if (!FlushViewOfFile(address, length)) throw IOException();
+    if (!FlushFileBuffers(handle_)) throw IOException();
 }
 
 void MappedFile::prefetch(void* address, uint64_t length)
@@ -54,6 +56,11 @@ void MappedFile::prefetch(void* address, uint64_t length)
     entry.VirtualAddress = const_cast<void*>(address);
     entry.NumberOfBytes = length;
     PrefetchVirtualMemory(GetCurrentProcess(), 1, &entry, 0);
+}
+
+void MappedFile::discard(void* address, uint64_t length)
+{
+    DiscardVirtualMemory(address, length);
 }
 
 } // namespace clarisma

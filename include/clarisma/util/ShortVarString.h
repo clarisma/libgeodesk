@@ -121,22 +121,33 @@ public:
         return !(*this == other);
     }
 
+    bool operator<(const ShortVarString& other) const noexcept
+    {
+        return compare(this, &other);
+    }
+
     bool equals(const char* str, size_t len) const
     {
         if (length() != len) return false;
         return std::memcmp(data(), str, len) == 0;
     }
 
-    std::string toString() const noexcept
-    {
-        uint32_t ofs = (bytes_[0] >> 7) + 1;
-        return std::string(reinterpret_cast<const char*>(&bytes_[ofs]), length());
-    }
-
     std::string_view toStringView() const noexcept
     {
         uint32_t ofs = (bytes_[0] >> 7) + 1;
         return std::string_view(reinterpret_cast<const char*>(&bytes_[ofs]), length());
+    }
+
+    template<typename S>
+    void format(S& out) const
+    {
+        auto sv = toStringView();
+        out.write(sv.data(), sv.size());
+    }
+
+    std::string toString() const noexcept
+    {
+        return std::string(toStringView());
     }
 
     static bool compare(const ShortVarString* a, const ShortVarString* b)

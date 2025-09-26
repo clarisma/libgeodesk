@@ -3,8 +3,11 @@
 
 #include <geodesk/query/TileQueryTask.h>
 #include <geodesk/feature/FeaturePtr.h>
+#include <geodesk/feature/TileConstants.h>
 #include <geodesk/feature/types.h>
-#include <geodesk/query/Query.h>
+#include <geodesk/query/QueryBase.h>
+
+using namespace TileConstants;
 
 namespace geodesk {
 
@@ -30,52 +33,31 @@ void TileQueryTask::operator()()
 	if (types & FeatureTypes::NONAREA_WAYS) searchIndexes(FeatureIndexType::WAYS);
 	if (types & FeatureTypes::AREAS) searchIndexes(FeatureIndexType::AREAS);
 	if (types & FeatureTypes::NONAREA_RELATIONS) searchIndexes(FeatureIndexType::RELATIONS);
-	query_->offer(results_);
+	query_->consumer()(query_, results_);
 }
 
 void TileQueryTask::searchNodeIndexes()
 {
 	const MatcherHolder* matcher = query_->matcher();
-	DataPtr ppRoot = pTile_ + 8;
+	DataPtr ppRoot = pTile_ + NODE_INDEX_OFS;
 	int32_t ptr = ppRoot.getInt();
 	if (ptr == 0) return;
-	if ((ptr & 1) == 0)
-	{
-		// method_ = matcher->method(FeatureIndexType::NODES);
-		searchNodeRoot(ppRoot);
-		return;
-	}
-	
-	DataPtr p = ppRoot + (ptr ^ 1);
+
+	DataPtr p = ppRoot + ptr;
 	for (;;)
 	{
-		int32_t last = p.getInt() & 1;
+		ptr =  p.getInt();
+		int32_t last = ptr & 1;
 		int32_t keys = (p+4).getInt();
 		if (matcher->acceptIndex(FeatureIndexType::NODES, keys))
 		{
-			searchNodeRoot(p);
+			searchNodeBranch(p + (ptr ^ last));
 		}
 		if (last != 0) break;
 		p += 8;
 	}
 }
 
-void TileQueryTask::searchNodeRoot(DataPtr ppRoot)
-{
-	int32_t ptr = ppRoot.getInt();
-	if (ptr)
-	{
-		DataPtr p = ppRoot + (ptr & 0xffff'fffc);
-		if (ptr & 2)
-		{
-			searchNodeLeaf(p);
-		}
-		else
-		{
-			searchNodeBranch(p);
-		}
-	}
-}
 
 void TileQueryTask::searchNodeBranch(DataPtr p)
 {
@@ -141,47 +123,25 @@ void TileQueryTask::searchNodeLeaf(DataPtr p)
 void TileQueryTask::searchIndexes(FeatureIndexType indexType)
 {
 	const MatcherHolder* matcher = query_->matcher();
-	DataPtr ppRoot = pTile_ + 8 + indexType * 4;
+	DataPtr ppRoot = pTile_ + NODE_INDEX_OFS + indexType * 4;
 	int32_t ptr = ppRoot.getInt();
 	if (ptr == 0) return;
-	if ((ptr & 1) == 0)
-	{
-		// method_ = matcher->method(indexType);
-		searchRoot(ppRoot);
-		return;
-	}
 
-	DataPtr p = ppRoot + (ptr ^ 1);
+	DataPtr p = ppRoot + ptr;
 	for (;;)
 	{
-		int32_t last = p.getInt() & 1;
+		ptr  = p.getInt();
+		int32_t last = ptr & 1;
 		int32_t keys = (p+4).getInt();
 		if (matcher->acceptIndex(indexType, keys))
 		{
-			searchRoot(p);
+			searchBranch(p + (ptr ^ last));
 		}
 		if (last != 0) break;
 		p += 8;
 	}
 }
 
-
-void TileQueryTask::searchRoot(DataPtr ppRoot)
-{
-	int32_t ptr = ppRoot.getInt();
-	if (ptr)
-	{
-		DataPtr p = ppRoot + (ptr & 0xffff'fffc);
-		if (ptr & 2)
-		{
-			searchLeaf(p);
-		}
-		else
-		{
-			searchBranch(p);
-		}
-	}
-}
 
 void TileQueryTask::searchBranch(DataPtr p)
 {
@@ -213,42 +173,12 @@ void TileQueryTask::searchLeaf(DataPtr p)
 	Box box = query_->bounds();
 	FeatureTypes acceptedTypes = query_->types();
 	const Matcher& matcher = query_->matcher()->mainMatcher();
-
+	int multiTileFlags = tipAndFlags_ & (FeatureFlags::MULTITILE_NORTH | FeatureFlags::MULTITILE_WEST);
 	for (;;)
 	{
 		int32_t flags = (p+16).getInt();
-		int32_t multiTileFlags = flags & 
-			(FeatureFlags::MULTITILE_NORTH | FeatureFlags::MULTITILE_WEST);
-		for (;;)
+		if((flags & multiTileFlags) == 0)
 		{
-			int32_t dupeFlag = 0;
-			if (multiTileFlags)
-			{
-				if (multiTileFlags == FeatureFlags::MULTITILE_WEST)
-				{
-					// If the feature has a second copy in the tile
-					// to the west, and the query's bounding box
-					// extends into that tile, we skip the feature
-
-					if (tipAndFlags_ & FeatureFlags::MULTITILE_WEST) break;
-				}
-				else if (multiTileFlags == FeatureFlags::MULTITILE_NORTH)
-				{
-					// If the feature has a second copy in the tile
-					// to the north, and the query's bounding box
-					// extends into that tile, we skip the feature
-
-					if (tipAndFlags_ & FeatureFlags::MULTITILE_NORTH) break;
-				}
-				else
-				{
-					// If both flags are set, this means we'll have
-					// to add the feature to the deduplication set
-					// TODO: if query does not extend beyond the
-					// tile boundaries, we don't have to do this
-					dupeFlag = Query::REQUIRES_DEDUP;
-				}
-			}
 			if (!(p.getInt() > box.maxX() ||
 				(p+4).getInt() > box.maxY() ||
 				(p+8).getInt() < box.minX() ||
@@ -266,18 +196,15 @@ void TileQueryTask::searchLeaf(DataPtr p)
 						if (filter == nullptr || filter->accept(query_->store(), 
 							pFeature, fastFilterHint_))
 						{
-							// LOG("Found %s/%llu", Feature::typeName(pFeature), Feature::id(pFeature));
-							addResult(static_cast<uint32_t>(pFeature.ptr() - pTile_) | dupeFlag);	// TODO
+							addResult(static_cast<uint32_t>(pFeature.ptr() - pTile_));
 						}
 					}
 				}
 			}
-			break;
 		}
 		if (flags & 1) break;
 		p += 32;
 	}
-
 }
 
 /**

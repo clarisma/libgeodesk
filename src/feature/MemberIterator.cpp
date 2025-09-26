@@ -5,8 +5,9 @@
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/filter/Filter.h>
 
-namespace geodesk {
+#ifdef JUNK
 
+namespace geodesk {
 
 #ifdef GEODESK_TEST_PERFORMANCE
 extern volatile uint32_t performance_blackhole;
@@ -191,3 +192,5 @@ FeaturePtr MemberIterator::next()
 }
 
 } // namespace geodesk
+
+#endif
