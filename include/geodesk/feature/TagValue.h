@@ -73,8 +73,12 @@ public:
         {
         case 1:     // global string
         case 3:     // local string (fall through)
-            clarisma::Math::parseDouble(stringValue_, &val);
-            return val;
+        {
+            bool valid = clarisma::Math::parseDouble(stringValue_, &val);
+            return valid ? val : 0.0;
+            // TODO: Return 0 or NaN?
+            //  Python returns 0
+        }
         case 0:     // narrow number
             return TagValues::intFromNarrowNumber(rawNumberValue());
         case 2:     // wide number

@@ -97,6 +97,33 @@ TEST_CASE_METHOD(GolFixture, "String values")
 }
 
 
+TEST_CASE_METHOD(GolFixture, "Int values")
+{
+	std::vector<std::string> l;
+
+	for (auto f : monaco)
+	{
+		for (auto tag : f.tags())
+		{
+			int64_t v = tag.value();
+			std::string s = f.toString() + ": " + std::to_string(v);
+			l.push_back(s);
+		}
+	}
+
+	std::sort(l.begin(), l.end());
+
+	// Write to file (UTF-8)
+	std::ofstream out("d:\\geodesk\\tests\\monaco-ints-cpp.txt",
+					  std::ios::out | std::ios::trunc);
+	out.imbue(std::locale::classic());
+	for (const std::string& s : l)
+	{
+		out << s << "\n";
+	}
+}
+
+
 /*
 
 // This does not compile (deliberate error:
