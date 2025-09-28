@@ -115,7 +115,7 @@ public:
 		case 2: // wide number
 		{
 			DataPtr pValue = valuePtr(value);
-			return TagValue((pValue.getUnsignedIntUnaligned() << 2) | TagValueType::WIDE_NUMBER);
+			return TagValue((static_cast<uint64_t>(pValue.getUnsignedIntUnaligned()) << 2) | TagValueType::WIDE_NUMBER);
 		}
 		case 3: // local string
 		{

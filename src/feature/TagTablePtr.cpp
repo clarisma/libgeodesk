@@ -133,15 +133,10 @@ PyObject* TagTablePtr::valueAsString(TagBits value, StringTable& strings) const
     }
 	if (type == TagValueType::NARROW_NUMBER)
 	{
-		return PyUnicode_FromFormat("%d", narrowNumber(value));
-
-		/*	TODO -- maybe replace with:
-		 *
 		char buf[32];
 		char* end = buf + sizeof(buf);
 		char* start = Format::integerReverse(narrowNumber(value), end);
 		return PyUnicode_FromStringAndSize(start, end-start);
-		 */
 	}
 	assert(type == TagValueType::WIDE_NUMBER);
 	DataPtr pValue = valuePtr(value);
