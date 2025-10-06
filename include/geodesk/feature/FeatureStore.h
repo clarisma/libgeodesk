@@ -159,6 +159,7 @@ public:
     // const uint32_t* tileIndex() const noexcept { return tileIndex_; }
     DataPtr tileIndex() const noexcept { return DataPtr(reinterpret_cast<byte*>(tileIndex_)); }
         // TODO: standardize on const uint32_t*?
+    int tipCount() const noexcept { return header()->tipCount; }
 
     #ifdef GEODESK_PYTHON
     PyObject* getEmptyTags();

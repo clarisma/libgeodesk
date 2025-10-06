@@ -47,8 +47,16 @@ public:
     void setup(const Metadata& metadata);
     // void addTile(Tip tip, std::span<byte> data);
 
+    const uint32_t* tileIndex() const { return tileIndex_.get(); }
+    void setTileIndex(std::unique_ptr<uint32_t[]>&& tileIndex)
+    {
+        tileIndex_ = std::move(tileIndex);
+    }
+
+    void putTile(Tip tip, std::span<const uint8_t> data);
+
 protected:
-    // uint32_t tileIndexOfs_;
+    std::unique_ptr<uint32_t[]> tileIndex_;
 };
 
 } // namespace geodesk

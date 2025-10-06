@@ -296,6 +296,13 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
     assert(freeBySize_.size() == header_.freeRanges);
 }
 
+// TODO: We must allocate the FRI just like any other blob,
+//  since its storage may otherwise be reused by an alloc
+//  (any alloc marks the FRI pointer as invalid, but that
+//  change is only persisted if the header is written
+//  during commit; but overwriting to a free range
+//  can happen before commit)
+
 void FreeStore::Transaction::writeFreeRangeIndex()
 {
     if (freeByStart_.size() != freeBySize_.size() ||

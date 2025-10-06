@@ -90,5 +90,16 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 
 }
 
+void FeatureStore::Transaction::putTile(Tip tip, std::span<const uint8_t> data)
+{
+	// TODO: Free existing tile
+
+	uint32_t page = addBlob(data);
+	tileIndex_[tip] = TileIndexEntry(page, TileIndexEntry::CURRENT);
+
+	// TODO: if new tile, increment active tile count in current snapshot
+}
+
+
 } // namespace geodesk
 
