@@ -162,7 +162,7 @@ GEOSGeometry* Polygonizer::createPolygonal(GEOSContextHandle_t context)
 {
     if (outerRings_ == nullptr)
     {
-        return GEOSGeom_createEmptyPolygon();
+        return GEOSGeom_createEmptyPolygon_r(context);
     }
 
     int ringCount = 0;
