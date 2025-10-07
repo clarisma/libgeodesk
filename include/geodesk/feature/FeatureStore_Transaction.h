@@ -47,9 +47,12 @@ public:
     void setup(const Metadata& metadata);
     // void addTile(Tip tip, std::span<byte> data);
 
+    // TileIndex contains the *payload size* in the first word
+    // (*not* the tipcount)
     const uint32_t* tileIndex() const { return tileIndex_.get(); }
     void setTileIndex(std::unique_ptr<uint32_t[]>&& tileIndex)
     {
+        header().tipCount = tileIndex[0] / 4;
         tileIndex_ = std::move(tileIndex);
     }
 
