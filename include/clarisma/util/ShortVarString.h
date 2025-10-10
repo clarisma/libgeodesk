@@ -10,8 +10,17 @@
 
 namespace clarisma {
 
+namespace detail
+{
+    #if defined(__ELF__)
+    /// Hidden on ELF so taking its address in a .so avoids a GOT-indirect ref
+    /// and it will not be exported.
+    __attribute__((visibility("hidden")))
+    #endif
+    inline constexpr uint8_t EMPTY_BYTES[2] = {0,0};
+} // namespace detail
 
-// TODO: ensure empty string can be safely deoded without buffer overrun
+// TODO: ensure empty string can be safely decoded without buffer overrun
 //  or enforce rule that second byte of a zero-length string must
 //  always be readable
 
@@ -23,18 +32,14 @@ namespace clarisma {
 class ShortVarString
 {
 public:
-    // TODO: Fix; this class should never be instantiated via
-    //  its constructor, it is merely a wrapper around an
-    //  array of bytes
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
-    ShortVarString() {} // do nothing
+    // cannot be instantiated
+    ShortVarString() = delete;
     ShortVarString(const ShortVarString&) = delete;
     ShortVarString& operator=(const ShortVarString&) = delete;
 
     static const ShortVarString* empty() noexcept
     {
-        static constexpr uint8_t EMPTY_BYTES[2] = {0, 0};
-        return reinterpret_cast<const ShortVarString*>(&EMPTY_BYTES);
+        return reinterpret_cast<const ShortVarString*>(&detail::EMPTY_BYTES);
     }
 
     void init(const ShortVarString* other)

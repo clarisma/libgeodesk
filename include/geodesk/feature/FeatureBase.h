@@ -154,8 +154,11 @@ public:
     /// @return the Feature's role (or an empty string)
     [[nodiscard]] StringValue role() const noexcept
     {
-        if(isAnonymousNode()) return {};
-        return feature_.role;
+        if(isAnonymousNode()) [[unlikely]]
+        {
+            return {};
+        }
+        return { feature_.role ? feature_.role : clarisma::ShortVarString::empty() };
     }
 
     bool operator==(const Feature& other) const noexcept
@@ -439,7 +442,7 @@ private:
 
     void setRole(StringValue role) noexcept
     {
-        feature_.role = role;
+        feature_.role = static_cast<const clarisma::ShortVarString*>(role);
     }
 
     int typeCode() const { return store_.flags() >> 1; }
@@ -511,7 +514,7 @@ private:
         struct
         {
             FeaturePtr ptr;
-            StringValue role;
+            const clarisma::ShortVarString* role;
         }
         feature_;
         struct  // NOLINT

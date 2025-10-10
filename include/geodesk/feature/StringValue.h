@@ -88,6 +88,8 @@ public:
     // NOLINTNEXTLINE(google-explicit-constructor)
     operator std::string() const { return str_->toString(); }       // may throw
 
+    explicit operator const clarisma::ShortVarString*() const { return str_; }
+
     /// Pointer to the raw data representing this string.
     ///
     /// **Warning:** This pointer becomes invalid once the
