@@ -57,7 +57,7 @@ TEST_CASE_METHOD(GolFixture, "Features2")
 
 TEST_CASE_METHOD(GolFixture, "Features 3")
 {
-	Features france(R"(c:\geodesk\tests\frxx.gol)");
+	Features france(R"(d:\geodesk\tests\france.gol)");
 	Feature paris = france("a[boundary=administrative][admin_level=8][name=Paris]").one();
 	Features museums = france("na[tourism=museum]");
 	Features subwayStops = france("n[railway=station][station=subway]");
@@ -196,7 +196,7 @@ TEST_CASE_METHOD(GolFixture, "Iterate tags of anonymous nodes")
 
 TEST_CASE("Issue 21")
 {
-	Features world("c:\\geodesk\\tests\\w.gol");
+	Features world("d:\\geodesk\\tests\\world.gol");
 	Box tileBounds = Box::ofWSEN(-10, -10, 10, 10);
 	Features tile = world(tileBounds);
 	Features features = tile("w");
@@ -204,7 +204,7 @@ TEST_CASE("Issue 21")
 
 TEST_CASE("WayNodes")
 {
-	Features features("c:\\geodesk\\tests\\liguria-libero4.gol");
+	Features features("d:\\geodesk\\tests\\liguria.gol");
 	uint64_t count = 0;
 	for (auto street : features("w[highway]"))
 	{
@@ -216,6 +216,18 @@ TEST_CASE("WayNodes")
 		if (count == 10) break;
 	}
 	std::cout << count << " waynodes\n";
+}
+
+
+TEST_CASE_METHOD(GolFixture, "role() of non-members (Issue 24)")
+{
+	for (Way way : monaco.ways())
+	{
+		if (way.role()) // <-- SEGFAULT
+		{
+			std::cout << way << " as " << way.role() << std::endl;
+		}
+	}
 }
 
 // TODO: Test if parent relation iterator respect types
