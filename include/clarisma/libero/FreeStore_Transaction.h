@@ -35,7 +35,12 @@ public:
 	void end();
 
 	uint32_t allocPages(uint32_t requestedPages);
-	void freePages(uint32_t firstPage, uint32_t pages);
+	void freePages(uint32_t firstPage, uint32_t pages)
+	{
+		stagedFreeRanges_.emplace_back(
+			(static_cast<uint64_t>(firstPage) << 32) | pages);
+	}
+	void performFreePages(uint32_t firstPage, uint32_t pages);
 	void dumpFreeRanges();
 	uint32_t addBlob(std::span<const byte> data);
 	uint32_t addBlob(std::span<const uint8_t> data)
@@ -71,6 +76,7 @@ private:
 	HashMap<uint64_t,const void*> editedBlocks_;
 	BTreeSet<uint64_t> freeBySize_;
 	BTreeSet<uint64_t> freeByStart_;
+	std::vector<uint64_t> stagedFreeRanges_;
 	Crc32C journalChecksum_;
 	HeaderBlock header_;
 };

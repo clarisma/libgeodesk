@@ -49,12 +49,22 @@ void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
 
 void FreeStore::Transaction::commit(bool isFinal)
 {
+    // Actually free the staged free ranges
+
+    for (uint64_t freeRange : stagedFreeRanges_)
+    {
+        uint32_t firstPage = static_cast<uint32_t>(freeRange >> 32);
+        uint32_t pages = static_cast<uint32_t>(freeRange);
+        performFreePages(firstPage, pages);
+    }
+    stagedFreeRanges_.clear();
+
     if (isFinal)
     {
-        if (header_.freeRangeIndex == INVALID_FREE_RANGE_INDEX)
-        {
-            writeFreeRangeIndex();
-        }
+        // if (header_.freeRangeIndex == INVALID_FREE_RANGE_INDEX)
+        // {
+        writeFreeRangeIndex();
+        // }
     }
 
     header_.commitId++;
@@ -88,7 +98,7 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
     assert(requestedPages > 0);
     assert(requestedPages <= (SEGMENT_LENGTH >> store_.pageSizeShift_));
 
-    header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
+    // header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
 
     // checkFreeTrees();
     LOGS << "Allocating " << requestedPages << " pages\n";
@@ -201,12 +211,12 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
 }
 
 // TODO: Doesn't work, erase() invalidates iterators
-void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
+void FreeStore::Transaction::performFreePages(uint32_t firstPage, uint32_t pages)
 {
     assert(pages > 0);
     assert(pages <= SEGMENT_LENGTH >> store_.pageSizeShift_);
 
-    header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
+    // header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
 
     // checkFreeTrees();
     // LOGS << firstPage << ": Freeing " << pages << " pages\n";
@@ -296,13 +306,8 @@ void FreeStore::Transaction::freePages(uint32_t firstPage, uint32_t pages)
     assert(freeBySize_.size() == header_.freeRanges);
 }
 
-// TODO: We must allocate the FRI just like any other blob,
-//  since its storage may otherwise be reused by an alloc
-//  (any alloc marks the FRI pointer as invalid, but that
-//  change is only persisted if the header is written
-//  during commit; but overwriting to a free range
-//  can happen before commit)
-
+/// @brief Allocates a new blob for the FRI and writes it.
+///
 void FreeStore::Transaction::writeFreeRangeIndex()
 {
     if (freeByStart_.size() != freeBySize_.size() ||
@@ -320,31 +325,42 @@ void FreeStore::Transaction::writeFreeRangeIndex()
         header_.freeRangeIndex = 0;
         return;
     }
-    uint32_t indexSize = (header_.freeRanges + 1) * sizeof(uint64_t);
+
+    // After allocating the blob to hold the FRI, the number of
+    // free ranges may differ: It may be one less (if a free range
+    // of the exact size has been found), or one more (a blob has
+    // been appended, but the leftover tail of a 1-GB segment has
+    // been added as a new free range). The free-range count only
+    // stays the same if we're allocating a portion of an existing
+    // free range; therefore, we must request enough space to
+    // store one more entry
+
+    // +1 for the blob's header (8 bytes) and for one extra entry
+    // (header_.freeRanges may change after the call to allocPages)
+    uint32_t slotCount = header_.freeRanges + 2;
+    uint32_t indexSize = slotCount * sizeof(uint64_t);
     uint32_t indexSizeInPages = store_.pagesForBytes(indexSize);
-    auto it = freeBySize_.lower_bound(
-        static_cast<uint64_t>(indexSizeInPages) << 32);
-    uint32_t indexPage;
-    if (it != freeBySize_.end()) [[likely]]
-    {
-        indexPage = static_cast<uint32_t>(*it);
-    }
-    else
-    {
-        indexPage = header_.totalPages;
-        header_.totalPages += indexSizeInPages;
-        // TODO: clarify if the FRI is allowed to straddle
-        //  segment boundaries (it is not used by consumers
-        //  that may require segment-based mapping)
-    }
-    std::unique_ptr<uint64_t[]> index(new uint64_t[header_.freeRanges + 1]);
+    uint32_t indexPage = allocPages(indexSizeInPages);
+
+    std::unique_ptr<uint64_t[]> index(new uint64_t[slotCount]);
     uint64_t* p = index.get();
-    *p++ = (header_.freeRanges * 8) + 4;
+    uint64_t* pEnd = p + slotCount;
+    *p++ = (slotCount * 8) - 4;
     for (auto entry : freeByStart_)
     {
         *p++ = entry;
     }
-    assert(p - index.get() == header_.freeRanges + 1);
+    assert(p == index.get() + header_.freeRanges + 1);
+
+    // put zeroes into leftover slots
+    if (p < pEnd)   [[likely]]
+    {
+        *p++ = 0;
+        if (p < pEnd)   [[unlikely]]
+        {
+            *p = 0;
+        }
+    }
 
     store_.file_.writeAllAt(store_.offsetOfPage(indexPage),
         index.get(), indexSize);
@@ -404,15 +420,21 @@ void FreeStore::Transaction::endCreateStore()
 
 }
 
+/// @brief Reads the FRI and frees the blob in which it is stored.
+///
 void FreeStore::Transaction::readFreeRangeIndex()
 {
     uint32_t count = header_.freeRanges;
-    if (count == 0) return;
+    if (count == 0) [[unlikely]]
+    {
+        return;
+    }
+
     std::unique_ptr<uint64_t[]> ranges(new uint64_t[count]);
     store_.file_.readAllAt(
-        (header_.freeRangeIndex << store_.pageSizeShift_) + 8,
-        ranges.get(), count * sizeof(uint64_t));
-    for (int i=0; i<count; i++)
+        (header_.freeRangeIndex << store_.pageSizeShift_),
+        ranges.get(), (count + 1) * sizeof(uint64_t));
+    for (int i=1; i <= count; i++)
     {
         uint64_t range = ranges[i];
         freeByStart_.insert(freeByStart_.end(), range);
@@ -420,12 +442,22 @@ void FreeStore::Transaction::readFreeRangeIndex()
         uint32_t size = static_cast<uint32_t>(range) >> 1;
         ranges[i] = (static_cast<uint64_t>(size) << 32) | first;
     }
-    std::sort(ranges.get(), ranges.get() + count);
-    for (int i=0; i<count; i++)
+
+    std::sort(ranges.get() + 1, ranges.get() + count + 1);
+    for (int i=1; i <= count; i++)
     {
         uint64_t range = ranges[i];
         freeBySize_.insert(freeBySize_.end(), range);
     }
+
+    // Free the FRI's blob
+    // (Its free range doesn't get added to the trees yet, to prevent
+    // it from being reallocated within the first commit cycle, before
+    // the INVALID_FREE_RANGE_INDEX has been committed)
+
+    uint32_t indexBlobSize = ranges[0] + 4;
+    freePages(header_.freeRangeIndex, store_.pagesForBytes(indexBlobSize));
+    header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
 }
 
 uint32_t FreeStore::Transaction::addBlob(std::span<const byte> data)

@@ -157,7 +157,7 @@ TEST_CASE("FeatureStore simulation")
 		LOGS << "Committed #" << i << "\n";
 		printf("Committed #%d\n", i);
 		fflush(stdout);
-		// tx.checkFreeTrees();
+		// tx.dumpFreeRanges();
 	}
 
 	tx.dumpFreeRanges();
