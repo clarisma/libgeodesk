@@ -305,16 +305,19 @@ int FreeStore::ensureIntegrity(
 
     int result = 0;
     size_t journalSize = journalFile.size();
-    MemoryMapping journal = { journalFile, 0, journalSize };
-    if (journalHeader.header.commitId == header->commitId || !isHeaderValid)
+    if (journalSize > 0)
     {
-        if (verifyJournal(journal))
+        MemoryMapping journal = { journalFile, 0, journalSize };
+        if (journalHeader.header.commitId == header->commitId || !isHeaderValid)
         {
-            applyJournal(writableStoreHandle, journal);
-            result = 1;
+            if (verifyJournal(journal))
+            {
+                applyJournal(writableStoreHandle, journal);
+                result = 1;
+            }
         }
+        journal.unmap();
     }
-    journal.unmap();
     journalFile.tryClose();
     std::remove(journalFileName);
 

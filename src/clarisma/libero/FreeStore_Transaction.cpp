@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/libero/FreeStore_Transaction.h>
@@ -32,6 +32,11 @@ void FreeStore::Transaction::end()
     {
         journal_.close();
         std::remove(store_.journalFileName());
+    }
+    else
+    {
+        store_.created_ = false;
+        // TODO: check this logic
     }
 }
 
@@ -71,7 +76,7 @@ void FreeStore::Transaction::commit(bool isFinal)
     Crc32C crc;
     crc.update(&header_, CHECKSUMMED_HEADER_SIZE);
     header_.checksum = crc.get();
-    LOGS << "Calculated header checksum: " << header_.checksum;
+    // LOGS << "Calculated header checksum: " << header_.checksum;
 
     if (!store_.created_)   [[likely]]
     {
@@ -101,7 +106,7 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
     // header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
 
     // checkFreeTrees();
-    LOGS << "Allocating " << requestedPages << " pages\n";
+    // LOGS << "Allocating " << requestedPages << " pages\n";
 
     auto it = freeBySize_.lower_bound(
         static_cast<uint64_t>(requestedPages) << 32);
@@ -115,6 +120,8 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
         uint32_t freePages = static_cast<uint32_t>(sizeEntry >> 32);
         uint32_t firstPage = static_cast<uint32_t>(sizeEntry);
 
+        assert(firstPage + freePages < header_.totalPages);
+
         it = freeByStart_.lower_bound(static_cast<uint64_t>(firstPage) << 32);
         if (it == freeByStart_.end() ||
             (*it >> 32) != firstPage ||
@@ -123,19 +130,28 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
             // There must be an entry in the free-by-end index with
             // the exact key, TODO: error handling needed?
 
+            if (it == freeByStart_.end())
+            {
+                LOGS << "Free-by-start index is missing " << firstPage << ":" << freePages;
+            }
+            else
+            {
+                LOGS << "Free-by-start index has wrong size for " << firstPage << ":\n"
+                    << " Expected " << freePages << " instead of " << (static_cast<uint32_t>(*it) >> 1);
+            }
             assert(false);  // Tree corrupted
         }
 
         if (freePages == requestedPages)
         {
-            LOGS << "  Found perfect fit of " << requestedPages
-                << " pages at " << firstPage;
+            //LOGS << "  Found perfect fit of " << requestedPages
+            //    << " pages at " << firstPage;
 
             // Perfect fit
             freeByStart_.erase(it);
             --header_.freeRanges;
 
-            dumpFreeRanges();
+            // dumpFreeRanges();
 
             assert(freeByStart_.size() == header_.freeRanges);
             assert(freeBySize_.size() == header_.freeRanges);
@@ -144,27 +160,26 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
 
         // we need to give back the remaining chunk
 
-        LOGS << "  Allocated " << requestedPages
-            << " pages at " << firstPage << ", giving back "
-            << (freePages - requestedPages) << " at " <<
-                (firstPage + requestedPages) << "\n";
+        //LOGS << "  Allocated " << requestedPages
+        //    << " pages at " << firstPage << ", giving back "
+        //    << (freePages - requestedPages) << " at " <<
+        //        (firstPage + requestedPages) << "\n";
 
         bool garbageFlag = static_cast<bool>(*it & 1);
         uint32_t leftoverSize = freePages - requestedPages;
         uint32_t leftoverStart = firstPage + requestedPages;
-        //  auto hint = std::next(it);
+
         it = freeByStart_.erase(it);
         freeByStart_.insert(it,
             (static_cast<uint64_t>(leftoverStart) << 32) |
             (leftoverSize << 1) |
             static_cast<uint64_t>(garbageFlag));
-        // TODO: hint asserts
 
         freeBySize_.insert((static_cast<uint64_t>(leftoverSize) << 32) | leftoverStart);
 
         assert(freeByStart_.size() == header_.freeRanges);
         assert(freeBySize_.size() == header_.freeRanges);
-        dumpFreeRanges();
+        // dumpFreeRanges();
 
         return firstPage;
     }
@@ -190,19 +205,19 @@ uint32_t FreeStore::Transaction::allocPages(uint32_t requestedPages)
             (remainingPages << 1));
         ++header_.freeRanges;
 
-        LOGS << "  Allocated virgin " << requestedPages << " pages at "
-            << firstPage << ", skipping " << remainingPages << " at "
-            << firstRemainingPage;
+        //LOGS << "  Allocated virgin " << requestedPages << " pages at "
+        //    << firstPage << ", skipping " << remainingPages << " at "
+        //    << firstRemainingPage << "\n";
 
-        dumpFreeRanges();
+        // dumpFreeRanges();
 
         assert(freeByStart_.size() == header_.freeRanges);
         assert(freeBySize_.size() == header_.freeRanges);
         return firstPage;
     }
 
-    LOGS << "  Allocated virgin " << requestedPages
-        << " pages at " << firstPage;
+    //LOGS << "  Allocated virgin " << requestedPages
+    //    << " pages at " << firstPage << "\n";
 
     header_.totalPages = firstPage + requestedPages;
     assert(freeByStart_.size() == header_.freeRanges);
@@ -218,8 +233,41 @@ void FreeStore::Transaction::performFreePages(uint32_t firstPage, uint32_t pages
 
     // header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
 
+#ifndef NDEBUG
+    // Guard against overlapping free
+
+    auto itNext = freeByStart_.lower_bound(
+        static_cast<uint64_t>(firstPage) << 32);
+    if (itNext != freeByStart_.end())
+    {
+        uint32_t nextFirstPage = static_cast<uint32_t>(*itNext >> 32);
+        if (nextFirstPage < firstPage + pages)
+        {
+            LOGS << "Attempting to free a range (" << firstPage << ":" << pages
+                << ") that overlaps free range at " << nextFirstPage;
+            assert(false);
+        }
+    }
+
+    auto itPrev = freeByStart_.upper_bound(
+        static_cast<uint64_t>(firstPage) << 32);
+    if (itPrev != freeByStart_.begin())
+    {
+        --itPrev;
+        uint32_t prevFirstPage = static_cast<uint32_t>(*itPrev >> 32);
+        uint32_t prevSize = static_cast<uint32_t>(*itPrev) >> 1;
+        if (prevFirstPage + prevSize > firstPage)
+        {
+            LOGS << "Attempting to free a range at " << firstPage
+                << " that overlaps free range at " << prevFirstPage
+                << ":" << prevSize;
+            assert(false);
+        }
+    }
+
+#endif
     // checkFreeTrees();
-    // LOGS << firstPage << ": Freeing " << pages << " pages\n";
+    LOGS << firstPage << ": Freeing " << pages << " pages\n";
 
     if (firstPage + pages == header_.totalPages)
     {
@@ -240,7 +288,7 @@ void FreeStore::Transaction::performFreePages(uint32_t firstPage, uint32_t pages
             freeByStart_.erase(it);
             --header_.freeRanges;
 
-            // LOGS << first << ": Trimmed " << size << " from end";
+            LOGS << first << ": Trimmed " << size << " from end\n";
         }
         assert(freeByStart_.size() == header_.freeRanges);
         assert(freeBySize_.size() == header_.freeRanges);
@@ -269,6 +317,8 @@ void FreeStore::Transaction::performFreePages(uint32_t firstPage, uint32_t pages
             }
             freeBySize_.erase(itSize);
             --header_.freeRanges;
+
+            LOGS << "Coalesced right free blob at " << rightStart << "\n";
         }
     }
     if (!freeByStart_.empty() && right != freeByStart_.begin())
@@ -293,6 +343,8 @@ void FreeStore::Transaction::performFreePages(uint32_t firstPage, uint32_t pages
             }
             freeBySize_.erase(itSize);
             --header_.freeRanges;
+
+            LOGS << "Coalesced into left free blob at " << leftStart << "\n";
         }
     }
     freeByStart_.insert(right,
@@ -302,6 +354,11 @@ void FreeStore::Transaction::performFreePages(uint32_t firstPage, uint32_t pages
     freeBySize_.insert(
         (static_cast<uint64_t>(pages) << 32) | firstPage);
     ++header_.freeRanges;
+    if (freeByStart_.size() != header_.freeRanges)
+    {
+        LOGS << "Free ranges per header: " << header_.freeRanges
+             << " vs. free ranges in freeByStart_: " << freeByStart_.size() << "\n";
+    }
     assert(freeByStart_.size() == header_.freeRanges);
     assert(freeBySize_.size() == header_.freeRanges);
 }
@@ -313,9 +370,9 @@ void FreeStore::Transaction::writeFreeRangeIndex()
     if (freeByStart_.size() != freeBySize_.size() ||
         freeByStart_.size() != header_.freeRanges)
     {
-        LOGS << "Free by start: " << freeByStart_.size()
-            << "\nFree by size:  " << freeBySize_.size()
-            << "\nFree ranges:   " << header_.freeRanges;
+        //LOGS << "Free by start: " << freeByStart_.size()
+        //    << "\nFree by size:  " << freeBySize_.size()
+        //    << "\nFree ranges:   " << header_.freeRanges;
     }
     assert(freeByStart_.size() == freeBySize_.size());
     assert(freeByStart_.size() == header_.freeRanges);
@@ -346,9 +403,12 @@ void FreeStore::Transaction::writeFreeRangeIndex()
     uint64_t* p = index.get();
     uint64_t* pEnd = p + slotCount;
     *p++ = (slotCount * 8) - 4;
+    uint64_t prevEntry = 0;
     for (auto entry : freeByStart_)
     {
         *p++ = entry;
+        assert(entry > prevEntry);
+        prevEntry = entry;
     }
     assert(p == index.get() + header_.freeRanges + 1);
 
@@ -432,15 +492,19 @@ void FreeStore::Transaction::readFreeRangeIndex()
 
     std::unique_ptr<uint64_t[]> ranges(new uint64_t[count]);
     store_.file_.readAllAt(
-        (header_.freeRangeIndex << store_.pageSizeShift_),
+        store_.offsetOfPage(header_.freeRangeIndex),
         ranges.get(), (count + 1) * sizeof(uint64_t));
-    for (int i=1; i <= count; i++)
+
+    uint32_t prevStart = 0;
+    for (int i=0; i<count; i++)
     {
         uint64_t range = ranges[i];
         freeByStart_.insert(freeByStart_.end(), range);
         uint32_t first = static_cast<uint32_t>(range >> 32);
         uint32_t size = static_cast<uint32_t>(range) >> 1;
         ranges[i] = (static_cast<uint64_t>(size) << 32) | first;
+        assert(first > prevStart);
+        prevStart = first;
     }
 
     std::sort(ranges.get() + 1, ranges.get() + count + 1);
@@ -458,6 +522,9 @@ void FreeStore::Transaction::readFreeRangeIndex()
     uint32_t indexBlobSize = ranges[0] + 4;
     freePages(header_.freeRangeIndex, store_.pagesForBytes(indexBlobSize));
     header_.freeRangeIndex = INVALID_FREE_RANGE_INDEX;
+
+    assert(freeByStart_.size() == count);
+    assert(freeBySize_.size() == count);
 }
 
 uint32_t FreeStore::Transaction::addBlob(std::span<const byte> data)

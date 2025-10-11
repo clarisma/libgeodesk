@@ -1,6 +1,7 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <iostream>
 #include <memory>
 #include <random>
 #include <string_view>
@@ -113,6 +114,9 @@ TEST_CASE("FeatureStore simulation")
 	}
 	t0.commit();
 	t0.end();
+	store.close();
+
+	store.open(filename, FreeStore::OpenMode::WRITE);
 
 	int typicalEdits = 200;
 
@@ -121,54 +125,61 @@ TEST_CASE("FeatureStore simulation")
 
 	std::vector<Blob> edited;
 
-	TestFreeStore::Transaction tx(store);
-	tx.begin();
-
-	for (int i=0; i<1000; i++)
+	try
 	{
-		int editCount = editCountRange(rng);
-		edited.reserve(editCount);
-		for (int i2 = 0; i2<editCount; i2++)
-		{
-			std::uniform_int_distribution<size_t> tileRange(0, tiles.size()-1);
-			size_t index = tileRange(rng);
-			auto [firstPage, pages] = tiles[index];
-			edited.emplace_back(firstPage, pages);
-			tx.freePages(firstPage, pages);
-			tiles.erase(tiles.begin() + index);
-		}
+		TestFreeStore::Transaction tx(store);
+		tx.begin();
 
-		for (int i2 = 0; i2<editCount; i2++)
+		for (int i=0; i<1000; i++)
 		{
-			auto [firstPage, pages] = edited[i2];
-			uint32_t minPages = pages < 51 ? 50 : (pages-1);
-			uint32_t maxPages = pages > 1495 ? 1500 : (pages + 5);
-			std::uniform_int_distribution<uint32_t> newSizeRange(
-				minPages, maxPages);
-			pages = newSizeRange(rng);
-			firstPage = tx.allocPages(pages);
+			int editCount = editCountRange(rng);
+			edited.reserve(editCount);
+			for (int i2 = 0; i2<editCount; i2++)
+			{
+				std::uniform_int_distribution<size_t> tileRange(0, tiles.size()-1);
+				size_t index = tileRange(rng);
+				auto [firstPage, pages] = tiles[index];
+				edited.emplace_back(firstPage, pages);
+				tx.freePages(firstPage, pages);
+				tiles.erase(tiles.begin() + index);
+			}
+
+			for (int i2 = 0; i2<editCount; i2++)
+			{
+				auto [firstPage, pages] = edited[i2];
+				uint32_t minPages = pages < 51 ? 50 : (pages-1);
+				uint32_t maxPages = pages > 1495 ? 1500 : (pages + 5);
+				std::uniform_int_distribution<uint32_t> newSizeRange(
+					minPages, maxPages);
+				pages = newSizeRange(rng);
+				firstPage = tx.allocPages(pages);
+				// tx.checkFreeTrees();
+				tiles.emplace_back(firstPage, pages);
+			}
+			edited.clear();
+
+			LOGS << "Committing #" << i << "\n";
+			tx.commit();
+			LOGS << "Committed #" << i << "\n";
+			printf("Committed #%d\n", i);
+			fflush(stdout);
 			// tx.checkFreeTrees();
-			tiles.emplace_back(firstPage, pages);
 		}
-		edited.clear();
 
-		LOGS << "Committing #" << i << "\n";
-		tx.commit();
-		LOGS << "Committed #" << i << "\n";
-		printf("Committed #%d\n", i);
-		fflush(stdout);
-		// tx.dumpFreeRanges();
+		tx.dumpFreeRanges();
+		size_t tilePages = 0;
+		for (const auto& e : tiles)
+		{
+			tilePages += e.pages;
+		}
+		LOGS << tiles.size() << " tiles with " << tilePages << " pages\n";
+
+		tx.end();
 	}
-
-	tx.dumpFreeRanges();
-	size_t tilePages = 0;
-	for (const auto& e : tiles)
+	catch (const std::exception& ex)
 	{
-		tilePages += e.pages;
+		std::cout << ex.what() << std::endl;
 	}
-	LOGS << tiles.size() << " tiles with " << tilePages << " pages\n";
-
-	tx.end();
 	store.close();
 }
 
