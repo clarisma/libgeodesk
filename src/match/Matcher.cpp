@@ -62,7 +62,7 @@ void MatcherHolder::dealloc() const
 	// Destroy regex patterns
 	if (regexCount_)
 	{
-		static_assert(alignof(std::regex) == 8, "std:regex must be 8-byte aligned");
+		static_assert(alignof(std::regex) <= 8, "std:regex alignment must not be stricter than 8 bytes");
 		// (all resources are 8-byte aligned to accommodate natural alignment
 		// of pointers, doubes and std::regex)
 		const std::regex* pRegex = reinterpret_cast<const std::regex*>(
