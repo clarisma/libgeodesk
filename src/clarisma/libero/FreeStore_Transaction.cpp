@@ -490,13 +490,13 @@ void FreeStore::Transaction::readFreeRangeIndex()
         return;
     }
 
-    std::unique_ptr<uint64_t[]> ranges(new uint64_t[count]);
+    std::unique_ptr<uint64_t[]> ranges(new uint64_t[count+1]);
     store_.file_.readAllAt(
         store_.offsetOfPage(header_.freeRangeIndex),
         ranges.get(), (count + 1) * sizeof(uint64_t));
 
     uint32_t prevStart = 0;
-    for (int i=0; i<count; i++)
+    for (int i=1; i <= count; i++)
     {
         uint64_t range = ranges[i];
         freeByStart_.insert(freeByStart_.end(), range);
