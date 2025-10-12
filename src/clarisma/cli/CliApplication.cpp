@@ -4,6 +4,8 @@
 #include <clarisma/cli/CliApplication.h>
 #include <csignal>
 
+#include "clarisma/util/log.h"
+
 namespace clarisma {
 
 #ifdef _WIN32
@@ -87,9 +89,11 @@ void terminateHandler()
 
 static std::atomic_bool shuttingDown_(false);
 
-void CliApplication::shutdown(const char* msg)
+bool CliApplication::shutdown(const char* msg)
 {
-	if (shuttingDown_.exchange(true)) return;
+	if (shuttingDown_.exchange(true)) return false;
+
+	LOGS << "CliApplication::shutdown: Shutting down.";
 
 	CliApplication* theApp = get();
 	if(theApp)
@@ -109,6 +113,16 @@ void CliApplication::shutdown(const char* msg)
 		}
 		Console::get()->restore();
 	}
+	return true;
+}
+
+void CliApplication::abort(const char* msg)
+{
+	if (shutdown(msg))
+	{
+		std::abort();
+	}
+
 }
 
 CliApplication* CliApplication::theApp_ = nullptr;

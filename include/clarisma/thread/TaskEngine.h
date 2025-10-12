@@ -153,8 +153,8 @@ private:
         {
             // TODO
             // Console::debug(ex.what());
-            CliApplication::shutdown(ex.what());
-            std::abort();
+            LOGS << "Calling CliApplication::abort due to exception: " << ex.what();
+            CliApplication::abort(ex.what());
         }
     }
 
