@@ -26,7 +26,9 @@ void FeatureStore2::Transaction::addTile(Tip tip, std::span<byte> data)
 }
 */
 
-void FeatureStore::Transaction::setup(const Metadata& metadata)
+void FeatureStore::Transaction::setup(
+	const Metadata& metadata,
+	std::unique_ptr<uint32_t[]>&& tileIndex)
 {
 	// BlobStore::Transaction::setup();
 	Header& header = Transaction::header();
@@ -43,10 +45,14 @@ void FeatureStore::Transaction::setup(const Metadata& metadata)
 
 	header.flags = metadata.flags;
 	header.guid = metadata.guid;
+	header.tipCount = tileIndex[0] / 4;
+	header.tileIndexChecksum = Crc32C::compute(tileIndex.get(), tileIndex[0] + 4);
 	header.snapshots[0].revision = metadata.revision;
 	header.snapshots[0].revisionTimestamp = metadata.revisionTimestamp;
 	header.settings = *metadata.settings;
 	header.snapshots[0].tileCount = 0;
+
+	tileIndex_ = std::move(tileIndex);
 
 	Crc32C metadataChecksum;
 
@@ -94,10 +100,48 @@ void FeatureStore::Transaction::putTile(Tip tip, std::span<const uint8_t> data)
 {
 	// TODO: Free existing tile
 
+	TileIndexEntry prevEntry(tileIndex_[tip]);
 	uint32_t page = addBlob(data);
 	tileIndex_[tip] = TileIndexEntry(page, TileIndexEntry::CURRENT);
 
-	// TODO: if new tile, increment active tile count in current snapshot
+	// TODO: use modified snapshot instead of active snapshot
+	//  once we support concurrent updates
+	header().snapshots[header().activeSnapshot].tileCount +=
+		static_cast<uint32_t>(!prevEntry.isLoadedAndCurrent());
+}
+
+
+void FeatureStore::Transaction::begin()
+{
+	FreeStore::Transaction::begin();
+	Snapshot& activeSnapshot = header().snapshots[header().activeSnapshot];
+	uint32_t tileIndexPage = activeSnapshot.tileIndex;
+	if (tileIndexPage)	[[likely]]
+	{
+		uint32_t tipCount = header().tipCount;
+		uint32_t tileIndexSlotCount = tipCount + 1;
+		tileIndex_.reset(new uint32_t[tileIndexSlotCount]);
+		memcpy(tileIndex_.get(),
+			store().data() + store().offsetOfPage(tileIndexPage),
+			tileIndexSlotCount * 4);
+	}
+}
+
+void FeatureStore::Transaction::commit(bool isFinal)
+{
+	// TODO: Currently, we're writing exclusively, so Snapshot 0
+	//  is always active; update this once we support concurrent writes
+
+	Snapshot& activeSnapshot = header().snapshots[header().activeSnapshot];
+	uint32_t tileIndexSize = tileIndex_[0] + 4;
+	if (activeSnapshot.tileIndex)	[[likely]]
+	{
+		freePages(activeSnapshot.tileIndex,
+			store().pagesForBytes(tileIndexSize));
+	}
+	activeSnapshot.tileIndex = addBlob(
+		{reinterpret_cast<uint8_t*>(tileIndex_.get()), tileIndexSize});
+	FreeStore::Transaction::commit(isFinal);
 }
 
 
