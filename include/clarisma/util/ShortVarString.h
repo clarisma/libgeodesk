@@ -32,8 +32,9 @@ namespace detail
 class ShortVarString
 {
 public:
-    // cannot be instantiated
-    ShortVarString() = delete;
+    // cannot be instantiated, but need to allow for StringStatistics
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
+    ShortVarString() {};
     ShortVarString(const ShortVarString&) = delete;
     ShortVarString& operator=(const ShortVarString&) = delete;
 
