@@ -86,6 +86,15 @@ public:
 		return static_cast<double>(*this) != val;
 	}
 
+	bool operator==(Decimal other) const noexcept
+	{
+		return value_ == other.value_;
+	}
+
+	bool operator!=(Decimal other) const noexcept
+	{
+		return value_ != other.value_;
+	}
 
 	char* format(char* buf) const noexcept;
 
