@@ -58,6 +58,10 @@ void ConsoleWriter::flush(bool forceDisplay)
 			if(peekLastChar() != '\n') writeByte('\n');
 		}
 	}
+	else
+	{
+		if(peekLastChar() != '\n') writeByte('\n');
+	}
 	console_->print(static_cast<Console::Stream>(stream_), data(), length());
 	clear();
 }
