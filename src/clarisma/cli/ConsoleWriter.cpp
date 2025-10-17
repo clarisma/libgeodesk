@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/cli/ConsoleWriter.h>
+#include <thread>
 #include <clarisma/cli/Console.h>
 
 namespace clarisma {
@@ -97,6 +98,15 @@ ConsoleWriter& ConsoleWriter::timestamp()
 	}
 	timestampSeconds_ = s;
 	// indent_ = 14;
+	return *this;
+}
+
+ConsoleWriter& ConsoleWriter::timestampAndThread()
+{
+	std::ostringstream oss;
+	oss << std::this_thread::get_id();
+	writeString(oss.str());
+	timestamp() << " [" << oss.str() << "] ";
 	return *this;
 }
 

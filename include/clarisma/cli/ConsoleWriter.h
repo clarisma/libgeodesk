@@ -26,6 +26,7 @@ public:
 
 	ConsoleWriter& blank();
 	ConsoleWriter& timestamp();
+	ConsoleWriter& timestampAndThread();
 	ConsoleWriter& success();
 	ConsoleWriter& failed();
 	ConsoleWriter& arrow();
