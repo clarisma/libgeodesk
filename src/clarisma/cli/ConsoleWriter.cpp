@@ -109,7 +109,6 @@ ConsoleWriter& ConsoleWriter::timestampAndThread()
 {
 	std::ostringstream oss;
 	oss << std::this_thread::get_id();
-	writeString(oss.str());
 	timestamp() << " [" << oss.str() << "] ";
 	return *this;
 }
