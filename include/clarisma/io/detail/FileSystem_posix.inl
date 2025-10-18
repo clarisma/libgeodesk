@@ -7,7 +7,9 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#ifdef __linux__
 #include <linux/fs.h>
+#endif
 #include <clarisma/io/IOException.h>
 
 namespace clarisma {
