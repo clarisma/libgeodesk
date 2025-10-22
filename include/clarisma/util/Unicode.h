@@ -42,6 +42,8 @@ public:
             // e.g., skip, insert replacement character, throw an exception, etc.
         }
     }
+
+    static std::wstring toWideString(std::string_view s);
 };
 
 } // namespace clarisma
