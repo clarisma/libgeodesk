@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/util/Unicode.h>
-
+#ifdef _WIN32
+#include <windows.h>
+#endif
 namespace clarisma {
 
 #ifdef _WIN32
