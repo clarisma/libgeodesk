@@ -126,6 +126,7 @@ protected:
 
 	// 0 = no journaling needed
 	// 1 = applied journal, txid may be different
+	// 2 = incompletely written file, treat it as newly created
 	// -1 = need to retry (other process applying journal)
 	static int ensureIntegrity(
 		const char* storeFileName, FileHandle storeHandle,

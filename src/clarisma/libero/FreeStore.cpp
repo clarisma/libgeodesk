@@ -124,12 +124,22 @@ void FreeStore::open(const char* fileName, OpenMode mode)
         }
         else
         {
-            assert(res == 1);
+            assert(res == 1 || res == 2);
             // Always start over after rollback, because header state
             // may have changed (including active snapshot).
             // Moreover, closing the second (writable) file handle
             // causes locks to be dropped on Posix, so we always
             // re-acquire the lock
+
+            if (res == 2)
+            {
+                // Incomplete existing file, truncate it (without
+                // affecting locks) and treat it as newly created
+                mapping.unmap();
+                (void)file.trySetSize(4096);
+                created = true;
+                break;
+            }
         }
         file.tryUnlock(lockStart, lockSize);
     }
@@ -245,7 +255,7 @@ int FreeStore::ensureIntegrity(
 
                 if (header->magic == 0)     // blank slate
                 {
-                    return 0;
+                    return isWriter ? 2 : 0;
                 }
                 if (header->magic == 0x7ADA0BB1)     // v1 format
                 {
