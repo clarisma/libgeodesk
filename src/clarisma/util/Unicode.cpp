@@ -16,6 +16,22 @@ std::wstring Unicode::toWideString(std::string_view s)
     MultiByteToWideChar(CP_UTF8, 0, s.data(), size, &wideString[0], sizeNeeded);
     return wideString;
 }
+
+std::string Unicode::toUtf8(std::wstring_view ws)
+{
+    int need = WideCharToMultiByte(CP_UTF8, 0,
+        ws.data(),static_cast<int>(ws.size()),
+        nullptr, 0, nullptr, nullptr);
+    if (need <= 0) return {};
+    std::string s;
+    s.resize(static_cast<size_t>(need));
+    int wrote = WideCharToMultiByte(CP_UTF8, 0,
+        ws.data(),static_cast<int>(ws.size()),
+        s.data(), need, nullptr, nullptr);
+    if (wrote != need) return {};
+    return s;
+}
+
 #endif
 
 } // namespace clarisma

@@ -45,6 +45,7 @@ public:
     }
 
     static std::wstring toWideString(std::string_view s);
+    static std::string toUtf8(std::wstring_view ws);
 };
 
 } // namespace clarisma
