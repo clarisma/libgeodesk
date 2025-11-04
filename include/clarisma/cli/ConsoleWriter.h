@@ -35,6 +35,7 @@ public:
 	void color(int color);
 	void normal();
 	bool hasColor() const noexcept { return hasColor_; }
+	bool isTerminal() const noexcept { return console_->isTerminal_[stream_]; }
 
 	ConsoleWriter& operator<<(const AnsiColor& color)
 	{
