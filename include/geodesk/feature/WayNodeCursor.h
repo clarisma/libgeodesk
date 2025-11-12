@@ -42,16 +42,16 @@ public:
     WayNodeCursor(Coordinate xy, const uint8_t* p, bool duplicateFirst, bool wayNodeIds)
     {
         remaining_ = clarisma::readVarint32(p) - 1;
-        pCoords_ = p;
         duplicateFirst_ = duplicateFirst;
         xy.x += clarisma::readSignedVarint32(p);
         xy.y += clarisma::readSignedVarint32(p);
+        pCoords_ = p;
         currentXY_ = xy;
         firstXY_ = duplicateFirst ? xy : Coordinate();
         if (wayNodeIds)
         {
             clarisma::skipVarints(p, remaining_ * 2);
-            currentId_ = clarisma::readVarint32(p);
+            currentId_ = clarisma::readSignedVarint64(p);
             firstId_ = duplicateFirst ? currentId_ : 0;
             pIds_ = p;
         }
@@ -78,7 +78,7 @@ public:
             currentXY_.y += clarisma::readSignedVarint32(pCoords_);
             if (currentId_)
             {
-                currentId_ += clarisma::readVarint32(pIds_);
+                currentId_ += clarisma::readSignedVarint64(pIds_);
             }
             --remaining_;
             return true;
