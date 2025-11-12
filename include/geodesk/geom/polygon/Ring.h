@@ -35,7 +35,11 @@ public:
     GEOSGeometry* createLinearRing(GEOSContextHandle_t context);
     GEOSGeometry* createPolygon(GEOSContextHandle_t context, clarisma::Arena& arena);
     #endif
-    
+    #ifdef GEODESK_WITH_OGR
+    OGRLinearRing* createOgrLinearRing() const;
+    OGRPolygon* createOgrPolygon() const;
+    #endif
+
     // Sort order (used by RingMerger)
     static bool compareMinX(const Ring* a, const Ring* b) 
     {
