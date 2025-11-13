@@ -29,8 +29,8 @@ public:
 		return buildPoint(node.xy());
 	}
 
-	static OGRLineString* buildLineString(FeaturePtr way);
-	static OGRGeometry* buildWayGeometry(FeaturePtr way);
+	static OGRLineString* buildLineString(WayPtr way);
+	static OGRGeometry* buildWayGeometry(WayPtr way);
 	static OGRGeometry* buildAreaRelationGeometry(FeatureStore* store, RelationPtr relation);
 	static OGRGeometry* buildRelationGeometry(FeatureStore *store, RelationPtr relation);
 

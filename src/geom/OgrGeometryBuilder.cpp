@@ -23,28 +23,20 @@ void OgrGeometryBuilder::setPoints(OGRLineString* line, WayPtr way)
 	}
 }
 
-OGRLineString* OgrGeometryBuilder::buildLineString(FeaturePtr way)
+OGRLineString* OgrGeometryBuilder::buildLineString(WayPtr way)
 {
 	OGRLineString* line = new OGRLineString();
-	int areaFlag = way.flags() & FeatureFlags::AREA;
-	WayCoordinateIterator iter;
-	iter.start(way, areaFlag);
-	int count = iter.storedCoordinatesRemaining() + (areaFlag ? 1 : 0);
-	line->setNumPoints(count, FALSE);
-	for (int i=0; i<count; i++)
-	{
-		Coordinate c = iter.next();
-		line->setPoint(i, c.lon(), c.lat());
-	}
+	setPoints(line, WayPtr(way));
 	return line;
 }
 
-OGRGeometry* OgrGeometryBuilder::buildWayGeometry(const FeaturePtr way)
+OGRGeometry* OgrGeometryBuilder::buildWayGeometry(const WayPtr way)
 {
-	OGRLineString* line = buildLineString(way);
-	if (!way.isArea()) return line;
+	if (!way.isArea()) return buildLineString(way);
 	OGRPolygon* polygon = new OGRPolygon();
-	polygon->addRingDirectly(line);
+	OGRLinearRing* ring = new OGRLinearRing();
+	setPoints(ring, way);
+	polygon->addRingDirectly(ring);
 	return polygon;
 }
 

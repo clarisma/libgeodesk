@@ -20,7 +20,7 @@ set(BUILD_SHARED_LIBS OFF)
 
 option(GEODESK_PYTHON "Build GeoDesk with Python support" OFF)
 option(GEODESK_PYTHON_WHEELS "Enable Support for Python Wheels" OFF)
-option(GEODESK_EXAMPLES "Build example applications" ON)
+option(GEODESK_EXAMPLES "Build example applications" OFF)
 option(GEODESK_MULTITHREADED "Allow multiple threads to use the same GOL" OFF)
 option(GEODESK_LIBERO "Enable Libero storage engine" ON)
 option(GEODESK_WITH_GEOS "Build GeoDesk with GEOS support" OFF)
