@@ -30,6 +30,31 @@ void Polygonizer::Segment::copyTo(GEOSContextHandle_t context, GEOSCoordSequence
 }
 #endif
 
+#ifdef GEODESK_WITH_OGR
+void Polygonizer::Segment::copyTo(OGRSimpleCurve* curve, int destPos) const
+{
+    // we skip first coordinate because it is already the end coordinate of previous
+    // segment (for the first segment, the caller has to place the start coordinate)
+
+    if (backward)
+    {
+        for (int i = vertexCount - 2; i >= 0; i--)
+        {
+            Coordinate c = coords[i];
+            curve->setPoint(destPos++, c.lon(), c.lat());
+        }
+    }
+    else
+    {
+        for (int i = 1; i < vertexCount; i++)
+        {
+            Coordinate c = coords[i];
+            curve->setPoint(destPos++, c.lon(), c.lat());
+        }
+    }
+}
+#endif
+
 Polygonizer::Segment* Polygonizer::Segment::createFragment(int start, int end, Arena& arena) const
 {
     assert(start < end);

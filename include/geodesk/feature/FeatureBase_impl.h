@@ -6,6 +6,12 @@
 #include <geodesk/feature/FeatureBase.h>
 #include <geodesk/feature/Features.h>
 #include <geodesk/feature/Nodes.h>
+#ifdef GEODESK_WITH_GEOS
+#include <geodesk/geom/GeometryBuilder.h>
+#endif
+#ifdef GEODESK_WITH_OGR
+#include <geodesk/geom/OgrGeometryBuilder.h>
+#endif
 
 // \cond
 
@@ -83,6 +89,45 @@ Features FeatureBase<T>::parents(const char* query) const
     }
     return Features::empty(store());
 }
+
+#ifdef GEODESK_WITH_GEOS
+template<typename T>
+GEOSGeometry* FeatureBase<T>::toGeometry(GEOSContextHandle_t geosContext) const
+{
+    if (isWay())
+    {
+        return GeometryBuilder::buildWayGeometry(feature_.ptr, geosContext);
+    }
+    if (isNode())
+    {
+        if (isAnonymousNode())
+        {
+            return GeometryBuilder::buildPointGeometry(
+                anonymousNode_.xy.x, anonymousNode_.xy.y, geosContext);
+        }
+        return GeometryBuilder::buildNodeGeometry(feature_.ptr, geosContext);
+    }
+    return GeometryBuilder::buildRelationGeometry(store_, feature_.ptr, geosContext);
+}
+#endif
+
+#ifdef GEODESK_WITH_OGR
+template<typename T>
+OGRGeometry* FeatureBase<T>::toOgrGeometry() const
+{
+    if (isWay())
+    {
+        return OgrGeometryBuilder::buildWayGeometry(feature_.ptr);
+    }
+    if (isNode())
+    {
+        return OgrGeometryBuilder::buildPoint(
+            isAnonymousNode() ? anonymousNode_.xy :
+            NodePtr(feature_.ptr).xy());
+    }
+    return OgrGeometryBuilder::buildRelationGeometry(store_, feature_.ptr);
+}
+#endif
 
 } // namespace geodesk
 

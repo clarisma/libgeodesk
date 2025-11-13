@@ -7,8 +7,6 @@
 #include <cstdint>
 #include <vector>
 #include <clarisma/data/HashMap.h>
-#include <geodesk/feature/GlobalTagIterator.h>
-#include <geodesk/feature/LocalTagIterator.h>
 #include <geodesk/feature/TagTablePtr.h>
 
 namespace geodesk {
@@ -18,6 +16,7 @@ class StringTable;
 class KeySchema 
 {
 public:
+    KeySchema(StringTable* strings) : strings_(strings) {}
     KeySchema(StringTable* strings, std::string_view keys);
 
     enum SpecialKey
@@ -27,6 +26,7 @@ public:
 
     static constexpr int SPECIAL_KEY_COUNT = 4;
 
+    void addKeys(std::string_view keys);
     size_t columnCount() const { return columns_.size(); }
     int columnOfLocal(std::string_view key) const;
     int columnOfGlobal(int key) const;

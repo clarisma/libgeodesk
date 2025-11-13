@@ -12,6 +12,11 @@ using namespace clarisma;
 KeySchema::KeySchema(StringTable* strings, std::string_view keys) :
     strings_(strings)
 {
+    addKeys(keys);
+}
+
+void KeySchema::addKeys(std::string_view keys)
+{
     size_t start = 0;
     for (;;)
     {

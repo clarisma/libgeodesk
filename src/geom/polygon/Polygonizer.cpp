@@ -187,4 +187,21 @@ GEOSGeometry* Polygonizer::createPolygonal(GEOSContextHandle_t context)
 }
 #endif
 
+#ifdef GEODESK_WITH_OGR
+OGRGeometry* Polygonizer::createOgrPolygonal() const
+{
+    const Ring* ring = outerRings_;
+    if (!ring) return new OGRPolygon();
+    if (!ring->next()) return ring->createOgrPolygon();
+    OGRMultiPolygon* mp = new OGRMultiPolygon();
+    do
+    {
+        mp->addGeometryDirectly(ring->createOgrPolygon());
+        ring = ring->next();
+    }
+    while (ring);
+    return mp;
+}
+#endif
+
 } // namespace geodesk

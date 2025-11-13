@@ -9,6 +9,9 @@
 #ifdef GEODESK_WITH_GEOS
 #include <geos_c.h>
 #endif
+#ifdef GEODESK_WITH_OGR
+#include <ogr_geometry.h>
+#endif
 
 namespace geodesk {
 
@@ -67,6 +70,9 @@ public:
     void assignAndMergeHoles();
     #ifdef GEODESK_WITH_GEOS
     GEOSGeometry* createPolygonal(GEOSContextHandle_t context);
+    #endif
+    #ifdef GEODESK_WITH_OGR
+    OGRGeometry* createOgrPolygonal() const;
     #endif
 
 private:
