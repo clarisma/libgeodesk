@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
-#include <clarisma/io/FileHandle.h>
+#include <clarisma/io/File.h>
 #include <clarisma/util/Buffer.h>
 
 namespace clarisma {
