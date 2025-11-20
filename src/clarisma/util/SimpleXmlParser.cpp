@@ -200,8 +200,16 @@ bool SimpleXmlParser::parseDeclaration()
     return true;
 }
 
+/// @brief Skips an XML comment
+/// Expects p_ to point to '!' in "<!..."
+/// @returns true if valid comment (p_ points to char after closing '>'),
+///    or false if comment is malformed
 bool SimpleXmlParser::parseComment()
 {
+    p_++;
+    if(*p_ != '-') return false;
+    p_++;
+    if(*p_ != '-') return false;
     for(;;)
     {
         p_++;

@@ -71,8 +71,8 @@ public:
     bool operator!=(const FixedLonLat& other) const noexcept = default;
 
 private:
-    int32_t lon_;
-    int32_t lat_;
+    int32_t lon_ = 0;
+    int32_t lat_ = 0;
 };
 
 } // namespace geodesk

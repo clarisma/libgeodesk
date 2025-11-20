@@ -47,6 +47,7 @@ private:
 		struct
 		{
 			WayCoordinateIterator coords;
+			// TODO: replace with WayNodeCursor
 			FeatureNodeIterator featureNodes;
 			NodePtr nextFeatureNode;
 		} nodes;
