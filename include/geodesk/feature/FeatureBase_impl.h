@@ -105,9 +105,11 @@ GEOSGeometry* FeatureBase<T>::toGeometry(GEOSContextHandle_t geosContext) const
             return GeometryBuilder::buildPointGeometry(
                 anonymousNode_.xy.x, anonymousNode_.xy.y, geosContext);
         }
-        return GeometryBuilder::buildNodeGeometry(feature_.ptr, geosContext);
+        return GeometryBuilder::buildNodeGeometry(
+            NodePtr(feature_.ptr), geosContext);
     }
-    return GeometryBuilder::buildRelationGeometry(store_, feature_.ptr, geosContext);
+    return GeometryBuilder::buildRelationGeometry(store_,
+        RelationPtr(feature_.ptr), geosContext);
 }
 #endif
 

@@ -39,6 +39,14 @@ FetchContent_Declare(gtl
     GIT_TAG v1.2.0)
 FetchContent_MakeAvailable(gtl)
 
+# Fetch GEOS 3.11.3 (tests only)
+# FetchContent_Declare(geos
+#         URL https://download.osgeo.org/geos/geos-3.13.1.tar.bz2
+#         DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+# FetchContent_MakeAvailable(geos)
+# set(GEOS_INCLUDE_PATHS "${geos_SOURCE_DIR}/include" "${geos_BINARY_DIR}/capi" CACHE INTERNAL "")
+
+
 set(PREVIOUS_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF)
 set(CATCH_BUILD_STATIC_LIBRARY ON)

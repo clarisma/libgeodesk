@@ -16,6 +16,10 @@ class Ways;
 class Relations;
 }
 
+class GEOSGeometry;
+class GEOSContextHandle_t;
+class OGRGeometry;
+
 namespace geodesk {
 
 ///
@@ -286,18 +290,28 @@ public:
     /// @param xy
     Features operator()(Coordinate xy) const;
 
-    /// @brief Only features whose geometry intersects with the
+    /// @brief Only features whose geometry intersects the
     /// given Feature (short form of intersecting())
     ///
     Features operator()(const Feature& feature) const;
 
-    /// @brief Only features whose geometry intersects with the
+    /// @brief Only features whose geometry intersects the
     /// given Feature.
     ///
     /// @throws QueryException if one or more tiles that contain
     ///   the geometry of a Relation are missing
     ///
     Features intersecting(const Feature& feature) const;
+
+    /// @brief Only features whose geometry intersects @p geom.
+    ///
+    /// This method is only available if build option `GEODESK_WITH_GEOS`
+    /// is enabled (off by default).
+    ///
+    /// @param context  GEOS context associated with @p geom
+    /// @param geom     GEOS geometry used as the intersection filter
+    ///
+    Features intersecting(GEOSContextHandle_t context, const GEOSGeometry* geom) const;
 
     /// @brief Only features that lie entirely inside the geometry
     /// of the given Feature.
@@ -307,6 +321,16 @@ public:
     ///
     Features within(const Feature& feature) const;
 
+    /// @brief Only features that lie entirely inside @p geom.
+    ///
+    /// This method is only available if build option `GEODESK_WITH_GEOS`
+    /// is enabled (off by default).
+    ///
+    /// @param context  GEOS context associated with @p geom
+    /// @param geom     GEOS geometry used as the containment filter
+    ///
+    Features within(GEOSContextHandle_t context, const GEOSGeometry* geom) const;
+
     /// @brief Only features whose geometry contains the
     /// given Feature.
     ///
@@ -314,6 +338,17 @@ public:
     ///   the geometry of a Relation are missing
     ///
     Features containing(const Feature& feature) const;
+
+    /// @brief Only features whose geometry contains @p geom.
+    ///
+    /// This method is only available if build option `GEODESK_WITH_GEOS`
+    /// is enabled (off by default).
+    ///
+    /// @param context  GEOS context associated with @p geom
+    /// @param geom     GEOS geometry that must lie entirely within
+    ///                 each returned feature's geometry
+    ///
+    Features containing(GEOSContextHandle_t context, const GEOSGeometry* geom) const;
 
     /// @brief Only features whose geometry contains the
     /// given Coordinate.
@@ -335,6 +370,16 @@ public:
     ///   the geometry of a Relation are missing
     ///
     Features crossing(const Feature& feature) const;
+
+    /// @brief Only features whose geometry crosses @p geom.
+    ///
+    /// This method is only available if build option `GEODESK_WITH_GEOS`
+    /// is enabled (off by default).
+    ///
+    /// @param context  GEOS context associated with @p geom
+    /// @param geom     GEOS geometry used as the crossing filter
+    ///
+    Features crossing(GEOSContextHandle_t context, const GEOSGeometry* geom) const;
 
     /// @brief Only features whose closest point lies within
     /// `distance` meters of `xy`.
