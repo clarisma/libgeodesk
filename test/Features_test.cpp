@@ -230,4 +230,22 @@ TEST_CASE_METHOD(GolFixture, "role() of non-members (Issue 24)")
 	}
 }
 
+TEST_CASE("WayNodes with IDs (#25)")
+{
+	Features features("d:\\geodesk\\tests\\mcu.gol");
+	uint64_t count = 0;
+	for (auto street : features("w[highway]"))
+	{
+		for(auto node : street.nodes())
+		{
+			std::cout << street << ": " << node << " at "
+				<< std::setprecision(10)
+				<< node.lon() << "," << node.lat() << '\n';
+			count++;
+		}
+		if (count == 10) break;
+	}
+	std::cout << count << " waynodes\n";
+}
+
 // TODO: Test if parent relation iterator respect types

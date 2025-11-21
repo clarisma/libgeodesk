@@ -70,7 +70,7 @@ public:
     /// @returns true if another node has been fetched, or false
     ///   if we've read past the end
     ///
-    [[nodiscard]] bool next() noexcept
+    bool next() noexcept
     {
         if (remaining_)
         {
