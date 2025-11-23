@@ -7,6 +7,8 @@
 #include <clarisma/util/ShortVarString.h>
 #include <clarisma/util/streamable.h> // for << operator support
 
+// \cond lowlevel
+
 namespace geodesk {
 
 using clarisma::operator<<;
@@ -129,3 +131,5 @@ private:
 static_assert(sizeof(StringHolder) == 16, "StringHolder must be 16 bytes");
 
 } // namespace geodesk
+
+// \endcond

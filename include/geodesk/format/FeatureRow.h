@@ -7,6 +7,8 @@
 #include <geodesk/format/KeySchema.h>
 #include <geodesk/format/StringHolder.h>
 
+// \cond
+
 using namespace geodesk;
 
 class FeatureRow : public clarisma::SmallArray<StringHolder,32>
@@ -16,3 +18,4 @@ public:
         FeaturePtr feature, int precision);
 };
 
+// \endcond

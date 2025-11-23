@@ -6,6 +6,8 @@
 #include <clarisma/util/DataPtr.h>
 #include <geodesk/feature/TileConstants.h>
 
+// \cond lowlevel
+
 using clarisma::DataPtr;
 using namespace TileConstants;
 
@@ -57,3 +59,5 @@ public:
         const Box& bounds, void (*accept)(FeaturePtr));
      */
 };
+
+// \endcond

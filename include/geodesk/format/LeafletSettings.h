@@ -3,9 +3,10 @@
 
 #pragma once
 
+
 #include "FeatureFormatter.h"
-#include <geodesk/geom/polygon/Polygonizer.h>
-#include <geodesk/geom/polygon/Ring.h>
+
+// \cond
 
 namespace geodesk {
 
@@ -22,3 +23,5 @@ struct LeafletSettings
 };
 
 } // namespace geodesk
+
+// \endcond

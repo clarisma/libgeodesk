@@ -6,6 +6,8 @@
 #include <cassert>
 #include <geodesk/geom/Coordinate.h>
 
+// \cond
+
 namespace geodesk {
 
 class CoordinateSpanIterator
@@ -37,3 +39,4 @@ private:
 
 } // namespace geodesk
 
+// \endcond
