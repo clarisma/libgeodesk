@@ -78,6 +78,11 @@ inline uint64_t readVarint64(const uint8_t*& p)
 	return val;
 }
 
+inline int64_t readSignedVarint35(const uint8_t*& p)
+{
+	int64_t val = static_cast<int64_t>(readVarint35(p));
+	return (val >> 1) ^ -(val & 1);
+}
 
 inline int32_t readSignedVarint32(const uint8_t*& p)
 {

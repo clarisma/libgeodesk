@@ -261,6 +261,11 @@ int FreeStore::ensureIntegrity(
                 {
                     throw FreeStoreException("Unsupported Store Format (Version 1.0)");
                 }
+                if (header->magic == 0xE0F6B060)     // GOB
+                {
+                    throw FreeStoreException(
+                        "Geo-Object Bundle; import it first using \"gol load\"");
+                }
                 if (header->magic == 0x1CE50D6E)     // v2 format, but invalid
                 {
                     char buf[1024];
