@@ -139,7 +139,7 @@ FeatureIteratorBase::~FeatureIteratorBase()
         storage_.worldQuery.~Query();
         break;
     case WAYNODES_ALL:
-        storage_.nodes.cursor.~WayNodeCursor()();
+        storage_.nodes.cursor.~WayNodeCursor();
         // fall through
     case WAYNODES_FEATURES:
         storage_.nodes.featureNodes.~FeatureNodeIterator();
