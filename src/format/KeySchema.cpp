@@ -13,6 +13,11 @@ KeySchema::KeySchema(StringTable* strings, std::string_view keys) :
     strings_(strings)
 {
     addKeys(keys);
+    if(specialKeyCols_[TAGS] && startsWith_.empty() &&
+        endsWith_.empty())
+    {
+        startsWith_.emplace_back("");
+    }
 }
 
 void KeySchema::addKeys(std::string_view keys)

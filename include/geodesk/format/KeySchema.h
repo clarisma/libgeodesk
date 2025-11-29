@@ -25,7 +25,6 @@ public:
         SPECIAL_KEY_COUNT // always keep this last
     };
 
-    void addKeys(std::string_view keys);
     size_t columnCount() const { return columns_.size(); }
     int columnOfLocal(std::string_view key) const;
     int columnOfGlobal(int key) const;
@@ -38,6 +37,7 @@ public:
     static constexpr int WILDCARD = -1;
 
 private:
+    void addKeys(std::string_view keys);
     void addKey(std::string_view key);
     int checkWildcard(std::string_view key) const;
 
