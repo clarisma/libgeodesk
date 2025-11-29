@@ -16,15 +16,14 @@ class StringTable;
 class KeySchema 
 {
 public:
-    KeySchema(StringTable* strings) : strings_(strings) {}
+    explicit KeySchema(StringTable* strings) : strings_(strings) {}
     KeySchema(StringTable* strings, std::string_view keys);
 
     enum SpecialKey
     {
-        ID, LON, LAT, TAGS
+        ID, LON, LAT, TAGS, GEOM,
+        SPECIAL_KEY_COUNT // always keep this last
     };
-
-    static constexpr int SPECIAL_KEY_COUNT = 4;
 
     void addKeys(std::string_view keys);
     size_t columnCount() const { return columns_.size(); }

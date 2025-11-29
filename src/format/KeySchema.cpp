@@ -66,6 +66,16 @@ void KeySchema::addKey(std::string_view key)
         specialKeyCols_[LAT] = col;
         return;
     }
+    if (key == "tags")
+    {
+        specialKeyCols_[TAGS] = col;
+        return;
+    }
+    if (key == "geom" || key == "shape")
+    {
+        specialKeyCols_[GEOM] = col;
+        return;
+    }
 
     int code = strings_->getCode(key);
     if (code >= 0 && code <= FeatureConstants::MAX_COMMON_KEY)

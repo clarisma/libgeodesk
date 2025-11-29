@@ -9,13 +9,18 @@
 
 // \cond
 
+namespace clarisma {
+class StringBuilder;
+}
+
 using namespace geodesk;
 
 class FeatureRow : public clarisma::SmallArray<StringHolder,32>
 {
 public:
     FeatureRow(const KeySchema& keys, FeatureStore* store,
-        FeaturePtr feature, int precision);
+        FeaturePtr feature, int precision,
+        clarisma::StringBuilder& stringBuilder);
 };
 
 // \endcond
