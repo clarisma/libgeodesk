@@ -37,6 +37,6 @@ public:
     }
 };
 
-// \endcond
+/// \endcond
 
 } // namespace geodesk

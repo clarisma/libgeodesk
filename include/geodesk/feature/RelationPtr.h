@@ -57,5 +57,5 @@ private:
 	std::unordered_set<int64_t> childRelations_;
 };
 
-// \endcond
+/// \endcond
 } // namespace geodesk

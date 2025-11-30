@@ -52,4 +52,4 @@ private:
 
 } // namespace geodesk
 
-// \endcond
+/// \endcond

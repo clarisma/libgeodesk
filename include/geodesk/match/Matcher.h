@@ -155,5 +155,5 @@ private:
     friend class ComboMatcher;
 };
 
-// \endcond
+/// \endcond
 } // namespace geodesk

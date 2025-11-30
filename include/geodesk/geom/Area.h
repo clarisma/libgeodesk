@@ -63,5 +63,5 @@ private:
 	}
 };
 
-// \endcond
+/// \endcond
 } // namespace geodesk

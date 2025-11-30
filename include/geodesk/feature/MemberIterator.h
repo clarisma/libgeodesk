@@ -206,5 +206,5 @@ protected:
 	const Matcher* currentMatcher_;
 };
 
-// \endcond
+/// \endcond
 } // namespace geodesk

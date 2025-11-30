@@ -139,4 +139,4 @@ static_assert(sizeof(StringHolder) == 16, "StringHolder must be 16 bytes");
 
 } // namespace geodesk
 
-// \endcond
+/// \endcond

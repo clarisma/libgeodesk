@@ -24,4 +24,4 @@ struct LeafletSettings
 
 } // namespace geodesk
 
-// \endcond
+/// \endcond
