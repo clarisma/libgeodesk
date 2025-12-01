@@ -34,6 +34,6 @@ private:
 	// asmjit::JitRuntime runtime_;
 };
 
-// \endcond
+/// \endcond
 
 } // namespace geodesk

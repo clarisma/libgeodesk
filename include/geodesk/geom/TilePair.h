@@ -263,5 +263,5 @@ private:
 	TilePair(uint32_t bits) { tile_ = bits; }
 };
 
-// \endcond
+/// \endcond
 } // namespace geodesk

@@ -6,7 +6,7 @@
 #include <clarisma/util/DataPtr.h>
 #include <geodesk/feature/TileConstants.h>
 
-// \cond lowlevel
+/// \cond lowlevel
 
 using clarisma::DataPtr;
 using namespace TileConstants;
@@ -60,4 +60,4 @@ public:
      */
 };
 
-// \endcond
+/// \endcond lowlevel

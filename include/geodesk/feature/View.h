@@ -521,6 +521,6 @@ private:
     Context context_;
 };
 
-// \endcond lowlevel
+/// \endcond lowlevel
 
 } // namespace geodesk

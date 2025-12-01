@@ -16,17 +16,15 @@ class StringTable;
 class KeySchema 
 {
 public:
-    KeySchema(StringTable* strings) : strings_(strings) {}
+    explicit KeySchema(StringTable* strings) : strings_(strings) {}
     KeySchema(StringTable* strings, std::string_view keys);
 
     enum SpecialKey
     {
-        ID, LON, LAT, TAGS
+        ID, LON, LAT, TAGS, GEOM,
+        SPECIAL_KEY_COUNT // always keep this last
     };
 
-    static constexpr int SPECIAL_KEY_COUNT = 4;
-
-    void addKeys(std::string_view keys);
     size_t columnCount() const { return columns_.size(); }
     int columnOfLocal(std::string_view key) const;
     int columnOfGlobal(int key) const;
@@ -39,6 +37,7 @@ public:
     static constexpr int WILDCARD = -1;
 
 private:
+    void addKeys(std::string_view keys);
     void addKey(std::string_view key);
     int checkWildcard(std::string_view key) const;
 
@@ -53,4 +52,4 @@ private:
 
 } // namespace geodesk
 
-// \endcond
+/// \endcond

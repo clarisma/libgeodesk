@@ -45,6 +45,13 @@ public:
         data_.referenced.ptr = s->data();
     }
 
+    explicit StringHolder(const std::string_view& sv)
+    {
+        data_.referenced.flag = REFERENCED_FLAG;
+        data_.referenced.len = static_cast<uint32_t>(sv.size());
+        data_.referenced.ptr = sv.data();
+    }
+
     // TODO: The inline space cannot accommodate the full range of Decimal values;
     //  it is sufficient for tag values stored as numbers
     explicit StringHolder(clarisma::Decimal d)
@@ -132,4 +139,4 @@ static_assert(sizeof(StringHolder) == 16, "StringHolder must be 16 bytes");
 
 } // namespace geodesk
 
-// \endcond
+/// \endcond

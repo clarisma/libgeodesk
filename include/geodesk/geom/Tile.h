@@ -246,5 +246,5 @@ struct std::hash<geodesk::Tile>
 	}
 };
 
-// \endcond
+/// \endcond
 

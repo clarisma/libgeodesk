@@ -95,6 +95,6 @@ private:
 	uint32_t crossingCount_;
 };
 
-// \endcond
+/// \endcond
 
 } // namespace geodesk
