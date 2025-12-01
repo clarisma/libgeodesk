@@ -60,4 +60,4 @@ public:
      */
 };
 
-/// \endcond
+/// \endcond lowlevel
