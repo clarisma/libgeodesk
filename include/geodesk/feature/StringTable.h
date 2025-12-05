@@ -96,5 +96,5 @@ private:
     // beware of alignment!
 };
 
-// \endcond
+/// \endcond
 } // namespace geodesk

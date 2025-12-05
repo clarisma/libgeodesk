@@ -79,7 +79,8 @@ void FeatureIteratorBase::initNodeIterator(const View& view)
     }
     if(type_ == WAYNODES_ALL)
     {
-        new(&storage_.nodes.coords) WayCoordinateIterator(way);
+        new(&storage_.nodes.cursor) WayNodeCursor(way,
+            view.store()->hasWaynodeIds());
     }
 }
 
@@ -138,7 +139,7 @@ FeatureIteratorBase::~FeatureIteratorBase()
         storage_.worldQuery.~Query();
         break;
     case WAYNODES_ALL:
-        storage_.nodes.coords.~WayCoordinateIterator();
+        storage_.nodes.cursor.~WayNodeCursor();
         // fall through
     case WAYNODES_FEATURES:
         storage_.nodes.featureNodes.~FeatureNodeIterator();
@@ -231,7 +232,10 @@ void FeatureIteratorBase::fetchNext()
     }
     case WAYNODES_ALL:
     {
-        Coordinate xy = storage_.nodes.coords.next();
+        auto& cursor = storage_.nodes.cursor;
+        Coordinate xy = cursor.xy();
+        uint64_t id = cursor.id();
+        cursor.next();
         if(xy.isNull())
         {
             current_.setNull();
@@ -251,7 +255,7 @@ void FeatureIteratorBase::fetchNext()
                 }
             }
             current_.setType(Feature::ExtendedFeatureType::ANONYMOUS_NODE);
-            current_.setIdAndXY(0, xy);
+            current_.setIdAndXY(id, xy);
         }
         return;
     }

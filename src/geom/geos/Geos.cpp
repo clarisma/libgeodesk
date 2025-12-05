@@ -6,6 +6,18 @@
 
 namespace geodesk {
 
+bool Geos::centroid(GEOSContextHandle_t context,
+    const GEOSGeometry* geom, Coordinate* centroid)
+{
+    double x, y;
+    GEOSGeometry* c = GEOSGetCentroid_r(context, geom);
+    if (!c) return false;
+    GEOSGeomGetX_r(context, c, &x);
+    GEOSGeomGetY_r(context, c, &y);
+    GEOSGeom_destroy_r(context, c);
+    *centroid = Coordinate(x, y);
+    return true;
+}
 
 
 } // namespace geodesk

@@ -51,6 +51,9 @@ public:
     #ifdef GEODESK_WITH_GEOS
     void copyTo(GEOSContextHandle_t context, GEOSCoordSequence* seq, int destPos) const;
     #endif
+    #ifdef GEODESK_WITH_OGR
+    void copyTo(OGRSimpleCurve* curve, int destPos) const;
+    #endif
     Segment* createFragment(int start, int end, clarisma::Arena& arena) const;
 };
 

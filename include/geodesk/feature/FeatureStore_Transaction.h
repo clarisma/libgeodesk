@@ -6,6 +6,8 @@
 #include <geodesk/feature/FeatureStore.h>
 #include <clarisma/libero/FreeStore_Transaction.h>
 
+// \cond
+
 namespace geodesk {
 
 struct FeatureStore::Metadata

@@ -57,7 +57,7 @@ Coordinate Centroid::ofRelation(FeatureStore* store, RelationPtr relation)
 		centroid.addAreaRelation(store, relation);
 		if (centroid.isEmpty()) return relation.bounds().center();
 			// If the relation is degenerate to the point where no rings could
-			// be built, return the cneter of its bbox. We can't use centroid()
+			// be built, return the center of its bbox. We can't use centroid()
 			// because the sum of areas will be zero and results in division-by-zero
 		return centroid.centroid();
 	}

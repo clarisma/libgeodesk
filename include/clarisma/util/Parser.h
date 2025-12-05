@@ -107,7 +107,18 @@ protected:
 	}
 
 	void expect(char ch);
-	
+
+	std::string_view expectString()
+	{
+		ParsedString s = string();
+		if (s.isNull())
+		{
+			error("Expected string");
+			return std::string_view();
+		}
+		return s.asStringView();
+	}
+
 	const char* pNext_;		// slightly more efficient placing pNext first
 	const char* pStart_;	
 };

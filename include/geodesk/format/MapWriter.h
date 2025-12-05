@@ -5,6 +5,8 @@
 
 #include <geodesk/format/GeometryWriter.h>
 
+// \cond
+
 namespace geodesk {
 
 class MapWriter : public GeometryWriter
@@ -46,3 +48,5 @@ private:
 };
 
 } // namespace geodesk
+
+// \endcond

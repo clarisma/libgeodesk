@@ -62,6 +62,41 @@ GEOSGeometry* Polygonizer::Ring::createPolygon(GEOSContextHandle_t context, clar
 }
 #endif
 
+#ifdef GEODESK_WITH_OGR
+
+OGRLinearRing* Polygonizer::Ring::createOgrLinearRing() const
+{
+    OGRLinearRing* ring = new OGRLinearRing();
+    ring->setNumPoints(vertexCount_);
+    Segment* seg = firstSegment_;
+    Coordinate first = seg->backward ? seg->coords[seg->vertexCount - 1] : seg->coords[0];
+    ring->setPoint(0, first.lon(), first.lat());
+    int pos = 1;
+    do
+    {
+        seg->copyTo(ring, pos);
+        pos += seg->vertexCount - 1;
+        seg = seg->next;
+    }
+    while (seg);
+    assert(pos == vertexCount_);
+    return ring;
+}
+
+OGRPolygon* Polygonizer::Ring::createOgrPolygon() const
+{
+    OGRPolygon* polygon = new OGRPolygon();
+    polygon->addRingDirectly(createOgrLinearRing());
+    Ring* inner = firstInner_;
+    while (inner)
+    {
+        polygon->addRingDirectly(inner->createOgrLinearRing());
+        inner = inner->next();
+    }
+    return polygon;
+}
+#endif
+
 void Polygonizer::Ring::calculateBounds()
 {
     Segment* p = firstSegment_;

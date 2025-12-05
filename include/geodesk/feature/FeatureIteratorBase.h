@@ -6,7 +6,7 @@
 #include <geodesk/feature/FeatureBase.h>
 #include <geodesk/feature/MemberIterator.h>
 #include <geodesk/feature/FeatureNodeIterator.h>
-#include <geodesk/feature/WayCoordinateIterator.h>
+#include <geodesk/feature/WayNodeCursor.h>
 #include <geodesk/filter/FeatureNodeFilter.h>
 #include <geodesk/filter/WayNodeFilter.h>
 #include <geodesk/query/Query.h>
@@ -46,7 +46,7 @@ private:
 		MemberIterator members;
 		struct
 		{
-			WayCoordinateIterator coords;
+			WayNodeCursor cursor;
 			FeatureNodeIterator featureNodes;
 			NodePtr nextFeatureNode;
 		} nodes;

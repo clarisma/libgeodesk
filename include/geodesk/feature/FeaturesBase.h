@@ -9,6 +9,9 @@
 #include <geodesk/feature/QueryException.h>
 #include <geodesk/feature/View.h>
 #include <geodesk/filter/PredicateFilter.h>
+#ifdef GEODESK_WITH_GEOS
+#include <geos_c.h>
+#endif
 
 namespace geodesk {
 
@@ -213,6 +216,62 @@ public:
         return {view_.withFilter(Filters::maxMetersFrom(distance,
             Coordinate::ofLonLat(lon, lat)))};
     }
+
+#ifdef GEODESK_WITH_GEOS
+    /// @brief Only features whose geometry intersects @p geom.
+    ///
+    /// This method is only available if build option `GEODESK_WITH_GEOS`
+    /// is enabled (off by default).
+    ///
+    /// @param context  GEOS context associated with @p geom
+    /// @param geom     GEOS geometry used as the intersection filter
+    ///
+    FeaturesBase intersecting(GEOSContextHandle_t context, const GEOSGeometry* geom) const
+    {
+        return { view_.withFilter(Filters::intersecting(context, geom))};
+    }
+
+    /// @brief Only features that lie entirely inside @p geom.
+    ///
+    /// This method is only available if build option `GEODESK_WITH_GEOS`
+    /// is enabled (off by default).
+    ///
+    /// @param context  GEOS context associated with @p geom
+    /// @param geom     GEOS geometry used as the containment filter
+    ///
+    FeaturesBase within(GEOSContextHandle_t context, const GEOSGeometry* geom) const
+    {
+        return { view_.withFilter(Filters::within(context, geom))};
+    }
+
+    /// @brief Only features whose geometry contains @p geom.
+    ///
+    /// This method is only available if build option `GEODESK_WITH_GEOS`
+    /// is enabled (off by default).
+    ///
+    /// @param context  GEOS context associated with @p geom
+    /// @param geom     GEOS geometry that must lie entirely within
+    ///                 each returned feature's geometry
+    ///
+    FeaturesBase containing(GEOSContextHandle_t context, const GEOSGeometry* geom) const
+    {
+        return { view_.withFilter(Filters::containing(context, geom))};
+    }
+
+    /// @brief Only features whose geometry crosses @p geom.
+    ///
+    /// This method is only available if build option `GEODESK_WITH_GEOS`
+    /// is enabled (off by default).
+    ///
+    /// @param context  GEOS context associated with @p geom
+    /// @param geom     GEOS geometry used as the crossing filter
+    ///
+    FeaturesBase crossing(GEOSContextHandle_t context, const GEOSGeometry* geom) const
+    {
+        return { view_.withFilter(Filters::crossing(context, geom))};
+    }
+
+#endif
 
     /// @}
     /// @name Topological filters

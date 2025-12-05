@@ -185,6 +185,7 @@ protected:
 
 private:
 	static constexpr uint32_t MAGIC = 0x1CE50D6E;
+    static constexpr uint32_t MAGIC_GOB = 0xE0F6B060;	//	(60 B0 F6 E0) "gob of geo"
     static constexpr uint16_t VERSION_HIGH = 2;
     static constexpr uint16_t VERSION_LOW = 0;
 

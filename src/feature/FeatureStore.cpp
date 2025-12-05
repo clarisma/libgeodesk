@@ -90,7 +90,9 @@ void FeatureStore::initialize(const byte* data)
 	const Header* header = reinterpret_cast<const Header*>(data);
 	if (header->magic != MAGIC)
 	{
-		throw FreeStoreException("Not a Geographic Object Library");
+		throw FreeStoreException(header->magic == MAGIC_GOB ?
+			"Geo-Object Bundle; import it first using \"gol load\"" :
+			"Not a Geographic Object Library");
 	}
 	// TODO: Version check
 

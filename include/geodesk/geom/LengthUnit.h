@@ -43,5 +43,5 @@ public:
 	static const char* VALID_UNITS;
 };
 
-// \endcond
+/// \endcond
 } // namespace geodesk

@@ -43,7 +43,7 @@ const Filter* PreparedFilterFactory::forFeature(FeatureStore* store, FeaturePtr 
 }
 
 #ifdef GEODESK_WITH_GEOS
-const Filter* PreparedFilterFactory::forGeometry(GEOSContextHandle_t context, GEOSGeometry* geom)
+const Filter* PreparedFilterFactory::forGeometry(GEOSContextHandle_t context, const GEOSGeometry* geom)
 {
 	int geomType = GEOSGeomTypeId_r(context, geom);
 	unsigned int coordLen;

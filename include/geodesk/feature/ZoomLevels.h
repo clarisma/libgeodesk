@@ -106,5 +106,5 @@ private:
     uint32_t levels_;
 };
 
-// \endcond
+/// \endcond
 } // namespace geodesk

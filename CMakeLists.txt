@@ -20,9 +20,11 @@ set(BUILD_SHARED_LIBS OFF)
 
 option(GEODESK_PYTHON "Build GeoDesk with Python support" OFF)
 option(GEODESK_PYTHON_WHEELS "Enable Support for Python Wheels" OFF)
-option(GEODESK_EXAMPLES "Build example applications" ON)
+option(GEODESK_EXAMPLES "Build example applications" OFF)
 option(GEODESK_MULTITHREADED "Allow multiple threads to use the same GOL" OFF)
 option(GEODESK_LIBERO "Enable Libero storage engine" ON)
+option(GEODESK_WITH_GEOS "Build GeoDesk with GEOS support" OFF)
+option(GEODESK_WITH_OGR "Build GeoDesk with OGR support" OFF)
 
 # Option to choose between static or shared library
 # Only set the option if BUILD_SHARED_LIBS is not already defined
@@ -36,6 +38,14 @@ FetchContent_Declare(gtl
     GIT_REPOSITORY https://github.com/greg7mdp/gtl.git
     GIT_TAG v1.2.0)
 FetchContent_MakeAvailable(gtl)
+
+# Fetch GEOS 3.11.3 (tests only)
+# FetchContent_Declare(geos
+#         URL https://download.osgeo.org/geos/geos-3.13.1.tar.bz2
+#         DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+# FetchContent_MakeAvailable(geos)
+# set(GEOS_INCLUDE_PATHS "${geos_SOURCE_DIR}/include" "${geos_BINARY_DIR}/capi" CACHE INTERNAL "")
+
 
 set(PREVIOUS_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF)
@@ -84,6 +94,15 @@ if(GEODESK_WITH_GEOS)
 else()
     message(STATUS "GeoDesk: Building *without* GEOS support.")
 endif()
+if(GEODESK_WITH_OGR)
+    message(STATUS "GeoDesk: Building with OGR support.")
+    target_compile_definitions(geodesk PUBLIC GEODESK_WITH_OGR)
+    if(NOT DEFINED GDAL_INCLUDE_PATHS)
+        message(FATAL_ERROR "GeoDesk: GDAL_INCLUDE_PATHS must be set to the  location of GDAL.")
+    endif()
+    message(STATUS "GDAL_INCLUDE_PATHS = ${GDAL_INCLUDE_PATHS}")
+    list(APPEND INCLUDES ${GDAL_INCLUDE_PATHS})
+endif()
 message(STATUS "GeoDesk: INCLUDES = ${INCLUDES}")
 
 if(GEODESK_PYTHON)
@@ -121,7 +140,7 @@ endif()
 message(STATUS "GeoDesk: Extra include paths: ${GEODESK_EXTRA_INCLUDE_DIRS}")
 target_include_directories(geodesk PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>)
+    $<INSTALL_INTERFACE:include> ${INCLUDES})
 target_include_directories(geodesk PRIVATE ${GEODESK_EXTRA_INCLUDE_DIRS} src ${boost_crc_SOURCE_DIR}/include)
 
 target_link_libraries(geodesk PUBLIC gtl)

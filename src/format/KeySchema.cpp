@@ -12,6 +12,16 @@ using namespace clarisma;
 KeySchema::KeySchema(StringTable* strings, std::string_view keys) :
     strings_(strings)
 {
+    addKeys(keys);
+    if(specialKeyCols_[TAGS] && startsWith_.empty() &&
+        endsWith_.empty())
+    {
+        startsWith_.emplace_back("");
+    }
+}
+
+void KeySchema::addKeys(std::string_view keys)
+{
     size_t start = 0;
     for (;;)
     {
@@ -59,6 +69,16 @@ void KeySchema::addKey(std::string_view key)
     if (key == "lat")
     {
         specialKeyCols_[LAT] = col;
+        return;
+    }
+    if (key == "tags")
+    {
+        specialKeyCols_[TAGS] = col;
+        return;
+    }
+    if (key == "geom" || key == "shape")
+    {
+        specialKeyCols_[GEOM] = col;
         return;
     }
 

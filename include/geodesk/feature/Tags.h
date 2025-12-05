@@ -59,6 +59,7 @@ public:
 
     Tags(const Tags& other) = default;
 
+    // \cond
     // TODO
     class Iterator
     {
@@ -98,6 +99,8 @@ public:
         const clarisma::ShortVarString* key_;
         TagBits value_;
     };
+
+    // \endcond
 
     Iterator begin() const { return Iterator(*this); }
     static std::nullptr_t end() { return nullptr; }  // Simple sentinel

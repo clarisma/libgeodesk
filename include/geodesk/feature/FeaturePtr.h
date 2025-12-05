@@ -83,6 +83,14 @@ public:
 	// so keep this for now but always return false
 	bool isPlaceholder() const { return false; }
 
+	// TODO: check for type==node as well if we ever re-purpose
+	//  the exception_node flag for other feature types (can be done
+	//  with a simple mask op)
+	bool isExceptionNode() const
+	{
+		return flags() & FeatureFlags::EXCEPTION_NODE;
+	}
+
 	// TODO: In v2, these bits are re-used for node flags
 	//  colocated_node / exception_node
 	//  No: these flags have been moved to bit 8 / bit 9

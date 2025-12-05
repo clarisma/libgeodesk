@@ -94,14 +94,13 @@ inline char* fractionalReverse(unsigned long long d, char** pEnd, int precision,
 char* doubleReverse(char** pEnd, double d, int precision, bool zeroFill)
 {
     assert(precision >= 0 && precision <= 15);
-    char* end = *pEnd;
     double multiplier = Math::POWERS_OF_10[precision];
     long long roundedScaled = static_cast<long long>(round(d * multiplier));
     long long intPart = static_cast<long long>(roundedScaled / multiplier);
     unsigned long long fracPart = static_cast<unsigned long long>(
         abs(roundedScaled - intPart * multiplier));
-    char* start = fractionalReverse(fracPart, &end, precision, zeroFill);
-    if (start != end) *(--start) = '.';
+    char* start = fractionalReverse(fracPart, pEnd, precision, zeroFill);
+    if (start != *pEnd) *(--start) = '.';
     return integerReverse(intPart, start);
 }
 

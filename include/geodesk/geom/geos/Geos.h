@@ -14,11 +14,13 @@ namespace geodesk {
 class Geos
 {
 public:
-	static Box getEnvelope(GEOSContextHandle_t context, GEOSGeometry* geom)
+	static Box getEnvelope(GEOSContextHandle_t context, const GEOSGeometry* geom)
 	{
 		return Box(((geos::geom::Geometry*)geom)->getEnvelopeInternal());
 	}
 
+	static bool centroid(GEOSContextHandle_t context,
+		const GEOSGeometry* geom, Coordinate* centroid);
 };
 
 } // namespace geodesk

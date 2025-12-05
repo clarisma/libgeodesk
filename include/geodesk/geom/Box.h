@@ -17,6 +17,9 @@
 #ifdef GEODESK_WITH_GEOS
 #include <geos/geom/Envelope.h>
 #endif
+#ifdef GEODESK_WITH_OGR
+#include <ogr_geometry.h>
+#endif
 
 namespace geodesk {
 
@@ -58,6 +61,17 @@ public:
 	{
 	}
 	#endif
+
+	#ifdef GEODESK_WITH_OGR
+	Box(const OGREnvelope* env) :
+		m_minX(Mercator::xFromLon(env->MinX)),
+		m_minY(Mercator::yFromLat(env->MinY)),
+		m_maxX(Mercator::xFromLon(env->MaxX)),
+		m_maxY(Mercator::yFromLat(env->MaxY))
+	{
+	}
+	#endif
+
 
 	/// @brief Returns a Box that encompasses the entire world.
 	///
@@ -329,6 +343,16 @@ public:
 		std::string_view sv = buf;
 		out.write(sv.data(), sv.size());
 	}
+
+	#ifdef GEODESK_WITH_OGR
+	void toOgrEnvelope(OGREnvelope* env) const
+	{
+		env->MinX = Mercator::lonFromX(m_minX);
+		env->MinY = Mercator::latFromY(m_minY);
+		env->MaxX = Mercator::lonFromX(m_maxX);
+		env->MaxY = Mercator::latFromY(m_maxY);
+	}
+	#endif
 
 private:
 	/**

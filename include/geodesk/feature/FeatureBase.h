@@ -29,6 +29,7 @@ class Features;
 class Nodes;
 template <typename T>
 class FeatureIterator;
+class OGRGeometry;
 
 using clarisma::operator<<;
 
@@ -369,6 +370,10 @@ public:
 
     #ifdef GEODESK_WITH_GEOS
     [[nodiscard]] GEOSGeometry* toGeometry(GEOSContextHandle_t geosContext) const;
+    #endif
+
+    #ifdef GEODESK_WITH_OGR
+    [[nodiscard]] OGRGeometry* toOgrGeometry() const;
     #endif
 
     /// @}

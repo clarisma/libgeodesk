@@ -8,6 +8,8 @@
 #include <geodesk/geom/polygon/Polygonizer.h>
 #include <geodesk/geom/polygon/Ring.h>
 
+// \cond
+
 namespace geodesk {
 
 class LeafletFormatter : public FeatureFormatter<LeafletFormatter>
@@ -100,3 +102,5 @@ private:
 };
 
 } // namespace geodesk
+
+// \endcond
