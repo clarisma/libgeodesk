@@ -80,6 +80,11 @@ public:
 		return tags_.globalString(value_, strings_);
 	}
 
+	uint32_t narrowValueFast() const
+	{
+		return tags_.rawNarrowValue(value_);
+	}
+
 	const clarisma::ShortVarString* localStringValueFast() const
 	{
 		return tags_.localString(value_);

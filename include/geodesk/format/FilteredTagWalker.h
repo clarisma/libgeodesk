@@ -31,7 +31,7 @@ public:
 				int column = schema_->columnOfGlobal(keyCode());
 			    if(column) return column;
 			}
-            else
+			else
 			{
             	int column = schema_->columnOfLocal(key()->toStringView());
             	if(column) return column;

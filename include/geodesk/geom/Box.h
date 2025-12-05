@@ -68,7 +68,7 @@ public:
 		return Box(min, min, max, max);
 	}
 
-	/// @brief Returns a Box that encompasses is bounded by
+	/// @brief Returns a Box that is bounded by
 	///		   the given coordinates (degrees WGS-84)
 	///
 	static Box ofWSEN(double west, double south, double east, double north)
