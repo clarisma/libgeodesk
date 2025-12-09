@@ -8,6 +8,10 @@
 #include <geodesk/feature/types.h>
 #include <geodesk/feature/FeaturePtr.h>
 
+namespace clarisma {
+class BufferWriter;
+}
+
 namespace geodesk {
 
 class FeatureStore;
@@ -127,6 +131,8 @@ public:
         const IndexMask& mask = indexMasks_[index];
         return ((keys & mask.keyMask) >= mask.keyMin);
     }
+
+    void explain(clarisma::BufferWriter& out) const;
 
 private:
     static const Matcher* defaultRoleMethod(const RoleMatcher* matcher, FeaturePtr);

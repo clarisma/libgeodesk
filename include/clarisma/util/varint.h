@@ -145,6 +145,7 @@ inline void skipVarintsBackwardUnsafe(const uint8_t*& p, int count)
 }
 
 // TODO: modify so we can write 64 bits in 9 bytes, no continuation bit in final
+//  No, that would not comply with LEB128
 
 inline void writeVarint(uint8_t*& p, uint64_t val)
 {
