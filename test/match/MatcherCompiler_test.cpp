@@ -27,8 +27,44 @@ TEST_CASE("Issue 29")
     Features berlin("d:\\geodesk\\tests\\berlin.gol");
 
     for (auto f : berlin(
-        // "a[amenity=parking][access!=private][parking!=street_side]"))
-        "a[amenity=parking][access!=no,private,employees,staff,permit,military,agricultural,restricted,delivery][parking!=carports,half_on_kerb,half_on_shoulder,layby,left,on_kerb,sheds,shoulder,lane,street_side]"))
+        "a[amenity=parking][parking!=street_side]"))
+        // "a[amenity=parking][access!=no,private,employees,staff,permit,military,agricultural,restricted,delivery][parking!=carports,half_on_kerb,half_on_shoulder,layby,left,on_kerb,sheds,shoulder,lane,street_side]"))
+    {
+        /*
+        if (f["parking"] == "street_side")
+        {
+            std::cout << f << std::endl;
+        }
+        */
+        std::cout << f["parking"] << std::endl;
+    }
+}
+
+TEST_CASE("Issue 30")
+{
+    Features berlin("d:\\geodesk\\tests\\mcu.gol");
+
+    for (auto f : berlin(
+        "a[amenity=parking][parking!=street_side]"))
+        // "a[amenity=parking][access!=no,private,employees,staff,permit,military,agricultural,restricted,delivery][parking!=carports,half_on_kerb,half_on_shoulder,layby,left,on_kerb,sheds,shoulder,lane,street_side]"))
+    {
+        /*
+        if (f["parking"] == "street_side")
+        {
+            std::cout << f << std::endl;
+        }
+        */
+        std::cout << f["parking"] << std::endl;
+    }
+}
+
+TEST_CASE("Issue geodesk-py#62")
+{
+    Features world("d:\\geodesk\\tests\\de.gol");
+
+    for (auto f : world(
+        "n[!geodesk:orphan][power]"))
+        // "a[amenity=parking][access!=no,private,employees,staff,permit,military,agricultural,restricted,delivery][parking!=carports,half_on_kerb,half_on_shoulder,layby,left,on_kerb,sheds,shoulder,lane,street_side]"))
     {
         /*
         if (f["parking"] == "street_side")

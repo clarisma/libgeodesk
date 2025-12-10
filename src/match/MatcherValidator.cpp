@@ -288,6 +288,7 @@ OpNode* MatcherValidator::validateSelector(Selector* sel)
 	TagClause* clause = sel->firstClause;
 	TagClause* lastClause = nullptr;
 	TagClause* lastGlobalKeyClause = nullptr;
+	TagClause* lastLocalKeyClause = nullptr;
 	bool seenGlobalKeyOp = false;
 	bool seenLocalKeyOp = false;
 	bool allLocalKeyOpsNegated = true;
@@ -310,6 +311,7 @@ OpNode* MatcherValidator::validateSelector(Selector* sel)
 				clause->keyOp.opcode = Opcode::FIRST_LOCAL_KEY;
 				seenLocalKeyOp = true;
 			}
+			lastLocalKeyClause = clause;
 			if (!clause->keyOp.isNegated()) allLocalKeyOpsNegated = false;
 		}
 
@@ -348,7 +350,7 @@ OpNode* MatcherValidator::validateSelector(Selector* sel)
 				assert(lastGlobalKeyClause);
 				assert(lastGlobalKeyClause->next);
 				lastGlobalKeyClause->trueOp.opcode = Opcode::HAS_LOCAL_KEYS;
-				lastGlobalKeyClause->trueOp.next[1] = &lastGlobalKeyClause->next->keyOp;
+				lastGlobalKeyClause->trueOp.next[1] = &lastLocalKeyClause->trueOp;
 			}
 		}
 	}
