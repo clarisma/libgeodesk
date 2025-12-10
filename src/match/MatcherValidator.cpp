@@ -357,7 +357,13 @@ OpNode* MatcherValidator::validateSelector(Selector* sel)
 	bool seenGlobalKeyOp = false;
 	bool seenLocalKeyOp = false;
 	bool allLocalKeyOpsNegated = true;
-	while (clause)
+
+	if (!clause) [[unlikely]]
+	{
+		return graph_.newOp(Opcode::RETURN, 1);
+	}
+
+	do
 	{
 		if (clause->keyOp.opcode == Opcode::GLOBAL_KEY)
 		{
@@ -391,6 +397,7 @@ OpNode* MatcherValidator::validateSelector(Selector* sel)
 		lastClause = clause;
 		clause = clause->next;
 	}
+	while (clause);
 
 	OpNode* op = &sel->firstClause->keyOp;
 	if (seenLocalKeyOp)

@@ -94,6 +94,10 @@ TEST_CASE("Polyform queries")
     (void)world("na[shop],n[amenity]");
     (void)world("wa[highway],r[local_key_banana]");
     (void)world("r[local_key_apple!=some_value][local_key_cherry],wa[highway],r[local_key_banana],w[!amenity]");
+
+    // ensure uniform queries don't have type ops
+    (void)world("na[shop],na[amenity]");
+    (void)world("na[local_key_apple]");
 }
 
 
@@ -104,6 +108,13 @@ TEST_CASE("[k][k!=v] queries")
     (void)world("na[shop][shop!=bakery][sells_bananas]");
     (void)world("na[local_key_banana][local_key_banana!=cherry][shop]");
     (void)world("na[local_key_banana][local_key_banana!=cherry][sells_bananas]");
+}
+
+TEST_CASE("Issue 32")
+{
+    Features world("d:\\geodesk\\tests\\mcu.gol");
+    (void)world("n,n");
+    (void)world("na,n");
 }
 
 
