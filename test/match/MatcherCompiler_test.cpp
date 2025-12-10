@@ -95,3 +95,15 @@ TEST_CASE("Polyform queries")
     (void)world("wa[highway],r[local_key_banana]");
     (void)world("r[local_key_apple!=some_value][local_key_cherry],wa[highway],r[local_key_banana],w[!amenity]");
 }
+
+
+TEST_CASE("[k][k!=v] queries")
+{
+    Features world("d:\\geodesk\\tests\\mcu.gol");
+    (void)world("na[shop][shop!=bakery]");
+    (void)world("na[shop][shop!=bakery][sells_bananas]");
+    (void)world("na[local_key_banana][local_key_banana!=cherry][shop]");
+    (void)world("na[local_key_banana][local_key_banana!=cherry][sells_bananas]");
+}
+
+

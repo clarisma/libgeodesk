@@ -157,15 +157,11 @@ OpNode* MatcherValidator::findWrongTypeOp(OpNode* firstValueOp)
  * on the operand types of the value ops (summarized in flags). Also
  * inserts CODE_TO_STR and STR_TO_NUM, if needed.
  */
-// TODO: Broken; for [k][k!=v], clause *succeeds* if wrong type
 void MatcherValidator::insertLoadOps(TagClause* clause)
 {
 	OpNode* keyOp = &clause->keyOp;
 	bool negated = keyOp->isNegated();
 
-	// TODO:
-	// Still broken for [k][k!=v]
-	
 	OpNode* firstValueOp = keyOp->next[!negated];
 	OpNode* wrongTypeOp = findWrongTypeOp(firstValueOp);
 	
