@@ -75,3 +75,23 @@ TEST_CASE("Issue geodesk-py#62")
         std::cout << f["parking"] << std::endl;
     }
 }
+
+
+TEST_CASE("Issue 31")
+{
+    Features world("d:\\geodesk\\tests\\mcu.gol");
+
+    // for (auto f : world("n,a"))
+    for (auto f : world("na[shop],n[amenity]"))
+    {
+        std::cout << f["parking"] << std::endl;
+    }
+}
+
+TEST_CASE("Polyform queries")
+{
+    Features world("d:\\geodesk\\tests\\mcu.gol");
+    (void)world("na[shop],n[amenity]");
+    (void)world("wa[highway],r[local_key_banana]");
+    (void)world("r[local_key_apple!=some_value][local_key_cherry],wa[highway],r[local_key_banana],w[!amenity]");
+}

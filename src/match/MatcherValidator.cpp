@@ -27,15 +27,84 @@ OpNode* MatcherValidator::validate(Selector* firstSel)
 		pRegex = pRegex->next();
 	}
 
+	Selector* sel = firstSel->next;
+	if (sel) [[unlikely]]
+	{
+		FeatureTypes types = firstSel->acceptedTypes;
+		do
+		{
+			if (sel->acceptedTypes != types)
+			{
+				return validatePolyformSelectors(firstSel);
+			}
+			sel = sel->next;
+		}
+		while (sel);
+	}
+
 	OpNode* root = validateAllSelectors(firstSel);
 	validateOp(root);
 	return root;
 }
 
+/// @brief Extracts a chain of Selectors that accept the same feature types.
+///        `pCandidates` will be updated to a chain of the remaining Selectors
+///        (or `nullptr` if all selectors have been extracted).
+///
+/// @param pCandidates a chain of one or more Selectors (must not be null)
+/// @return the first and last Selector in the extracted chain
+///
+std::pair<Selector*,Selector*> MatcherValidator::groupSelectors(Selector** pCandidates)
+{
+	assert(*pCandidates);
+	Selector* first = *pCandidates;
+	*pCandidates = first->next;
+	Selector** pNextRemaining = pCandidates;
+	Selector* next = first->next;
+	first->next = nullptr;
+	Selector* last = first;
+	while (next)
+	{
+		Selector* afterNext = next->next;
+		if (next->acceptedTypes == first->acceptedTypes)
+		{
+			*pNextRemaining = afterNext;
+			last->next = next;
+			last = next;
+			next->next = nullptr;
+		}
+		else
+		{
+			pNextRemaining = &(*pNextRemaining)->next;
+		}
+		next = afterNext;
+	}
+	return {first,last};
+}
+
+OpNode* MatcherValidator::validatePolyformSelectors(Selector* selectors)
+{
+	OpNode* typeOp = graph_.newOp(Opcode::FEATURE_TYPE);
+	OpNode* root = typeOp;
+		// just reserve the initial op, the details are filled in later
+	do
+	{
+		auto [first,last] = groupSelectors(&selectors);
+		OpNode* op = validateAllSelectors(first);
+		*typeOp = OpNode(Opcode::FEATURE_TYPE);
+		typeOp->operand.featureTypes = first->acceptedTypes;
+		typeOp->next[0] = &last->falseOp;
+		typeOp->next[1] = op;
+		typeOp = &last->falseOp;
+	}
+	while (selectors);
+	validateOp(root);
+	return root;
+}
 
 
-// TODO: may need explciit stack because complex queries may have 
-// a call depth that is too deep
+// TODO: may need explicit stack because complex queries may have
+//  a call depth that is too deep
 void MatcherValidator::validateOp(OpNode* node)
 {
 	node->flags |= OpFlags::VALIDATED;

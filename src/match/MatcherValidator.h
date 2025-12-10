@@ -29,6 +29,9 @@ private:
 
 	static OpNode* findWrongTypeOp(OpNode* firstValOp);
 	OpNode* validateAllSelectors(Selector* first);
+	OpNode* validatePolyformSelectors(Selector* selectors);
+
+	static std::pair<Selector*,Selector*> groupSelectors(Selector** candidates);
 	OpNode* validateSelector(Selector* sel);
 	void insertLoadOps(TagClause* clause);
 	OpNode* createMultiTypeLoadOps(uint32_t valueFlags, OpNode* valOp);

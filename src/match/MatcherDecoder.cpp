@@ -135,7 +135,13 @@ void MatcherDecoder::writeBranchingOp(const uint16_t* p)
 
 		case OperandType::FEATURE_TYPES:
 		{
-			out_.writeString(" <TODO>");
+			out_.writeByte(' ');
+			FeatureTypes types(DataPtr(
+				reinterpret_cast<const uint8_t*>(p)).getUnsignedIntUnaligned());
+			if (types & FeatureTypes::NODES) out_.writeByte('n');
+			if (types & FeatureTypes::NONAREA_WAYS) out_.writeByte('w');
+			if (types & FeatureTypes::AREAS) out_.writeByte('a');
+			if (types & FeatureTypes::NONAREA_RELATIONS) out_.writeByte('r');
 			p += 2;	// two-word argument
 		}
 		break;
