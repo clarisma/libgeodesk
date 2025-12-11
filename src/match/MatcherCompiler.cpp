@@ -82,6 +82,8 @@ const MatcherHolder* MatcherCompiler::getMatcher(const char* query)
 				reinterpret_cast<const uint8_t*>(&matcher->mainMatcher_) + sizeof(Matcher)));
 		decoder.decode();
 		LOG("%.*s\n", static_cast<int>(buf.length()), buf.data());
+		fflush(stdout);
+
 #endif
 	}
 

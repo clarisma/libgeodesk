@@ -111,13 +111,13 @@ private:
 
 	/**
 	 * Pointer to the regex in the MatcherHolder. This is initially null
-	 * and will be assigned an adress by the MatcherEmitter.
+	 * and will be assigned an address by the MatcherEmitter.
 	 */
 	const std::regex* regexResource_;
 
 	/**
 	 * The compiled regex. Once parsing is successful, this regex will be
-	 * transferred to regexResource_ (using move cosntruction) during 
+	 * transferred to regexResource_ (using move construction) during
 	 * opcode generation. 
 	 */
 	std::regex regex_;

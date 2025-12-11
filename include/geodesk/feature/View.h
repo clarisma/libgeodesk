@@ -8,10 +8,10 @@
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/geom/Box.h>
 
+namespace geodesk {
+
 class Filter;
 class MatcherHolder;
-
-namespace geodesk {
 
 /// \cond lowlevel
 

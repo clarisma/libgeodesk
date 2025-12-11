@@ -5,6 +5,7 @@
 #include <cstddef>   // for offsetof
 #include <regex>
 #include <clarisma/util/pointer.h>
+#include "MatcherDecoder.h"
 
 namespace geodesk {
 
@@ -236,5 +237,15 @@ const MatcherHolder* MatcherHolder::combine(
 	return self;
 }
 
+
+void MatcherHolder::explain(BufferWriter& out) const
+{
+	// TODO: only works for bytecode-based Matcher
+
+	MatcherDecoder decoder(mainMatcher_.store(), out,
+		reinterpret_cast<const uint16_t*>(
+			reinterpret_cast<const uint8_t*>(this) + sizeof(MatcherHolder)));
+	decoder.decode();
+}
 
 } // namespace geodesk

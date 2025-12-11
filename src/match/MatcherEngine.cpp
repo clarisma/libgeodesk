@@ -21,14 +21,20 @@ int MatcherEngine::scanGlobalKeys()
     ip_ += 2;   // move to 2nd operand (jump target)
     for (;;)
     {
+        // TODO: We could just use tagKey_; read it when we start
+        //  processing global keys at FIRST_GLOBAL_KEY;
+        //  update at end of loop
         uint16_t key = pTag_.getUnsignedShort();
         int step = 4 + (key & 2);
         if (key >= operand)
         {
-            valueOfs_ = step - 2;
+            // valueOfs_ = step - 2;
+            // valueOfs_ = -2;
+                // set when we encounter FIRST_GLOBAL_KEY;
+                // stays static for all global keys
             tagKey_ = key;
             int matched = ((key & 0x7ffc) == operand);
-            pTag_ += step * matched;
+            // pTag_ += step * matched;
             return matched;
         }
         pTag_ += step;
@@ -46,7 +52,7 @@ int MatcherEngine::scanLocalKeys()
         int32_t key = pTag_.getUnalignedInt();
         pTag_ -= 6 + (key & 2);
         pointer pKey = pTagTableAligned + ((key >> 3) << 2);
-        geodesk::StringValue keyString(pKey);
+        StringValue keyString(pKey);
         if (keyString == operand)
         {
             tagKey_ = key;
@@ -172,6 +178,7 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
                 break;
 
             case GLOBAL_KEY:
+            /*
                 if (ctx.tagKey_ & 0x8000)
                 {
                     // We're at last tag --> match failed 
@@ -181,14 +188,16 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
                 }
                 else
                 {
+                */
                     matched = ctx.scanGlobalKeys();
-                }
+                // }
                 break;
 
             case FIRST_GLOBAL_KEY:
             {
                 pointer p = ctx.pTagTable_;
                 ctx.pTag_ = p & (uint64_t)~1;       // mask off the local-keys flag
+                ctx.valueOfs_ = -2;
                 matched = ctx.scanGlobalKeys();
             }
             break;
@@ -241,6 +250,10 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
                 // The resulting pointer may therefore be invalid, but we are only 
                 // dereferencing it if the wide-string check succeeds
 
+                // TODO: Can simplify this
+                //  Tile data in GOL 2.0 is followed by a 4-byte checksum,
+                //   so we can safely read up to 4 bytes past the end of
+                //   a tagtable
                 pointer pVal = ctx.pTag_ - (int)ctx.valueOfs_;
                 matched = ((ctx.tagKey_ & 3) == 3);      // wide string
                 int32_t rel = pVal.getUnsignedShort();   // read lower half
