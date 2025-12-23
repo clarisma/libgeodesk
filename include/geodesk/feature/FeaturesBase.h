@@ -4,6 +4,7 @@
 #pragma once
 
 #include <optional>
+#include <geodesk/feature/IdIndex.h>
 #include <geodesk/filter/Filters.h>
 #include <geodesk/feature/FeatureUtils.h>
 #include <geodesk/feature/QueryException.h>
@@ -101,6 +102,49 @@ public:
 
     [[nodiscard]] std::optional<T> first() const;
     [[nodiscard]] T one() const;
+
+    /// @brief Looks up a feature by its OSM ID.
+    ///
+    /// Requires ID index files created by `gol build -i`.
+    ///
+    /// @param id The OSM ID to look up
+    /// @return The feature if found, or `std::nullopt` if not found
+    /// @throws QueryException if ID indexes are not available
+    ///
+    [[nodiscard]] std::optional<T> byId(uint64_t id) const
+    {
+        IdIndex* idx = store()->idIndex();
+        if (!idx)
+        {
+            throw QueryException("ID indexes not available (build GOL with -i flag)");
+        }
+
+        // Determine the feature type from the template parameter T
+        // T is Node, Way, Relation, or Feature (FeatureBase<XxxPtr>)
+        FeatureType type;
+        if constexpr (std::is_same_v<T, Node>)
+        {
+            type = FeatureType::NODE;
+        }
+        else if constexpr (std::is_same_v<T, Way>)
+        {
+            type = FeatureType::WAY;
+        }
+        else if constexpr (std::is_same_v<T, Relation>)
+        {
+            type = FeatureType::RELATION;
+        }
+        else
+        {
+            static_assert(
+                std::is_same_v<T, Node> || std::is_same_v<T, Way> || std::is_same_v<T, Relation>,
+                "byId() is only available on Nodes, Ways, or Relations collections");
+        }
+
+        FeaturePtr ptr = idx->findById(id, type);
+        if (ptr.isNull()) return std::nullopt;
+        return T(store(), ptr);
+    }
 
     // NOLINTNEXTLINE(google-explicit-constructor)
     [[nodiscard]] operator std::vector<T>() const;

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <memory>
+#include <mutex>
 #include <span>
 #include <unordered_map>
 #ifdef GEODESK_PYTHON
@@ -27,6 +29,7 @@ class PyFeatures;       // not namespaced for now
 
 namespace geodesk {
 
+class IdIndex;
 class MatcherHolder;
 
 //  Possible threadpool alternatives:
@@ -171,6 +174,10 @@ public:
     TilePtr fetchTile(Tip tip) const;
     static bool isTileValid(const byte* p);
 
+    /// @brief Returns the ID index if available, or nullptr if not.
+    /// ID index files are created by `gol build -i`.
+    IdIndex* idIndex();
+
     struct Metadata;
     class Transaction;
 
@@ -216,6 +223,8 @@ private:
     #endif
     clarisma::ThreadPool<TileQueryTask> executor_;
     ZoomLevels zoomLevels_;
+    std::unique_ptr<IdIndex> idIndex_;
+    mutable std::once_flag idIndexInitFlag_;
 
     friend class Transaction;
 };
