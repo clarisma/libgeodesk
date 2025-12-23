@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/store/IndexFile.h>
-#include <limits>
 
 namespace clarisma {
 
 IndexFile::IndexFile() :
 	slotsPerSegment_(0),
-	maxEntryCount_(std::numeric_limits<int64_t>::max()),	// TODO
+	maxEntryCount_(0),
 	valueWidth_(0)
 {
 }
@@ -19,6 +18,8 @@ void IndexFile::open(const char* filename, OpenMode mode, int valueWidth)
 	assert(valueWidth > 0 && valueWidth <= 32);
 	valueWidth_ = valueWidth;
 	slotsPerSegment_ = static_cast<int64_t>(SEGMENT_LENGTH) * 8 / valueWidth_;
+	// Calculate max entry count based on actual file size
+	maxEntryCount_ = static_cast<int64_t>(mainMappingSize()) * 8 / valueWidth_;
 }
 
 IndexFile::CellRef IndexFile::getCell(int64_t key)
@@ -35,8 +36,8 @@ IndexFile::CellRef IndexFile::getCell(int64_t key)
 	return ref;
 }
 
-// TODO: Clarify that it is legal to call get() if IndexFile is not open,
-//  which will always return 0 because maxEntryCount_==0
+// It is legal to call get() if IndexFile is not open;
+// it will always return 0 because maxEntryCount_==0
 uint32_t IndexFile::get(uint64_t key)
 {
 	if (key >= maxEntryCount_) [[unlikely]]

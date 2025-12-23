@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/feature/FeatureStore.h>
+#include <geodesk/feature/IdIndex.h>
 #include <geodesk/feature/TileIndexEntry.h>
 #include <filesystem>
 #include <clarisma/io/FilePath.h>
@@ -132,6 +133,14 @@ TilePtr FeatureStore::fetchTile(Tip tip) const
 	return TilePtr(pagePointer(entry.page()));
 }
 
+IdIndex* FeatureStore::idIndex()
+{
+	std::call_once(idIndexInitFlag_, [this]()
+	{
+		idIndex_ = std::make_unique<IdIndex>(this);
+	});
+	return idIndex_->isAvailable() ? idIndex_.get() : nullptr;
+}
 
 
 void FeatureStore::readIndexSchema(DataPtr p)
