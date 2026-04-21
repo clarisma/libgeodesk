@@ -153,7 +153,7 @@ install(TARGETS geodesk
 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ 
         DESTINATION include 
-        FILES_MATCHING PATTERN "*.h")
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.inl")
 
 if(NOT GEODESK_PYTHON AND NOT BUILD_SHARED_LIBS)
     # Define a simple test target (optional)
