@@ -196,20 +196,20 @@ public:
 		return Box(x1, y1, x2, y2);
 	}
 
-	int64_t widthSimple() const
+	constexpr int64_t widthSimple() const
 	{
 		return static_cast<int64_t>(maxX()) -
 			static_cast<int64_t>(minX()) + 1;
 	}
 
-	int64_t height() const
+	constexpr int64_t height() const
 	{
 		return static_cast<int64_t>(maxY()) -
 			static_cast<int64_t>(minY()) + 1;
 	}
 
 
-	double area() const
+	constexpr double area() const
 	{
 		double w = (double)maxX() - (double)minX();
 		double h = (double)maxY() - (double)minY();
@@ -250,10 +250,10 @@ public:
 			static_cast<int32_t>((static_cast<int64_t>(minY()) + maxY()) / 2));
 	}
 
-	int minX() const { return m_minX; } 
-	int minY() const { return m_minY; }
-	int maxX() const { return m_maxX; }
-	int maxY() const { return m_maxY; }
+	constexpr int minX() const { return m_minX; }
+	constexpr int minY() const { return m_minY; }
+	constexpr int maxX() const { return m_maxX; }
+	constexpr int maxY() const { return m_maxY; }
 	double minLon() const { return Mercator::lonFromX(minX()); }
 	double minLat() const { return Mercator::latFromY(minY()); }
 	double maxLon() const { return Mercator::lonFromX(maxX()); }

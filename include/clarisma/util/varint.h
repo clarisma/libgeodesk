@@ -157,6 +157,18 @@ inline void writeVarint(uint8_t*& p, uint64_t val)
 	*p++ = static_cast<uint8_t>(val);
 }
 
+inline void writeVarint14(uint8_t*& p, int val)
+{
+	assert(val < 0x4000);
+	if (val < 0x80)  [[likely]]
+	{
+		*p++ = val;
+		return;
+	}
+	*p++ = (val & 0x7f) | 0x80;
+	*p++ = val >> 7;
+}
+
 
 inline void writeSignedVarint(uint8_t*& p, int64_t val)
 {
