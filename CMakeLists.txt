@@ -145,6 +145,7 @@ target_include_directories(geodesk PRIVATE ${GEODESK_EXTRA_INCLUDE_DIRS} src ${b
 
 target_link_libraries(geodesk PUBLIC gtl)
 
+
 # Define where the library and public headers should be installed
 install(TARGETS geodesk
         RUNTIME DESTINATION bin

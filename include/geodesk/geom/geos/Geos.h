@@ -21,6 +21,9 @@ public:
 
 	static bool centroid(GEOSContextHandle_t context,
 		const GEOSGeometry* geom, Coordinate* centroid);
+
+	static double distanceMeters(GEOSContextHandle_t context,
+		const GEOSGeometry* geom1, const GEOSGeometry* geom2);
 };
 
 } // namespace geodesk
