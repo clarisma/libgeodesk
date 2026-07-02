@@ -125,10 +125,10 @@ public:
 
 	bool contains(int32_t x, int32_t y) const
 	{
-		if (minX() > maxX())
+		if (minX() > maxX())	[[unlikely]]
 		{
 			// empty or Antimeridian-crossing
-			if (minY() > maxY()) return false;  // empty box cannot contain anything
+			if (minY() > maxY()) [[unlikely]] return false;  // empty box cannot contain anything
 			// If 180 longitude crossed, minX and maxY are swapped
 			return (x >= maxX() && x <= minX() &&
 				y >= minY() && y <= maxY());
@@ -141,12 +141,12 @@ public:
 		return (!(x > m_maxX || y > m_maxY || x < m_minX || y < m_minY));
 	}
 
-	inline bool containsSimple(Coordinate c) const
+	bool containsSimple(Coordinate c) const
 	{
 		return containsSimple(c.x, c.y);
 	}
 
-	inline bool contains(Coordinate c) const
+	bool contains(Coordinate c) const
 	{
 		return contains(c.x, c.y);
 	}
@@ -154,7 +154,7 @@ public:
 	/**
 	 * Assumes neither box is empty, and neither crosses Antimeridian.
 	 */
-	inline bool containsSimple(const Box& other) const
+	bool containsSimple(const Box& other) const
 	{
 		return other.minX() >= m_minX &&
 			other.maxX() <= m_maxX &&
@@ -166,10 +166,10 @@ public:
 	{
 		bool isSimple = minX() <= maxX();
 		bool isOtherSimple = other.minX() <= other.maxX();
-		if (isSimple && isOtherSimple) return containsSimple(other);
+		if (isSimple && isOtherSimple) [[likely]] return containsSimple(other);
 
 		// Either of the boxes is empty --> cannot contain or be contained
-		if (minY() < maxY() || other.minY() < other.maxY()) return false;
+		if (isEmpty() || other.isEmpty()) [[unlikely]] return false;
 		
 		return std::min(other.minX(), other.maxX()) >= std::min(minX(), maxX()) &&
 			std::max(other.minX(), other.maxX()) <= std::max(minX(), maxX()) &&
@@ -376,7 +376,7 @@ private:
 	 * @param y
 	 * @return the result of the addition; or the highest positive value in case of an overflow
 	 */
-	static inline int trimmedAdd(int32_t x, int32_t y)
+	static int trimmedAdd(int32_t x, int32_t y)
 	{
 		int r = x + y;
 		if (((x ^ r) & (y ^ r)) < 0) return INT_MAX;

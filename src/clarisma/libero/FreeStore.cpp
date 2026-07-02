@@ -39,7 +39,7 @@ void FreeStore::open(const char* fileName, OpenMode mode)
         {
             if (hasAny(mode, OpenMode::EXCLUSIVE | OpenMode::TRY_EXCLUSIVE))
             {
-                if (!file.tryLock(LOCK_OFS, 3), !writable)
+                if (!file.tryLock(LOCK_OFS, 3, !writable))
                 {
                     if (has(mode, OpenMode::TRY_EXCLUSIVE))
                     {

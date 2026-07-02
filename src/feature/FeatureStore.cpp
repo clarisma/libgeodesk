@@ -64,7 +64,7 @@ FeatureStore* FeatureStore::openSingle(std::string_view relativeFileName)
 	try
 	{
 		std::lock_guard lock(getOpenStoresMutex());
-		auto openStores = getOpenStores();
+		auto& openStores = getOpenStores();
 
 		auto it = openStores.find(fileName);
 		if (it != openStores.end())
@@ -117,7 +117,7 @@ FeatureStore::~FeatureStore()
 	LOG("Destroyed FeatureStore.");
 
 	std::lock_guard lock(getOpenStoresMutex());
-	auto openStores = getOpenStores();
+	auto& openStores = getOpenStores();
 	openStores.erase(fileName());
 }
 
