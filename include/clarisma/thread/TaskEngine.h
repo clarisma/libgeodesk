@@ -127,6 +127,13 @@ public:
 
     int threadCount() const { return threadCount_; }
 
+    void fail(const char* msg)
+    {
+        // TODO: For now, we simply abort
+        LOGS << "Calling CliApplication::abort: " << msg;
+        CliApplication::abort(msg);
+    }
+
 protected:
     // TODO: rename to "submitWork()"
     void postWork(WorkTask&& task)
@@ -151,10 +158,7 @@ private:
         }
         catch (std::exception& ex)
         {
-            // TODO
-            // Console::debug(ex.what());
-            LOGS << "Calling CliApplication::abort due to exception: " << ex.what();
-            CliApplication::abort(ex.what());
+            self()->fail(ex.what());
         }
     }
 

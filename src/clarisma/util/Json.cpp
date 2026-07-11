@@ -61,4 +61,124 @@ void Json::writeEscaped(Buffer& out, std::string_view s)
     }
 }
 
+const char* Json::skipObject(const char*p, const char* end)
+{
+    int level = 1;
+    while(p < end)
+    {
+        char ch = *p++;
+        if(ch == '\"')
+        {
+            for(;;)
+            {
+                if(p >= end) return end;
+                ch = *p++;
+                if(ch == '\\')
+                {
+                    p++;
+                    continue;
+                }
+                if(ch == '\"') break;
+            }
+        }
+        else if(ch == '{')
+        {
+            level++;
+        }
+        else if(ch == '}')
+        {
+            level--;
+            if(level == 0) return p;
+        }
+    }
+    return end;
+}
+
+const char* Json::skipArray(const char*p, const char* end)
+{
+    int level = 1;
+    while(p < end)
+    {
+        char ch = *p++;
+        if(ch == '\"')
+        {
+            for(;;)
+            {
+                if(p >= end) return end;
+                ch = *p++;
+                if(ch == '\\')
+                {
+                    p++;
+                    continue;
+                }
+                if(ch == '\"') break;
+            }
+        }
+        else if(ch == '[')
+        {
+            level++;
+        }
+        else if(ch == ']')
+        {
+            level--;
+            if(level == 0) return p;
+        }
+    }
+    return end;
+}
+
+
+const char* Json::skipValue(const char*p, const char* end)
+{
+    char ch;
+    while (p < end)
+    {
+        ch = *p++;
+        if (ch > ' ') break;
+    }
+
+    if (p == end) return end;
+    ch = *p++;
+
+    if (ch == '{') return skipObject(p, end);
+    if (ch == '[') return skipArray(p, end);
+    if (ch == '\"')
+    {
+        for(;;)
+        {
+            if(p >= end) return end;
+            ch = *p++;
+            if(ch == '\\')
+            {
+                p++;
+                continue;
+            }
+            if(ch == '\"') return p;
+        }
+    }
+    while (p < end)
+    {
+        ch = *p++;
+        if (ch == ',' || ch == '}' || ch == ']') break;
+    }
+    return p;
+}
+
+std::string_view Json::readRawString(const char* p, const char* end)
+{
+    const char* start = p;
+    while (p < end)
+    {
+        char ch = *p++;
+        if(ch == '\\')
+        {
+            p += (p < end);
+            continue;
+        }
+        if(ch == '\"') break;
+    }
+    // ReSharper disable once CppDFALocalValueEscapesFunction
+    return std::string_view(start, p);
+}
+
 } // namespace clarisma

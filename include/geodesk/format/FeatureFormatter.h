@@ -20,7 +20,7 @@ template<typename Derived>
 class FeatureFormatter : public CoordinateFormat
 {
 public:
-	FeatureFormatter(KeySchema* schema = nullptr) : schema_(schema) {}
+	FeatureFormatter(const KeySchema* schema = nullptr) : schema_(schema) {}
 
 	void writeFeatureGeometry(clarisma::Buffer& out, FeatureStore* store, FeaturePtr feature) const
     {

@@ -75,11 +75,12 @@ public:
 	void writeTags(clarisma::Buffer& out, TagTablePtr tags, StringTable& strings) const
     {
 		FilteredTagWalker iter(tags, strings, schema_);
-		char separatorChar = '{';
+		out.writeByte('{');
+		bool first = true;
 		while(iter.next())
         {
-			out.writeByte(separatorChar);
-			separatorChar = ',';
+			if (!first) out.writeByte(',');
+			first = false;
 			out.writeByte('\"');
 			clarisma::Json::writeEscaped(out, iter.key()->toStringView());
 			out << "\":";

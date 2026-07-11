@@ -109,12 +109,12 @@ void FeatureStore::initialize(const byte* data)
 
 FeatureStore::~FeatureStore()
 {
-	LOG("Destroying FeatureStore...");
+	// LOG("Destroying FeatureStore...");
 	#ifdef GEODESK_PYTHON
 	Py_XDECREF(emptyTags_);
 	Py_XDECREF(emptyFeatures_);
 	#endif
-	LOG("Destroyed FeatureStore.");
+	// LOG("Destroyed FeatureStore.");
 
 	std::lock_guard lock(getOpenStoresMutex());
 	auto& openStores = getOpenStores();
