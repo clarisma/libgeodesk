@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <span>
 #include <geodesk/export.h>
 #include <geodesk/feature/forward.h>
 #include <geodesk/geom/Coordinate.h>
@@ -29,6 +30,7 @@ public:
     static const Filter* crossing(GEOSContextHandle_t context, const GEOSGeometry* geom);
 #endif
     static const Filter* maxMetersFrom(double meters, Coordinate xy);
+    static const Filter* withRole(std::span<std::string_view> roles);
 };
 
 // \endcond

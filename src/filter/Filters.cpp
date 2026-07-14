@@ -7,6 +7,7 @@
 #include <geodesk/filter/CrossesFilter.h>
 #include <geodesk/filter/IntersectsFilter.h>
 #include <geodesk/filter/PointDistanceFilter.h>
+#include <geodesk/filter/RoleFilter.h>
 #include <geodesk/filter/WithinFilter.h>
 
 #include "geodesk/geom/geos/Geos.h"
@@ -54,6 +55,11 @@ const Filter* Filters::crossing(Feature feature)
 const Filter* Filters::maxMetersFrom(double meters, Coordinate xy)
 {
     return new PointDistanceFilter(meters, xy);
+}
+
+const Filter* Filters::withRole(std::span<std::string_view> roles)
+{
+    return new RoleFilter(roles);
 }
 
 #ifdef GEODESK_WITH_GEOS

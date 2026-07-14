@@ -54,6 +54,13 @@ enum FilterFlags
      * must be accepted by this filter in order for the filter to match.
      */
     MUST_ACCEPT_ALL_MEMBERS = 32,
+
+    /**
+     * Filter is of class `RoleFilter`.
+     *
+     * If set, `Filter` must derive from `RoleFilter` and implement `acceptRole()`
+     */
+    ROLE_FILTER = 64,
 };
 
 

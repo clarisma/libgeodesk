@@ -302,6 +302,24 @@ public:
         return {view_.parentsOf(feature.ptr())};
     }
 
+    /// @brief Only relation members with the given role.
+    ///
+    /// @param role
+    ///
+    FeaturesBase withRole(std::string_view role) const
+    {
+        return { view_.withFilter(Filters::withRole(std::span(&role, 1)))};
+    }
+
+    /// @brief Only relation members with one of the given roles.
+    ///
+    /// @param roles
+    ///
+    FeaturesBase withRole(std::span<std::string_view> roles) const
+    {
+        return { view_.withFilter(Filters::withRole(roles))};
+    }
+
     /// @}
 
     template <typename Predicate>
