@@ -306,18 +306,18 @@ public:
     ///
     /// @param role
     ///
-    FeaturesBase withRole(std::string_view role) const
+    [[nodiscard]] FeaturesBase withRole(std::string_view role) const
     {
-        return { view_.withFilter(Filters::withRole(std::span(&role, 1)))};
+        return withRole(std::span(&role, 1));
     }
 
     /// @brief Only relation members with one of the given roles.
     ///
     /// @param roles
     ///
-    FeaturesBase withRole(std::span<std::string_view> roles) const
+    [[nodiscard]] FeaturesBase withRole(std::span<std::string_view> roles) const
     {
-        return { view_.withFilter(Filters::withRole(roles))};
+        return { view_.withFilter(Filters::withRole(roles, store()->strings()))};
     }
 
     /// @}

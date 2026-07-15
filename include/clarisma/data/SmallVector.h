@@ -1,378 +1,341 @@
 // Copyright (c) 2025 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#pragma once
+
 #include <cstddef>
+#include <cstdint>
+#include <initializer_list>
+#include <limits>
 #include <memory>
+#include <new>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
-#include <iterator>
 
 namespace clarisma {
 
-// TODO: review
-
-/// @brief A vector-like container with inline storage for the first N elements.
+/// \brief A vector-like container that stores up to S elements inline
+/// (without heap allocation), and only allocates once the element
+/// count exceeds S.
 ///
-/// @tparam T The type of elements stored in the vector.
-/// @tparam N The number of elements to store on the stack before switching to heap.
-///
-/// @details
-/// SmallVector behaves like `std::vector<T>`, but optimizes for small sizes by
-/// storing the first N elements directly within the object. This can reduce
-/// heap allocations and improve performance and cache locality for small arrays.
-///
-/// The container automatically switches to heap storage if the number of elements
-/// exceeds N. It supports most of the `std::vector` interface, including:
-/// - `push_back`, `pop_back`, `emplace_back`
-/// - `operator[]`, `at()`, `front()`, `back()`
-/// - Iterators and reverse iterators
-/// - `reserve()`, `shrink_to_fit()`, and `clear()`
-///
-/// @note N must be greater than 0.
-/// @note When moved, inline storage is preserved when possible.
-///
-template<typename T, std::size_t N>
+template<typename T, size_t S>
 class SmallVector
 {
-    static_assert(N > 0, "SmallVector capacity N must be > 0");
-
 public:
-    using value_type             = T;
-    using size_type              = std::size_t;
-    using difference_type        = std::ptrdiff_t;
-    using reference              = T&;
-    using const_reference        = const T&;
-    using pointer                = T*;
-    using const_pointer          = const T*;
-    using iterator               = T*;
-    using const_iterator         = const T*;
-    using reverse_iterator       = std::reverse_iterator<iterator>;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using SizeType = uint32_t;      // customizable later
 
-    SmallVector() noexcept
-        : size_(0)
-        , capacity_(N)
-        , data_(inlineData_)
+    using value_type = T;
+    using size_type = SizeType;
+    using reference = T&;
+    using const_reference = const T&;
+    using iterator = T*;
+    using const_iterator = const T*;
+
+    static_assert(S > 0, "SmallVector requires at least one inline slot");
+    static_assert(S <= std::numeric_limits<SizeType>::max(),
+        "Inline capacity exceeds SizeType range");
+
+    SmallVector() noexcept :
+        data_(inlinePtr()),
+        size_(0),
+        capacity_(static_cast<SizeType>(S))
     {
     }
 
-    SmallVector(const SmallVector& other)
-        : size_(other.size_)
-        , capacity_(other.capacity_ > N ? other.capacity_ : N)
-        , data_(capacity_ > N ? allocate(capacity_) : inlineData_)
+    explicit SmallVector(SizeType size) : SmallVector()
     {
-        for (size_type i = 0; i < size_; ++i)
+        resize(size);
+    }
+
+    SmallVector(SizeType size, const T& value) : SmallVector()
+    {
+        resize(size, value);
+    }
+
+    SmallVector(std::initializer_list<T> init) : SmallVector()
+    {
+        reserve(static_cast<SizeType>(init.size()));
+        for(const T& v : init)
         {
-            new (data_ + i) T(other.data_[i]);
+            new (data_ + size_) T(v);
+            ++size_;
         }
     }
 
-    SmallVector(SmallVector&& other) noexcept
-        : size_(other.size_)
-        , capacity_(other.capacity_)
-        , data_(other.data_)
+    SmallVector(const SmallVector& other) : SmallVector()
     {
-        if (other.data_ == other.inlineData_)
-        {
-            for (size_type i = 0; i < size_; ++i)
-            {
-                new (inlineData_ + i)
-                    T(std::move(other.inlineData_[i]));
-                other.inlineData_[i].~T();
-            }
-            data_     = inlineData_;
-            capacity_ = N;
-        }
-        other.size_     = 0;
-        other.capacity_ = N;
-        other.data_     = other.inlineData_;
+        reserve(other.size_);
+        std::uninitialized_copy_n(other.data_, other.size_, data_);
+        size_ = other.size_;
     }
 
-    ~SmallVector()
+    SmallVector(SmallVector&& other)
+        noexcept(std::is_nothrow_move_constructible_v<T>) :
+        SmallVector()
     {
-        clear();
-        if (data_ != inlineData_)
-        {
-            ::operator delete(data_);
-        }
+        adoptContentsOf(other);
+    }
+
+    ~SmallVector() noexcept
+    {
+        std::destroy_n(data_, size_);
+        freeHeap();
     }
 
     SmallVector& operator=(const SmallVector& other)
     {
-        if (this != &other)
+        if(this != &other)
         {
             clear();
-            if (data_ != inlineData_)
-            {
-                ::operator delete(data_);
-            }
-
-            size_     = other.size_;
-            capacity_ = other.capacity_ > N
-                ? other.capacity_ : N;
-            data_     = capacity_ > N
-                ? allocate(capacity_) : inlineData_;
-
-            for (size_type i = 0; i < size_; ++i)
-            {
-                new (data_ + i) T(other.data_[i]);
-            }
+            reserve(other.size_);
+            std::uninitialized_copy_n(other.data_, other.size_, data_);
+            size_ = other.size_;
         }
         return *this;
     }
 
-    SmallVector& operator=(SmallVector&& other) noexcept
+    SmallVector& operator=(SmallVector&& other)
+        noexcept(std::is_nothrow_move_constructible_v<T>)
     {
-        if (this != &other)
+        if(this != &other)
         {
-            clear();
-            if (data_ != inlineData_)
-            {
-                ::operator delete(data_);
-            }
-
-            size_     = other.size_;
-            capacity_ = other.capacity_;
-            data_     = other.data_;
-
-            if (other.data_ == other.inlineData_)
-            {
-                for (size_type i = 0; i < size_; ++i)
-                {
-                    new (inlineData_ + i)
-                        T(std::move(other.inlineData_[i]));
-                    other.inlineData_[i].~T();
-                }
-                data_     = inlineData_;
-                capacity_ = N;
-            }
-            other.size_     = 0;
-            other.capacity_ = N;
-            other.data_     = other.inlineData_;
+            std::destroy_n(data_, size_);
+            freeHeap();
+            data_ = inlinePtr();
+            size_ = 0;
+            capacity_ = static_cast<SizeType>(S);
+            adoptContentsOf(other);
         }
         return *this;
     }
 
-    // Element access
-    reference operator[](size_type idx) noexcept
+    // --- Element access ---------------------------------------------------
+
+    T& operator[](SizeType i) noexcept
     {
-        return data_[idx];
+        return data_[i];
     }
 
-    const_reference operator[](size_type idx) const noexcept
+    const T& operator[](SizeType i) const noexcept
     {
-        return data_[idx];
+        return data_[i];
     }
 
-    reference at(size_type idx)
+    T& at(SizeType i)
     {
-        if (idx >= size_)
-        {
-            throw std::out_of_range("SmallVector::at");
-        }
-        return data_[idx];
+        if(i >= size_) throw std::out_of_range("SmallVector::at");
+        return data_[i];
     }
 
-    const_reference at(size_type idx) const
+    const T& at(SizeType i) const
     {
-        if (idx >= size_)
-        {
-            throw std::out_of_range("SmallVector::at");
-        }
-        return data_[idx];
+        if(i >= size_) throw std::out_of_range("SmallVector::at");
+        return data_[i];
     }
 
-    reference front() noexcept { return data_[0]; }
-    const_reference front() const noexcept { return data_[0]; }
-    reference back() noexcept { return data_[size_ - 1]; }
-    const_reference back() const noexcept
-    {
-        return data_[size_ - 1];
-    }
+    T& front() noexcept { return data_[0]; }
+    const T& front() const noexcept { return data_[0]; }
+    T& back() noexcept { return data_[size_ - 1]; }
+    const T& back() const noexcept { return data_[size_ - 1]; }
 
-    pointer data() noexcept { return data_; }
-    const_pointer data() const noexcept { return data_; }
+    T* data() noexcept { return data_; }
+    const T* data() const noexcept { return data_; }
 
-    // Iterators
+    // --- Iterators ----------------------------------------------------------
+
     iterator begin() noexcept { return data_; }
-    iterator end() noexcept { return data_ + size_; }
     const_iterator begin() const noexcept { return data_; }
-    const_iterator end() const noexcept { return data_ + size_; }
     const_iterator cbegin() const noexcept { return data_; }
+    iterator end() noexcept { return data_ + size_; }
+    const_iterator end() const noexcept { return data_ + size_; }
     const_iterator cend() const noexcept { return data_ + size_; }
-    reverse_iterator rbegin() noexcept
-    {
-        return reverse_iterator(end());
-    }
-    reverse_iterator rend() noexcept
-    {
-        return reverse_iterator(begin());
-    }
-    const_reverse_iterator rbegin() const noexcept
-    {
-        return const_reverse_iterator(end());
-    }
-    const_reverse_iterator rend() const noexcept
-    {
-        return const_reverse_iterator(begin());
-    }
-    const_reverse_iterator crbegin() const noexcept
-    {
-        return const_reverse_iterator(cend());
-    }
-    const_reverse_iterator crend() const noexcept
-    {
-        return const_reverse_iterator(cbegin());
-    }
 
-    // Capacity
+    // --- Capacity -----------------------------------------------------------
+
     bool empty() const noexcept { return size_ == 0; }
-    size_type size() const noexcept { return size_; }
-    size_type capacity() const noexcept { return capacity_; }
+    SizeType size() const noexcept { return size_; }
+    SizeType capacity() const noexcept { return capacity_; }
 
-    void reserve(size_type newCap)
+    static constexpr SizeType max_size() noexcept
     {
-        if (newCap <= capacity_)
-        {
-            return;
-        }
-        pointer newData = allocate(newCap);
-        for (size_type i = 0; i < size_; ++i)
-        {
-            new (newData + i) T(std::move(data_[i]));
-            data_[i].~T();
-        }
-        if (data_ != inlineData_)
-        {
-            ::operator delete(data_);
-        }
-        data_     = newData;
-        capacity_ = newCap;
+        return std::numeric_limits<SizeType>::max();
     }
 
-    void shrink_to_fit()
+    bool isInline() const noexcept
     {
-        if (size_ <= N && data_ != inlineData_)
+        return data_ == inlinePtr();
+    }
+
+    void reserve(SizeType minCapacity)
+    {
+        if(minCapacity > capacity_)    [[unlikely]]
         {
-            for (size_type i = 0; i < size_; ++i)
-            {
-                new (inlineData_ + i)
-                    T(std::move(data_[i]));
-                data_[i].~T();
-            }
-            ::operator delete(data_);
-            data_     = inlineData_;
-            capacity_ = N;
-        }
-        else if (size_ < capacity_)
-        {
-            reserve(size_);
+            reallocate(minCapacity);
         }
     }
 
-    // Modifiers
+    // --- Modifiers ----------------------------------------------------------
+
     void clear() noexcept
     {
-        for (size_type i = 0; i < size_; ++i)
-        {
-            data_[i].~T();
-        }
+        std::destroy_n(data_, size_);
         size_ = 0;
     }
 
     void push_back(const T& value)
     {
-        if (size_ < capacity_)
-        {
-            new (data_ + size_) T(value);
-        }
-        else
-        {
-            growAndEmplace(value);
-        }
-        ++size_;
+        emplace_back(value);
     }
 
     void push_back(T&& value)
     {
-        if (size_ < capacity_)
-        {
-            new (data_ + size_) T(std::move(value));
-        }
-        else
-        {
-            growAndEmplace(std::move(value));
-        }
-        ++size_;
+        emplace_back(std::move(value));
     }
 
     template<typename... Args>
-    reference emplace_back(Args&&... args)
+    T& emplace_back(Args&&... args)
     {
-        if (size_ >= capacity_)
+        if(size_ == capacity_)    [[unlikely]]
         {
-            growAndReserve();
+            reallocate(nextCapacity(size_ + 1));
         }
-        new (data_ + size_) T(std::forward<Args>(args)...);
+        T* p = new (data_ + size_) T(std::forward<Args>(args)...);
         ++size_;
-        return back();
+        return *p;
     }
 
     void pop_back() noexcept
     {
-        if (size_ > 0)
-        {
-            --size_;
-            data_[size_].~T();
-        }
+        --size_;
+        data_[size_].~T();
     }
 
-    void swap(SmallVector& other) noexcept
+    void resize(SizeType newSize)
     {
-        using std::swap;
-        if (data_ == inlineData_ && other.data_ == other.inlineData_)
+        if(newSize > size_)
         {
-            SmallVector temp(std::move(*this));
-            *this = std::move(other);
-            other = std::move(temp);
+            reserve(newSize);
+            std::uninitialized_value_construct_n(
+                data_ + size_, newSize - size_);
         }
         else
         {
-            swap(size_,     other.size_);
-            swap(capacity_, other.capacity_);
-            swap(data_,     other.data_);
+            std::destroy_n(data_ + newSize, size_ - newSize);
+        }
+        size_ = newSize;
+    }
+
+    void resize(SizeType newSize, const T& value)
+    {
+        if(newSize > size_)
+        {
+            reserve(newSize);
+            std::uninitialized_fill_n(data_ + size_, newSize - size_, value);
+        }
+        else
+        {
+            std::destroy_n(data_ + newSize, size_ - newSize);
+        }
+        size_ = newSize;
+    }
+
+private:
+    T* inlinePtr() noexcept
+    {
+        return reinterpret_cast<T*>(inlineData_);
+    }
+
+    const T* inlinePtr() const noexcept
+    {
+        return reinterpret_cast<const T*>(inlineData_);
+    }
+
+    static T* allocate(SizeType capacity)
+    {
+        return static_cast<T*>(operator new(
+            static_cast<size_t>(capacity) * sizeof(T),
+            std::align_val_t(alignof(T))));
+    }
+
+    void freeHeap() noexcept
+    {
+        if(!isInline())    [[unlikely]]
+        {
+            ::operator delete(data_, std::align_val_t(alignof(T)));
         }
     }
 
-protected:
-    // no protected members
-
-private:
-    void growAndReserve()
+    SizeType nextCapacity(SizeType minCapacity) const
     {
-        size_type newCap =
-            capacity_ ? (capacity_ * 2) : 1;
-        reserve(newCap);
+        if(minCapacity < capacity_)    [[unlikely]]   // SizeType overflow
+        {
+            throw std::length_error("SmallVector: capacity overflow");
+        }
+        SizeType doubled = (capacity_ > max_size() - capacity_) ?
+            max_size() : (capacity_ * 2);
+        return (doubled > minCapacity) ? doubled : minCapacity;
     }
 
-    template<typename U>
-    void growAndEmplace(U&& value)
+    /// Moves all elements into a new heap buffer of the given capacity.
+    /// Provides the strong exception guarantee (falls back to copying
+    /// if T's move constructor may throw, like std::vector).
+    ///
+    void reallocate(SizeType newCapacity)
     {
-        growAndReserve();
-        new (data_ + size_) T(std::forward<U>(value));
+        T* newData = allocate(newCapacity);
+        if constexpr(std::is_nothrow_move_constructible_v<T> ||
+            !std::is_copy_constructible_v<T>)
+        {
+            std::uninitialized_move_n(data_, size_, newData);
+        }
+        else
+        {
+            try
+            {
+                std::uninitialized_copy_n(data_, size_, newData);
+            }
+            catch(...)
+            {
+                ::operator delete(newData, std::align_val_t(alignof(T)));
+                throw;
+            }
+        }
+        std::destroy_n(data_, size_);
+        freeHeap();
+        data_ = newData;
+        capacity_ = newCapacity;
     }
 
-    pointer allocate(size_type count)
+    /// Takes over the contents of another SmallVector, which is left
+    /// empty. Assumes this SmallVector is empty and inline.
+    ///
+    void adoptContentsOf(SmallVector& other) noexcept(
+        std::is_nothrow_move_constructible_v<T>)
     {
-        return static_cast<pointer>(
-            ::operator new(sizeof(T) * count)
-        );
+        if(!other.isInline())
+        {
+            // Heap contents: just steal the buffer
+            data_ = other.data_;
+            size_ = other.size_;
+            capacity_ = other.capacity_;
+            other.data_ = other.inlinePtr();
+            other.size_ = 0;
+            other.capacity_ = static_cast<SizeType>(S);
+        }
+        else
+        {
+            // Inline contents: must move element by element
+            std::uninitialized_move_n(other.data_, other.size_, data_);
+            size_ = other.size_;
+            other.clear();
+        }
     }
 
-    size_type size_;
-    size_type capacity_;
-    T*          data_;
-    alignas(T) T inlineData_[N];
+    T* data_;
+    SizeType size_;
+    SizeType capacity_;
+    alignas(alignof(T)) std::byte inlineData_[S * sizeof(T)];
 };
 
 } // namespace clarisma
