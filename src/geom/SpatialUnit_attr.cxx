@@ -1,0 +1,25 @@
+static const int ATTR_COUNT = 21;
+static const char* ATTR_NAMES[] =
+{
+    "meters",
+    "m",
+    "kilometers",
+    "km",
+    "feet",
+    "ft",
+    "yards",
+    "yd",
+    "miles",
+    "mi",
+    "square_meters",
+    "m2",
+    "square_kilometers",
+    "km2",
+    "square_feet",
+    "square_yards",
+    "square_miles",
+    "hectares",
+    "hc",
+    "acres",
+    "ac",
+};
