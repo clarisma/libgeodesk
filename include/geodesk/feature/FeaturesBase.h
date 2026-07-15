@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <optional>
 #include <geodesk/filter/Filters.h>
 #include <geodesk/feature/FeatureUtils.h>
@@ -306,7 +307,7 @@ public:
     ///
     /// @param role
     ///
-    [[nodiscard]] FeaturesBase withRole(std::string_view role) const
+    [[nodiscard]] FeaturesBase withRole(const std::string_view role) const
     {
         return withRole(std::span(&role, 1));
     }
@@ -315,9 +316,32 @@ public:
     ///
     /// @param roles
     ///
-    [[nodiscard]] FeaturesBase withRole(std::span<std::string_view> roles) const
+    [[nodiscard]] FeaturesBase withRole(std::span<const std::string_view> roles) const
     {
         return { view_.withFilter(Filters::withRole(roles, store()->strings()))};
+    }
+
+    /// @brief Only relation members with one of the given roles.
+    ///
+    /// Example:
+    ///
+    /// @code
+    /// busRoute.members().withRole("forward", "backward")
+    /// @endcode
+    ///
+    /// @param roles
+    ///
+    template <typename... Strings>
+    requires (sizeof...(Strings) >= 2 &&
+        (std::is_convertible_v<Strings, const char*> && ...))
+    [[nodiscard]] FeaturesBase withRole(Strings&&... roles)
+    {
+        // Converts zero or more null-terminated strings and delegates to withRole().
+        std::array<std::string_view, sizeof...(Strings)> roleStrings
+        {
+            std::string_view{std::forward<Strings>(roles)}...
+        };
+        return withRole(std::span<std::string_view>{roleStrings});
     }
 
     /// @}

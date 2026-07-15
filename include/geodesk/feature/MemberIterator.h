@@ -33,14 +33,13 @@ class MemberIteratorBase : public RelatedIterator<MemberIteratorBase,FeaturePtr,
 {
 public:
 	MemberIteratorBase(FeatureStore* store, DataPtr pMembers,
-		FeatureTypes types, const MatcherHolder* matcher, const Filter* filter,
-		const RoleFilter* roleFilter = nullptr) :
+		FeatureTypes types, const MatcherHolder* matcher, const Filter* filter) :
 		RelatedIterator(store, pMembers, Tex::MEMBERS_START_TEX,
 		matcher, filter),
 		types_(types),
 		currentRoleCode_(0),
 		currentRoleStr_(nullptr),
-		roleFilter_(roleFilter)
+		roleFilter_(nullptr)
 	{
 		#ifdef GEODESK_PYTHON
 		// currentRoleObject_ = store->strings().getStringObject(0);
@@ -51,6 +50,18 @@ public:
 		// assert(currentRoleObject_);
 		currentRoleObject_ = nullptr;
 		#endif
+	}
+
+	void setRoleFilter(const RoleFilter* roleFilter)
+	{
+		if(roleFilter)
+		{
+			roleFilter_ = roleFilter;
+			if (!roleFilter->acceptRole(currentRoleCode_, currentRoleStr_))
+			{
+				currentRoleCode_ = REJECTED_ROLE;
+			}
+		}
 	}
 
 	MemberIteratorBase(FeatureStore* store, DataPtr pMembers) :
@@ -201,6 +212,8 @@ protected:
 	FeatureTypes types_;
 	int currentRoleCode_;
 	const clarisma::ShortVarString* currentRoleStr_;
+
+private:
 	const RoleFilter* roleFilter_;
 	#ifdef GEODESK_PYTHON
 	PyObject* currentRoleObject_;
@@ -216,22 +229,24 @@ public:
 	{
 		if (filter)	[[unlikely]]
 		{
+			const RoleFilter* roleFilter = nullptr;
 			if (filter->isRoleFilter())
 			{
-				roleFilter_ = reinterpret_cast<const RoleFilter*>(filter);
+				roleFilter = reinterpret_cast<const RoleFilter*>(filter);
 				filter_ = nullptr;
 			}
 			else if (filter->isCombo())
 			{
 				// extract RoleFilter from combo
 				const ComboFilter* comboFilter = reinterpret_cast<const ComboFilter*>(filter);
-				roleFilter_ = comboFilter->roleFilter();
-				if (roleFilter_)
+				roleFilter = comboFilter->roleFilter();
+				if (roleFilter)
 				{
 					ownedFilter_ = comboFilter->withoutRoleFilter();
 					filter_ = ownedFilter_;
 				}
 			}
+			setRoleFilter(roleFilter);
 		}
 	}
 

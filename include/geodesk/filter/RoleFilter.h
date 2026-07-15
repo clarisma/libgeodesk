@@ -24,7 +24,7 @@ namespace geodesk {
 class RoleFilter : public Filter
 {
 public:
-	RoleFilter(std::span<std::string_view> roles, const StringTable& strings);
+	RoleFilter(std::span<const std::string_view> roles, const StringTable& strings);
 	RoleFilter(const RoleFilter&) = delete;
 	RoleFilter(RoleFilter&&) = delete;
 

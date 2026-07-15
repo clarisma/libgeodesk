@@ -8,7 +8,7 @@ namespace geodesk {
 
 using namespace clarisma;
 
-RoleFilter::RoleFilter(std::span<std::string_view> roles, const StringTable& strings) :
+RoleFilter::RoleFilter(std::span<const std::string_view> roles, const StringTable& strings) :
     Filter(ROLE_FILTER, FeatureTypes::RELATION_MEMBERS)
 {
     SmallVector<int,8> codes;

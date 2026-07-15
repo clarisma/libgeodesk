@@ -420,6 +420,33 @@ public:
     ///
     Features connectedTo(const Feature& feature) const;
 
+    /// @brief Only relation members with the given role.
+    ///
+    /// @param role
+    ///
+    Features withRole(const std::string_view role) const;
+
+    /// @brief Only relation members with one of the given roles.
+    ///
+    /// @param roles
+    ///
+    Features withRole(std::span<const std::string_view> roles) const;
+
+    /// @brief Only relation members with one of the given roles.
+    ///
+    /// Example:
+    ///
+    /// @code
+    /// busRoute.members().withRole("forward", "backward")
+    /// @endcode
+    ///
+    /// @param roles
+    ///
+    template <typename... Strings>
+    requires (sizeof...(Strings) >= 2 &&
+        (std::is_convertible_v<Strings, const char*> && ...))
+    Features withRole(Strings&&... roles);
+
     /// @}
     /// @name Filtering with Predicate
     /// @{

@@ -31,7 +31,7 @@ public:
     static const Filter* crossing(GEOSContextHandle_t context, const GEOSGeometry* geom);
 #endif
     static const Filter* maxMetersFrom(double meters, Coordinate xy);
-    static const Filter* withRole(std::span<std::string_view> roles, const StringTable& strings);
+    static const Filter* withRole(std::span<const std::string_view> roles, const StringTable& strings);
 };
 
 // \endcond
