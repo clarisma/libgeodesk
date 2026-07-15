@@ -80,10 +80,14 @@ public:
     Filter() : flags_(0), acceptedTypes_(FeatureTypes::ALL) {}
     Filter(int flags, FeatureTypes acceptedTypes) :
         flags_(flags), acceptedTypes_(acceptedTypes) {}
+    explicit Filter(const Filter& other) :
+        flags_(other.flags_),
+        acceptedTypes_(other.acceptedTypes_) {}
     virtual ~Filter() {};
 
     int flags() const { return flags_; }
     bool isCombo() const { return flags_ & FilterFlags::COMBO_FILTER; }
+    bool isRoleFilter() const { return flags_ & FilterFlags::ROLE_FILTER; }
     Box getBounds() const;
     FeatureTypes acceptedTypes() const { return acceptedTypes_; }
 

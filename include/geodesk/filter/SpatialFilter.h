@@ -25,6 +25,9 @@ public:
     SpatialFilter(int flags, FeatureTypes acceptedTypes, const Box& bounds) :
         Filter(flags, acceptedTypes),
         bounds_(bounds) {}
+    explicit SpatialFilter(const SpatialFilter& other) :
+        Filter(other),
+        bounds_(other.bounds()) {}
 
     const Box& bounds() const { return bounds_; }
 

@@ -94,4 +94,33 @@ int ComboFilter::acceptTile(Tile tile) const
     }
     return fast;
 }
+
+
+const RoleFilter* ComboFilter::roleFilter() const
+{
+    for (const Filter* f : filters_)
+    {
+        if (f->isRoleFilter()) return reinterpret_cast<const RoleFilter*>(f);
+    }
+    return nullptr;
+}
+
+// TODO: what if there are multiple RoleFilters?
+const Filter* ComboFilter::withoutRoleFilter() const
+{
+    std::vector<const Filter*> newFilters;
+    for (const Filter* f : filters_)
+    {
+        if (!f->isRoleFilter())
+        {
+            f->addref();
+            newFilters.push_back(f);
+        }
+    }
+    if (newFilters.empty()) [[unlikely]] return nullptr;
+    if (newFilters.size() == 1) return newFilters[0];
+    return new ComboFilter(*this, std::move(newFilters));
+}
+
+
 } // namespace geodesk

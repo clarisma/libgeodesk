@@ -59,7 +59,7 @@ const Filter* Filters::maxMetersFrom(double meters, Coordinate xy)
 
 const Filter* Filters::withRole(std::span<std::string_view> roles, const StringTable& strings)
 {
-    return RoleFilter::create(roles, strings);
+    return new RoleFilter(roles, strings);
 }
 
 #ifdef GEODESK_WITH_GEOS

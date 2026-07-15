@@ -7,6 +7,8 @@
 
 namespace geodesk {
 
+class RoleFilter;
+
 ///
 /// \cond lowlevel
 ///
@@ -18,8 +20,14 @@ public:
 
     bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
     int acceptTile(Tile tile) const override;
+    const RoleFilter* roleFilter() const;
+    const Filter* withoutRoleFilter() const;
 
 private:
+    ComboFilter(const ComboFilter& other, std::vector<const Filter*>&& filters) :
+        SpatialFilter(other),
+        filters_(std::move(filters)) {}
+
     void add(const Filter* f);
 
     std::vector<const Filter*> filters_;
