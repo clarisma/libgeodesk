@@ -1,4 +1,4 @@
-static const int ATTR_COUNT = 21;
+static const int ATTR_COUNT = 24;
 static const char* ATTR_NAMES[] =
 {
     "meters",
@@ -16,8 +16,11 @@ static const char* ATTR_NAMES[] =
     "square_kilometers",
     "km2",
     "square_feet",
+    "ft2",
     "square_yards",
+    "yd2",
     "square_miles",
+    "mi2",
     "hectares",
     "hc",
     "acres",

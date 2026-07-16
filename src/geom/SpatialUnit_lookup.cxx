@@ -37,12 +37,12 @@
 #line 6 "SpatialUnit_attr.txt"
 struct Unit { const char *name; int index; };
 
-#define TOTAL_KEYWORDS 21
+#define TOTAL_KEYWORDS 24
 #define MIN_WORD_LENGTH 1
 #define MAX_WORD_LENGTH 17
 #define MIN_HASH_VALUE 1
-#define MAX_HASH_VALUE 40
-/* maximum key range = 40, duplicates = 0 */
+#define MAX_HASH_VALUE 38
+/* maximum key range = 38, duplicates = 0 */
 
 class SpatialUnit_AttrHash
 {
@@ -57,32 +57,32 @@ SpatialUnit_AttrHash::hash (const char *str, size_t len)
 {
   static unsigned char asso_values[] =
     {
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      18, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 20, 41,  0,
-      20,  0,  0, 41, 30,  5, 41,  0, 41,  0,
-      41, 41, 41,  0, 41,  0,  3, 41, 41, 41,
-      41, 15, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41, 41, 41, 41, 41,
-      41, 41, 41, 41, 41, 41
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      23, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 15, 39,  0,
+      20,  0,  0, 39,  8,  0, 39,  5, 39,  0,
+      39, 39, 39,  0, 39,  0, 30, 39, 39, 39,
+      39, 15, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+      39, 39, 39, 39, 39, 39
     };
   unsigned int hval = len;
 
@@ -114,30 +114,39 @@ SpatialUnit_AttrHash::lookup (const char *str, size_t len)
       {""},
 #line 9 "SpatialUnit_attr.txt"
       {"m",          SpatialUnit::METERS,},
+#line 17 "SpatialUnit_attr.txt"
+      {"mi",         SpatialUnit::MILES,},
+#line 27 "SpatialUnit_attr.txt"
+      {"mi2",                 SpatialUnit::MILES | SpatialUnit::AREA_UNIT,},
+#line 12 "SpatialUnit_attr.txt"
+      {"feet",       SpatialUnit::FEET,},
+#line 16 "SpatialUnit_attr.txt"
+      {"miles",      SpatialUnit::MILES,},
+#line 8 "SpatialUnit_attr.txt"
+      {"meters",     SpatialUnit::METERS,},
 #line 11 "SpatialUnit_attr.txt"
       {"km",         SpatialUnit::KILOMETERS,},
 #line 21 "SpatialUnit_attr.txt"
       {"km2",                 SpatialUnit::KILOMETERS | SpatialUnit::AREA_UNIT,},
-#line 12 "SpatialUnit_attr.txt"
-      {"feet",       SpatialUnit::FEET,},
-#line 13 "SpatialUnit_attr.txt"
-      {"ft",         SpatialUnit::FEET,},
-#line 8 "SpatialUnit_attr.txt"
-      {"meters",     SpatialUnit::METERS,},
-#line 17 "SpatialUnit_attr.txt"
-      {"mi",         SpatialUnit::MILES,},
-      {""}, {""},
-#line 16 "SpatialUnit_attr.txt"
-      {"miles",      SpatialUnit::MILES,},
+      {""},
+#line 29 "SpatialUnit_attr.txt"
+      {"hc",                  SpatialUnit::HECTARES | SpatialUnit::AREA_UNIT,},
 #line 22 "SpatialUnit_attr.txt"
       {"square_feet",         SpatialUnit::FEET | SpatialUnit::AREA_UNIT,},
-#line 24 "SpatialUnit_attr.txt"
+#line 26 "SpatialUnit_attr.txt"
       {"square_miles",        SpatialUnit::MILES | SpatialUnit::AREA_UNIT,},
 #line 18 "SpatialUnit_attr.txt"
       {"square_meters",       SpatialUnit::METERS | SpatialUnit::AREA_UNIT,},
       {""},
 #line 10 "SpatialUnit_attr.txt"
       {"kilometers", SpatialUnit::KILOMETERS,},
+#line 28 "SpatialUnit_attr.txt"
+      {"hectares",            SpatialUnit::HECTARES | SpatialUnit::AREA_UNIT,},
+#line 31 "SpatialUnit_attr.txt"
+      {"ac",                  SpatialUnit::ACRES | SpatialUnit::AREA_UNIT,},
+      {""}, {""},
+#line 30 "SpatialUnit_attr.txt"
+      {"acres",               SpatialUnit::ACRES | SpatialUnit::AREA_UNIT,},
       {""},
 #line 20 "SpatialUnit_attr.txt"
       {"square_kilometers",   SpatialUnit::KILOMETERS | SpatialUnit::AREA_UNIT,},
@@ -145,25 +154,21 @@ SpatialUnit_AttrHash::lookup (const char *str, size_t len)
 #line 19 "SpatialUnit_attr.txt"
       {"m2",                  SpatialUnit::METERS | SpatialUnit::AREA_UNIT,},
       {""},
-#line 28 "SpatialUnit_attr.txt"
-      {"ac",                  SpatialUnit::ACRES | SpatialUnit::AREA_UNIT,},
-      {""}, {""},
-#line 27 "SpatialUnit_attr.txt"
-      {"acres",               SpatialUnit::ACRES | SpatialUnit::AREA_UNIT,},
-      {""},
-#line 23 "SpatialUnit_attr.txt"
+#line 24 "SpatialUnit_attr.txt"
       {"square_yards",        SpatialUnit::YARDS | SpatialUnit::AREA_UNIT,},
       {""}, {""}, {""}, {""},
-#line 26 "SpatialUnit_attr.txt"
-      {"hc",                  SpatialUnit::HECTARES | SpatialUnit::AREA_UNIT,},
-      {""}, {""}, {""}, {""},
-#line 15 "SpatialUnit_attr.txt"
-      {"yd", 3       SpatialUnit::YARDS,},
-#line 25 "SpatialUnit_attr.txt"
-      {"hectares",            SpatialUnit::HECTARES | SpatialUnit::AREA_UNIT,},
+#line 13 "SpatialUnit_attr.txt"
+      {"ft",         SpatialUnit::FEET,},
+#line 23 "SpatialUnit_attr.txt"
+      {"ft2",                 SpatialUnit::FEET | SpatialUnit::AREA_UNIT,},
       {""},
 #line 14 "SpatialUnit_attr.txt"
-      {"yards",      SpatialUnit::YARDS,}
+      {"yards",      SpatialUnit::YARDS,},
+      {""},
+#line 15 "SpatialUnit_attr.txt"
+      {"yd",         SpatialUnit::YARDS,},
+#line 25 "SpatialUnit_attr.txt"
+      {"yd2",                 SpatialUnit::YARDS | SpatialUnit::AREA_UNIT,}
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)

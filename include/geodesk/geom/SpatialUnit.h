@@ -28,13 +28,13 @@ public:
 
 	static double fromMeters(double meters, int unit)
 	{
-		assert(unit >= 0 && unit <= 4);
+		assert(unit >= METERS && unit <= ACRES);
 		return meters * METERS_TO_UNIT[unit];
 	}
 
 	static double toMeters(double units, int unit)
 	{
-		assert(unit >= 0 && unit <= 4);
+		assert(unit >= METERS && unit <= ACRES);
 		return units * UNITS_TO_METERS[unit];
 	}
 
@@ -47,7 +47,8 @@ public:
 	static const double METERS_TO_UNIT[];
 	static const double UNITS_TO_METERS[];
 
-	static const char* VALID_UNITS;
+	static const char* LENGTH_UNITS;
+	static const char* AREA_UNITS;
 };
 
 /// \endcond
