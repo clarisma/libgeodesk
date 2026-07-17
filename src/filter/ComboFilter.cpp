@@ -27,10 +27,10 @@ ComboFilter::ComboFilter(const Filter* a, const Filter* b)
     if (strictBoundsFlag)
     {
         const Box& aBounds = reinterpret_cast<const SpatialFilter*>(a)->bounds();
-        const Box& bBounds = reinterpret_cast<const SpatialFilter*>(a)->bounds();
+        const Box& bBounds = reinterpret_cast<const SpatialFilter*>(b)->bounds();
         bounds_ = Box::simpleIntersection(aBounds, bBounds);
         if (bounds_.isEmpty()) acceptedTypes_ = 0;
-        // If the strict bound shave no overlap, the filter will never match anything
+        // If the strict bound share no overlap, the filter will never match anything
     }
     else
     {
