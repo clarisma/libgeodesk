@@ -32,6 +32,13 @@ public:
 		return meters * METERS_TO_UNIT[unit];
 	}
 
+	static double fromSquareMeters(double squareMeters, int unit)
+	{
+		assert(unit >= METERS && unit <= ACRES);
+		double scale = METERS_TO_UNIT[unit];
+		return squareMeters * scale * scale;
+	}
+
 	static double toMeters(double units, int unit)
 	{
 		assert(unit >= METERS && unit <= ACRES);

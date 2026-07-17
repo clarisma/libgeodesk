@@ -243,11 +243,19 @@ public:
 		}
 	}
 
-	Coordinate center() const
+	constexpr int32_t x() const
 	{
-		return Coordinate(
-			static_cast<int32_t>((static_cast<int64_t>(minX()) + maxX()) / 2),
-			static_cast<int32_t>((static_cast<int64_t>(minY()) + maxY()) / 2));
+		return static_cast<int32_t>((static_cast<int64_t>(minX()) + maxX()) / 2);
+	}
+
+	constexpr int32_t y() const
+	{
+		return static_cast<int32_t>((static_cast<int64_t>(minY()) + maxY()) / 2);
+	}
+
+	constexpr Coordinate center() const
+	{
+		return Coordinate(x(), y());
 	}
 
 	constexpr int minX() const { return m_minX; }
