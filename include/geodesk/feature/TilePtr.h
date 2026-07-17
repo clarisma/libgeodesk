@@ -3,9 +3,7 @@
 
 #pragma once
 
-#include <clarisma/util/DataPtr.h>
 #include <geodesk/feature/ExportTablePtr.h>
-#include <geodesk/feature/TileConstants.h>
 
 namespace geodesk {
 
