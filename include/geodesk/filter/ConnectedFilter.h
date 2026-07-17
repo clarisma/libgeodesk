@@ -24,7 +24,7 @@ private:
 	void collectMemberPoints(FeatureStore* store, RelationPtr relation, RecursionGuard& guard);
 
 	uint64_t self_;
-	std::unordered_set<Coordinate> points_;
+	std::unordered_set<Coordinate> points_;		// TODO: use HashMap
 };
 
 } // namespace geodesk

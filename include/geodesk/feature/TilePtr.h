@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <clarisma/util/DataPtr.h>
-#include <geodesk/feature/TileConstants.h>
+#include <geodesk/feature/ExportTablePtr.h>
+
+namespace geodesk {
 
 /// \cond lowlevel
 
@@ -35,6 +36,16 @@ public:
 		return payloadSize() + headerSize();
 	}
 
+	uint32_t revision() const
+	{
+		return (*this + REVISION_OFS).getUnsignedInt();
+	}
+
+	ExportTablePtr exports() const
+	{
+		return ExportTablePtr((*this + EXPORTS_OFS).follow());
+	}
+
 	/*
 	DataPtr ptr() const { return p_; }
 	DataPtr nodeIndex() const {	return p_ + NODE_INDEX_OFS; }
@@ -61,3 +72,4 @@ public:
 };
 
 /// \endcond lowlevel
+} // namespace geodesk
