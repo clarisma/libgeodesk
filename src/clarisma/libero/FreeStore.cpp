@@ -55,7 +55,7 @@ void FreeStore::open(const char* fileName, OpenMode mode)
             else
             {
                 // Try to lock for writing
-                if (!file.tryLock(LOCK_OFS + 1, 1), false)
+                if (!file.tryLock(LOCK_OFS + 1, 1, false))
                 {
                     throw FreeStoreException("Store locked");
                 }
