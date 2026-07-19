@@ -19,7 +19,7 @@ namespace clarisma {
 #ifndef NDEBUG
 #define LOGS clarisma::ConsoleWriter(clarisma::Console::Stream::STDERR).timestamp()
 #else
-#define LOGS if(false) clarisma::ConsoleWriter().timestamp()
+#define LOGS while(false) clarisma::ConsoleWriter().timestamp()
 #endif
 
 
