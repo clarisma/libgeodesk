@@ -173,6 +173,12 @@ public:
         {
             matcher = store->getMatcher(query);
             flags = USES_MATCHER;
+            types &= matcher->acceptedTypes();
+            if (types == 0) [[unlikely]]
+            {
+                view = EMPTY;
+                // TODO: Do we need to release the matcher?
+            }
         }
         else
         {

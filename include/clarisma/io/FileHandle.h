@@ -300,7 +300,7 @@ public:
     bool tryUnlock(uint64_t ofs, uint64_t length);
 
     byte* map(uint64_t offset, uint64_t length, bool writable = false);
-    static void unmap(void* address, uint64_t length);
+    static void unmap(const void* address, uint64_t length);
 
 protected:
     Native handle_ = INVALID;
