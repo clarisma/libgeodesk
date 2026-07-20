@@ -38,7 +38,9 @@ public:
 	 *
 	 * TODO: use half-open rule to match MCIndex::countCrossings
 	 *  (only count either the upper or lower vertex)
-	 *  TODO: horizontal ways?
+	 *   No, that's the whole point of the "1-point for vertex,
+	 *    2 points for segment" rule so we don't double-count
+	 *  TODO: verify horizontal ways
 	 */
 	bool testAgainstWay(const WayPtr way)
 	{
