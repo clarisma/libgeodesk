@@ -8,6 +8,8 @@
 
 namespace clarisma {
 
+// TODO: remove
+
 class AtomicFile : public File
 {
 public:

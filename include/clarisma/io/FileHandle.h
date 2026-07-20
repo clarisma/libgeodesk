@@ -63,28 +63,13 @@ public:
 
     /// @brief Copyable: copies the same native handle (no ownership).
     FileHandle(const FileHandle&) = default;
-
-    /// @brief Move-construct; steals the native handle and invalidates @p other.
-    FileHandle(FileHandle&& other) noexcept :
-        handle_(other.handle_)
-    {
-        other.handle_ = INVALID;
-    }
+    FileHandle(FileHandle&&) noexcept = default;
 
     /// @brief Copy-assign: aliases the same native handle (no ownership).
-    FileHandle& operator=(const FileHandle&) = default;
-
-    /// @brief Move-assign; steals the native handle and invalidates @p other.
-    FileHandle& operator=(FileHandle&& other) noexcept
-    {
-        if (this != &other)
-        {
-            handle_ = other.handle_;
-            other.handle_ = INVALID;
-        }
-        return *this;
-    }
-
+    FileHandle& operator=(const FileHandle&) noexcept = default;
+    /// @brief Move-assign; aliases the same native handle (no ownership).
+    FileHandle& operator=(FileHandle&& other) noexcept = default;
+    
     // Keep the values of READ,WRITE and CREATE stable for
     // use in other classes
     // Bits 0-7 are used for value mapping in open(), keep values in sync
