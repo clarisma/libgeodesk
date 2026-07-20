@@ -28,9 +28,9 @@ namespace clarisma {
 /// the trit value itself, which enables branch-free decoding.
 ///
 /// Data is fetched one unaligned `uint64_t` at a time into a 64-bit
-/// shift register; a code that straddles a word boundary is handled
-/// explicitly in the (rare) refill path, so the hot path of next()
-/// contains a single well-predicted branch and no other conditionals.
+/// shift register. Values that straddle a word boundary are handled in
+/// the rare refill path. The hot path contains one well-predicted branch;
+/// selection between bit and trit decoding is branch-free.
 ///
 /// Requirements:
 /// - `end - start` must be >= 8 and a multiple of 8, so that the
@@ -38,10 +38,13 @@ namespace clarisma {
 /// - Pointers may be unaligned
 /// - Target must be 64-bit little-endian
 ///
-/// The number of trits in the stream is *not* known to the reader;
-/// it is the caller's responsibility to stop after the last valid trit.
-/// A call to next() that would consume bits at or beyond `end` throws
-/// `std::runtime_error`.
+/// The logical contents and length of the stream are not known to the
+/// reader. It is the caller's responsibility to stop after the last valid
+/// value. Calls to next() and nextBit() share a single bit cursor; reading
+/// a bit may consume part of an encoded trit.
+///
+/// A call to next() or nextBit() that would consume data at or beyond `end`
+/// throws `std::runtime_error`.
 ///
 class TritStreamReader
 {
@@ -87,48 +90,48 @@ public:
         assert(firstTrit >= 0 && firstTrit <= 2);
     }
 
-    /// \brief Returns the next trit (0 to 2).
+    /// \brief Returns the next trit, or the next encoded bit.
     ///
-    /// \throws std::runtime_error if decoding the next trit would
-    ///     require bits at or beyond `end`
-    int next()
+    /// \param asSingleBit If true, consumes and returns one encoded bit.
+    ///     Otherwise, consumes and returns one decoded trit.
+    /// \return A bit from 0 to 1, or a trit from 0 to 2.
+    ///
+    /// \throws std::runtime_error if the requested value extends beyond `end`.
+    ///
+    int next(bool asSingleBit = false)
     {
-        if (avail_ < 2) [[unlikely]]
-        {
-            if (avail_ == 0)
-            {
-                refill();
-                // continue below
-            }
-            else
-            {
-                assert(avail_ == 1);
-                unsigned firstBit = buf_ & 1;
-                if (firstBit != 0)
-                {
-                    // A lone 1-bit is a complete code for trit 1
-                    // (buf_ is left stale; avail_ == 0 forces a refill)
-                    avail_ = 0;
-                    return 1;
-                }
-                // The code straddles a word boundary: its first bit (0)
-                // is the last of the current word, its second bit is the
-                // first of the next word (refill() throws if there isn't
-                // one, which is exactly right: that bit lies past `end`)
-                refill();
-                const int trit = static_cast<int>((buf_ & 1) << 1);
-                buf_ >>= 1;
-                avail_ = 63;
-                return trit;
-            }
-        }
         unsigned v = buf_ & 3;
-        unsigned width = 2 - (v & 1);
-        buf_ >>= width;
-        avail_ -= width;
-        // width|1 is 1 for a 1-bit code (masks v to trit 1) and
-        // 3 for a 2-bit code (passes v through as trit 0 or 2)
+        unsigned single = (v & 1) | static_cast<unsigned>(asSingleBit);
+        unsigned width = 2 - single;
+        unsigned shift = width;
+
+        if (avail_ < width) [[unlikely]]
+        {
+            unsigned pastAvail = avail_;
+            refill();
+            unsigned vUpper = buf_ & 3;
+
+            // pastAvail is either zero or one, so it is also the mask for
+            // the valid low bits of v.
+            v = (v & pastAvail) | (vUpper << pastAvail);
+            single = (v & 1) | static_cast<unsigned>(asSingleBit);
+            width = 2 - single;
+            shift = width - pastAvail;
+        }
+
+        avail_ -= shift;
+        buf_ >>= shift;
         return static_cast<int>(v & (width | 1));
+    }
+
+    /// \brief Returns the next bit (0 or 1).
+    ///
+    /// \throws std::runtime_error if decoding the next bit would
+    ///     require reading at or beyond `end`
+    ///
+    int nextBit()
+    {
+        return next(true);
     }
 
 private:
@@ -144,7 +147,7 @@ private:
         avail_ = 64;
     }
 
-    DataPtr p_;         ///< Next refill address (start_ <= p_ <= end_)
+    DataPtr p_;         ///< Next refill address (start <= p_ <= end_)
     DataPtr end_;       ///< One past the last readable byte
     uint64_t buf_;      ///< Shift register; next code starts at bit 0
     unsigned avail_;    ///< Number of unconsumed bits in buf_

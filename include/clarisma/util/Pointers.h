@@ -27,6 +27,17 @@ inline uint32_t offset32(const void* dest, const void* source)
 	return static_cast<uint32_t>(d);
 }
 
+inline uint64_t extractBits(const void *p, uint64_t mask)
+{
+	return reinterpret_cast<uintptr_t>(p) & mask;
+}
+
+template <typename T>
+T* masked(T *p, uint64_t mask)
+{
+	return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(p) & mask);
+}
+
 }
 
 } // namespace clarisma
