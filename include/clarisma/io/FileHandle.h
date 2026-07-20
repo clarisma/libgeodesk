@@ -69,7 +69,7 @@ public:
     FileHandle& operator=(const FileHandle&) noexcept = default;
     /// @brief Move-assign; aliases the same native handle (no ownership).
     FileHandle& operator=(FileHandle&& other) noexcept = default;
-    
+
     // Keep the values of READ,WRITE and CREATE stable for
     // use in other classes
     // Bits 0-7 are used for value mapping in open(), keep values in sync

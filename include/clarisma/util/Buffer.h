@@ -180,7 +180,7 @@ protected:
 	void grow();
 };
 
-
+/*
 // TODO: replace with FileBuffer2
 class FileBuffer : public Buffer
 {
@@ -194,6 +194,7 @@ public:
 private:
 	FILE* file_;
 };
+*/
 
 inline Buffer& operator<<(Buffer& buf, std::string_view s)
 {

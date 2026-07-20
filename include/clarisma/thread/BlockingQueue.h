@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cassert>
+#include <optional>
 #include <vector>
 #include <condition_variable>
 #include <mutex>

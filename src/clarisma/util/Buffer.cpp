@@ -7,6 +7,7 @@
 
 namespace clarisma {
 
+/*
 FileBuffer::FileBuffer(FILE* file, size_t capacity) :
 	file_(file)
 {
@@ -38,5 +39,7 @@ void FileBuffer::flush(char* p)
 	// TODO: check number of bytes written (error handling)
 	p_ = buf_;
 }
+
+*/
 
 } // namespace clarisma

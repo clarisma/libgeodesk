@@ -35,6 +35,10 @@ public:
 	 * the given way. Shortcuts if point lies on boundary.
 	 * 
 	 * @return true if point lies on boundary, else false.
+	 *
+	 * TODO: use half-open rule to match MCIndex::countCrossings
+	 *  (only count either the upper or lower vertex)
+	 *  TODO: horizontal ways?
 	 */
 	bool testAgainstWay(const WayPtr way)
 	{

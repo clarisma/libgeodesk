@@ -13,6 +13,8 @@
 
 namespace clarisma {
 
+// TODO: Only works for Windows
+
 class DateTime
 {
 public:

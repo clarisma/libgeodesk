@@ -62,6 +62,12 @@ public:
     {
         // If thread list is empty, this means processing has already ended
         if(!threads_.empty()) end();
+
+        // TODO: We cannot call end() here, because it calls postProcess(),
+        //  but the dtor of the derived class has already run at this point,
+        //  rendering the derived class invalid
+        //  end() must be called before dtors run; the issue is uncaught
+        //  exceptions in the client code causing stack unwind
     }
 
     void start()

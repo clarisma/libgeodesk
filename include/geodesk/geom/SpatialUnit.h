@@ -10,6 +10,8 @@ namespace geodesk {
 
 /// \cond lowlevel
 
+// TODO: Use "ha" for hectares
+
 class SpatialUnit
 {
 public:
