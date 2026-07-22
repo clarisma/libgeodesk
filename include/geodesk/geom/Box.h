@@ -127,6 +127,8 @@ public:
 	{
 		if (minX() > maxX())	[[unlikely]]
 		{
+			// TODO: check, tests should be the same for Anti-meridian-
+			// crosssing box
 			// empty or Antimeridian-crossing
 			if (minY() > maxY()) [[unlikely]] return false;  // empty box cannot contain anything
 			// If 180 longitude crossed, minX and maxY are swapped

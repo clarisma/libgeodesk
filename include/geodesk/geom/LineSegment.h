@@ -32,6 +32,7 @@ public:
         }
     }
 
+    // TODO: These invert orientation, fix
     static int orientation(double x1, double y1, double x2, double y2, double px, double py);
     static int orientation(Coordinate start, Coordinate end, Coordinate pt)
     {

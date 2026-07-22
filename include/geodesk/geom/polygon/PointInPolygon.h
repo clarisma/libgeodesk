@@ -12,6 +12,8 @@ namespace geodesk {
 ///
 /// \cond lowlevel
 ///
+/// TODO: replace with PointInPolygon2
+///
 class PointInPolygon
 {
 public:
@@ -61,7 +63,9 @@ public:
 			// we normalize the vector so it always points upwards
 			Coordinate start = prev.y < next.y ? prev : next;
 			Coordinate end = prev.y < next.y ? next : prev;
-			
+
+			// TODO: (point_.y >= start.y && point_.y < end.y)
+			//  and get rid of the half-counts
 			if (point_.y >= start.y && point_.y <= end.y)
 			{
 				// TODO: this could be more efficient
