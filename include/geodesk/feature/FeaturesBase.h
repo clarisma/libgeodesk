@@ -62,7 +62,10 @@ public:
     bool operator !() const {return FeatureUtils::isEmpty(view_); }
 
     template<typename T2>
-    [[nodiscard]] FeaturesBase operator&(const FeaturesBase<T2>& other) const;
+    [[nodiscard]] FeaturesBase operator&(const FeaturesBase<T2>& other) const
+    {
+        return FeaturesBase(view_.withOther(other.view_));
+    }
 
     
     /// @name Query by type & tags

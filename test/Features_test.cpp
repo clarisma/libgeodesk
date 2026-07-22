@@ -1,6 +1,7 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "tests.h"
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -13,15 +14,12 @@ using namespace geodesk;
 
 struct GolFixture
 {
-	GolFixture() :
-		world(R"(d:\geodesk\tests\world.gol)"),
-		monaco(R"(d:\geodesk\tests\monaco.gol)")
-	{
-	}
+	GolFixture() : monaco(getMonaco()) {}
 
-	Features world;
 	Features monaco;
 };
+
+#ifdef TEST_WORLD
 
 TEST_CASE_METHOD(GolFixture, "Features")
 {
@@ -71,6 +69,17 @@ TEST_CASE_METHOD(GolFixture, "Features 3")
 	}
 }
 
+TEST_CASE("Issue 21")
+{
+	Features world("d:\\geodesk\\tests\\world.gol");
+	Box tileBounds = Box::ofWSEN(-10, -10, 10, 10);
+	Features tile = world(tileBounds);
+	Features features = tile("w");
+}
+
+#endif
+
+/*
 TEST_CASE_METHOD(GolFixture, "String values")
 {
 	std::vector<std::string> l;
@@ -122,7 +131,7 @@ TEST_CASE_METHOD(GolFixture, "Int values")
 		out << s << "\n";
 	}
 }
-
+*/
 
 /*
 
@@ -194,14 +203,8 @@ TEST_CASE_METHOD(GolFixture, "Iterate tags of anonymous nodes")
 		<< highwayNodeCount << " highway nodes.";
 }
 
-TEST_CASE("Issue 21")
-{
-	Features world("d:\\geodesk\\tests\\world.gol");
-	Box tileBounds = Box::ofWSEN(-10, -10, 10, 10);
-	Features tile = world(tileBounds);
-	Features features = tile("w");
-}
 
+/*
 TEST_CASE("WayNodes")
 {
 	Features features("d:\\geodesk\\tests\\liguria.gol");
@@ -217,7 +220,7 @@ TEST_CASE("WayNodes")
 	}
 	std::cout << count << " waynodes\n";
 }
-
+*/
 
 TEST_CASE_METHOD(GolFixture, "role() of non-members (Issue 24)")
 {
@@ -230,6 +233,7 @@ TEST_CASE_METHOD(GolFixture, "role() of non-members (Issue 24)")
 	}
 }
 
+/*
 TEST_CASE("WayNodes with IDs (#25)")
 {
 	Features features("d:\\geodesk\\tests\\mcu.gol");
@@ -247,5 +251,57 @@ TEST_CASE("WayNodes with IDs (#25)")
 	}
 	std::cout << count << " waynodes\n";
 }
+*/
 
 // TODO: Test if parent relation iterator respect types
+
+TEST_CASE_METHOD(GolFixture, "withRole()")
+{
+	size_t count = 0;
+	size_t totalStopMembers = 0;
+	for (Relation route : monaco("r[type=route]"))
+	{
+		std::vector<Feature> members;
+		route.members().withRole("stop").addTo(members);
+
+		std::vector<Feature> membersManually;
+		for (auto member : route.members())
+		{
+			count++;
+			if (member.role() == "stop")
+			{
+				membersManually.push_back(member);
+				totalStopMembers++;
+			}
+		}
+		REQUIRE(members == membersManually);
+	}
+	REQUIRE(count > 0);
+	REQUIRE(totalStopMembers > 0);
+}
+
+TEST_CASE_METHOD(GolFixture, "No members due to conflicting filters")
+{
+	for (Relation route : monaco("r[type=route]"))
+	{
+		REQUIRE(route.members("w[highway]")
+			.nodes().withRole("stop").count() == 0);
+			// nodes cannot be "w", so members should be an empty set
+	}
+}
+
+TEST_CASE_METHOD(GolFixture, "Features & Features")
+{
+	auto attractions = monaco("na[tourism=attraction]");
+	auto accessible = monaco("[wheelchair]");
+	auto accessible_attractions = attractions & accessible;
+	size_t count = 0;
+	for (auto f : accessible_attractions)
+	{
+		REQUIRE(f["tourism"] == "attraction");
+		REQUIRE(f.hasTag("wheelchair"));
+		REQUIRE(f["wheelchair"] != "no");
+		count++;
+	}
+	REQUIRE(count > 0);
+}

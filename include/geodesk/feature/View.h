@@ -482,6 +482,88 @@ public:
         throw QueryException("Not yet implented");
     }
 
+    // TODO:
+    // Combination rules:
+    // - if one of the Views is EMPTY, return EMPTY
+    // - if one of the Views is WORLD, graft the matcher/filter/types
+    //   onto the other View (which is a Related View)
+    //   - if type intersection is 0, return EMPTY
+    //   - if the WORLD View has an active bbox, that bbox needs
+    //     to be turned into a filter for the Related View
+    //     (since Related Views don't have a native bbox)
+    // - Otherwise, *both* View are Related Views:
+    //   - if type intersection is 0, return EMPTY
+    //   - else materialize one of the Views and use it as a
+    //     typedId set Matcher for the other
+
+    View withOther(const View& other) const
+    {
+        // Cannot combine sets from different stores
+        if (store_ != other.store_) return empty();
+
+        FeatureTypes newTypes = types_ & other.types_;
+        if (newTypes == 0) return empty();
+
+        if (view_ != WORLD || other.view_ != WORLD)
+        {
+            // Others will require special handling, rarely used
+            // TODO: allow other combinations
+            throw QueryException("Not yet implented");
+        }
+
+        // TODO: merge bounding boxes (need to consider world vs. related query)
+
+        const MatcherHolder* newMatcher;
+        if (flags_ & USES_MATCHER)
+        {
+            if (other.flags_ & USES_MATCHER)
+            {
+                matcher_->addref();
+                other.matcher_->addref();
+                newMatcher = MatcherHolder::combine(
+                    matcher_, other.matcher_);
+                // combine() steals the references
+            }
+            else
+            {
+                newMatcher = matcher_;
+                newMatcher->addref();
+            }
+        }
+        else
+        {
+            newMatcher = other.matcher_;
+            newMatcher->addref();
+        }
+
+        const Filter* newFilter = other.filter_;
+        if (newFilter)
+        {
+            if (filter_)
+            {
+                newFilter = new ComboFilter(filter_, newFilter);
+            }
+            else
+            {
+                newFilter->addref();
+            }
+        }
+        else if (filter_)
+        {
+            newFilter = filter_;
+            newFilter->addref();
+        }
+        else
+        {
+            newFilter = nullptr;
+        }
+
+        store_->addref();
+        return { view_, flags_ | BOUNDS_ACTIVE, newTypes, store_,
+            context_, newMatcher, newFilter };
+    }
+
+
     // TODO: fix, apply to world view only
     // TODO: merge with memnersOF()
     View ofRelated(int view, FeaturePtr related, FeatureTypes types = FeatureTypes::ALL) const

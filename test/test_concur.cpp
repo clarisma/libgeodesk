@@ -1,38 +1,41 @@
+// Copyright (c) 2026 Clarisma / GeoDesk contributors
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#include "tests.h"
 #include <iostream>
+#include <utility>
 #include <vector>
 #include <string>
 #include <functional>
 #include <cstdint>
-#include <catch2/catch_test_macros.hpp>
-#include <geodesk/geodesk.h>
 
-// #define GEODESK_CONCUR_TEST
-#ifdef GEODESK_CONCUR_TEST
 
 using namespace geodesk;
+
+using ConcurTestFunction = std::function<int64_t(Features&)>;
 
 // Structure to hold test information
 struct GeodeskConcurTest
 {
-    GeodeskConcurTest(const std::string& n, std::function<int64_t()> f) :
-        name(n), function(f) {}
+    GeodeskConcurTest(const std::string& n, ConcurTestFunction f) :
+        name(std::move(n)), function(std::move(f)) {}
 
     std::string name;
-    std::function<int64_t()> function;
+    ConcurTestFunction function;
 };
 
 // Vector to hold all the tests
 std::vector<GeodeskConcurTest> geodesk_concur_tests;
 
 // Function to register a test
-void registerConcurTest(const std::string& name, std::function<int64_t()> func)
+void registerConcurTest(const std::string& name, ConcurTestFunction func)
 {
     geodesk_concur_tests.emplace_back(name, func);
 }
 
 // Macro to define a test
 #define GEODESK_TEST(test_name)                                  \
-int64_t test_name##_impl();                                      \
+int64_t test_name##_impl(Features& world);                       \
 struct test_name##_registrar                                     \
 {                                                                \
     test_name##_registrar()                                      \
@@ -40,12 +43,12 @@ struct test_name##_registrar                                     \
         registerConcurTest(#test_name, test_name##_impl);        \
     }                                                            \
 } test_name##_registrar_instance;                                \
-int64_t test_name##_impl()
+int64_t test_name##_impl(Features& world)
 
 // static Features world(R"(c:\geodesk\tests\mcxx.gol)");
-static Features world(R"(d:\geodesk\tests\monaco.gol)");
+// static Features world(R"(d:\geodesk\tests\monaco.gol)");
 
-
+/*
 Feature findLargestCountry()
 {
     static FeaturePtr largestCountry;
@@ -63,6 +66,7 @@ Feature findLargestCountry()
     }
     return {world.store(), largestCountry};
 }
+*/
 
 /*
 Feature findLongestRiver()
@@ -84,10 +88,12 @@ Feature findLongestRiver()
 }
 */
 
+/*
 GEODESK_TEST(areas_containing_largest_country_centroid_count)
 {
     return world("a").containing(findLargestCountry().centroid()).count();
 }
+*/
 
 GEODESK_TEST(centroid_hash)
 {
@@ -421,13 +427,13 @@ GEODESK_TEST(lonlat_100nd_hash)
 
 
 
-
 TEST_CASE("concur")
 {
+    Features monaco = getMonaco();
+
     for(auto test: geodesk_concur_tests)
     {
-        std::cout << test.name << "=" << test.function() << std::endl;
+        std::cout << test.name << "=" << test.function(monaco) << std::endl;
     }
 }
 
-#endif

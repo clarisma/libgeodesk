@@ -151,9 +151,11 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
 if(NOT GEODESK_PYTHON AND NOT BUILD_SHARED_LIBS)
     # Define a simple test target (optional)
     enable_testing()
+    set(TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/test/data")
     file(GLOB_RECURSE TEST_SOURCE_FILES "test/*.cpp")
     add_executable(geodesk-test ${TEST_SOURCE_FILES})
-    # add_executable(geodesk-test test/test_main.cpp test/test_concur.cpp)
+    target_compile_definitions(geodesk-test PRIVATE
+            TEST_DATA_DIR="${TEST_DATA_DIR}")
     target_include_directories(geodesk-test PRIVATE include src ${Catch2_SOURCE_DIR})
     target_link_libraries(geodesk-test geodesk Catch2::Catch2WithMain)  # or zlib for shared
     add_test(NAME geodesk-test COMMAND geodesk-test)
