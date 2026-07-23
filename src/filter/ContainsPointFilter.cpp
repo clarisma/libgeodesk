@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/filter/ContainsPointFilter.h>
-#include <geodesk/geom/polygon/PointInPolygon.h>
+#include <geodesk/geom/polygon/RobustPointInPolygon.h>
 
 namespace geodesk {
 
@@ -12,37 +12,26 @@ bool ContainsPointFilter::accept(FeatureStore* store, FeaturePtr feature, FastFi
 	{
 		if (feature.isWay())
 		{
-			PointInPolygon tester(point_);
-			// point is on boundary or inside (odd number of crossings)
-			return tester.testAgainstWay(WayPtr(feature)) || tester.isInside();
+			// TODO: Does it make sense to perform the bbox shortcut test?
+			//  The query bbox for a point should already have taken care
+			//  of this (but filter combos may result in larger bbox)
+
+			return RobustPointInPolygon::classifyBoundaryWay(
+				WayPtr(feature), point_) != RobustPointInPolygon::OUTSIDE;
+				// point is also considered within if on boundary
 		}
-		else
-		{
-			PointInPolygon tester(point_);
-			// point is on boundary or inside (odd number of crossings)
-			return tester.testAgainstRelation(store, RelationPtr(feature)) || tester.isInside();
-		}
+		assert(feature.isRelation());
+		return RobustPointInPolygon::classifyAreaRelation(
+			store, RelationPtr(feature), point_) != RobustPointInPolygon::OUTSIDE;
+			// point is also considered within if on boundary
 	}
-	else if (feature.isWay())
+	if (feature.isWay())
 	{
-		WayPtr way(feature);
-		WayCoordinateIterator iter(way);
-		Coordinate start = iter.next();
-		for (;;)
-		{
-			Coordinate end = iter.next();
-			if (end.isNull()) break;
-			if (LineSegment::orientation(start, end, point_) == 0)
-			{
-				// test point lies on line segment, which means
-				// the linear way "contains" the point
-				return true;
-			}
-			start = end;
-		}
-		return false;
+		return RobustPointInPolygon::classifyBoundaryWay(
+			WayPtr(feature), point_) == RobustPointInPolygon::BOUNDARY;
+			// A linear way contains a point that lies on its boundary
 	}
-	else if (feature.isNode())
+	if (feature.isNode())
 	{
 		// A node contains another node only if their coordinates are the same
 		NodePtr node(feature);

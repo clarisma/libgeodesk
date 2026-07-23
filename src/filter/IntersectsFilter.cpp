@@ -2,16 +2,16 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/filter/IntersectsFilter.h>
-#include <geodesk/geom/polygon/PointInPolygon.h>
+#include <geodesk/geom/polygon/RobustPointInPolygon.h>
 
 namespace geodesk {
 
 static bool chainContainedByAreaWay(const RTree<const MonotoneChain>::Node* node, WayPtr way)
 {
 	if (!way.bounds().containsSimple(node->bounds)) return false;
-	PointInPolygon tester(node->item()->first());
-	tester.testAgainstWay(way);
-	return tester.isInside();
+	Coordinate pt = node->item()->first();
+	return RobustPointInPolygon::classifyBoundaryWay(way, pt)
+		!= RobustPointInPolygon::OUTSIDE;
 }
 
 struct StoredRelation
@@ -27,9 +27,9 @@ static bool chainContainedByAreaRelation(
 {
 	RelationPtr relation = storedRel->relation;
 	if (!relation.bounds().containsSimple(node->bounds)) return false;
-	PointInPolygon tester(node->item()->first());
-	tester.testAgainstRelation(storedRel->store, relation);
-	return tester.isInside();
+	Coordinate pt = node->item()->first();
+	return RobustPointInPolygon::classifyAreaRelation(
+		storedRel->store, relation, pt) != RobustPointInPolygon::OUTSIDE;
 }
 
 

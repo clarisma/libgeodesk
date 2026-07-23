@@ -135,6 +135,10 @@ public:
 		return odd;
 	}
 
+	/// Combines the INNER/OUTER results of two segment checks
+	/// (It is not suitable for BOUNDARY, which should be treated
+	/// as a conclusive result)
+	///
 	static int combineResult(int a, int b) noexcept
 	{
 		assert(a == 0 || a == 1);
@@ -142,7 +146,7 @@ public:
 		return a ^ b;
 	}
 
-	/// Tests the location of a point relative to way that
+	/// Tests the location of a point relative to `way` that
 	/// is either an area way or an inner/outer member way
 	/// of a relation.
 	///
@@ -159,6 +163,14 @@ public:
 	///
 	static int classifyBoundaryWay(const WayPtr way, Coordinate pt) noexcept
 	{
+		// Not strictly needed, but the equivalent of
+		// classifyBoundaryWay() previously performed this
+		// shortcut test, which now should be done by the client
+		// (we omit it here because the client may have performed
+		// an equivalent shortcut check); we only assert to avoid
+		// a performance regression
+
+		assert(mustClassifyBoundaryWay(way, pt));
 		WayCoordinateIterator iter(way);
 		return classifyBoundaryChain(iter, pt);
 	}
@@ -180,6 +192,25 @@ public:
 		return pt.y >= bounds.minY() && pt.y <= bounds.maxY();
 	}
 
+	/// Tests the location of a point relative to `rel`.
+	/// If any of the relation's members were skipped due to
+	/// missing tiles, the result is OUTSIDE, unless the point
+	/// is located on the boundary of a present member way
+	/// (This avoids INSIDE being falsely reported for incomplete
+	/// relation geometries caused by missing tiles -- see #43)
+	///
+	/// @param store
+	/// @param rel
+	/// @param pt the Coordinate to test
+	///
+	/// @return OUTSIDE (0) if `pt` lies outside
+	///			INSIDE(1) if `pt` lies inside
+	///		    BOUNDARY(-1) if `pt` lies on the boundary
+	///
+	///	This method does not consider the way's bbox for
+	///	shortcuts; it assumes the caller has already performed
+	///	any appropriate bbox shortcuts.
+	///
 	static int classifyAreaRelation(FeatureStore* store, const RelationPtr rel, Coordinate pt)
 	{
 		assert(rel.isArea());
@@ -210,7 +241,7 @@ public:
 				loc = combineResult(loc, memberLoc);
 			}
 		}
-		return loc;
+		return loc & static_cast<int>(!iter.anyTilesMissing());
 	}
 
 

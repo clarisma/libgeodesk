@@ -7,6 +7,10 @@
 #include <geodesk/feature/WayCoordinateIterator.h>
 #include <geodesk/geom/LineSegment.h>
 
+// Use RobustPointInPolygon
+
+#ifdef false
+
 namespace geodesk {
 
 ///
@@ -108,3 +112,5 @@ private:
 /// \endcond
 
 } // namespace geodesk
+
+#endif

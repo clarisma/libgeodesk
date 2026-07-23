@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/geom/polygon/Ring.h>
-#include <geodesk/geom/polygon/PointInPolygon.h>
+#include <geodesk/geom/polygon/RobustPointInPolygon.h>
 #include "Segment.h"
 
 namespace geodesk {
@@ -109,17 +109,27 @@ void Polygonizer::Ring::calculateBounds()
 }
 
 
-PointInPolygon::Location Polygonizer::Ring::locateCoordinate(Coordinate c) const
+int Polygonizer::Ring::locateCoordinate(Coordinate c) const
 {
-    PointInPolygon tester(c);
+    int result = 0;
     const Segment* seg = firstSegment_;
     do
     {
-        if (tester.testAgainstWay(seg->way)) return PointInPolygon::Location::BOUNDARY;
+        if (RobustPointInPolygon::mustClassifyBoundaryWay(seg->way, c))
+        {
+            int wayResult = RobustPointInPolygon::classifyBoundaryWay(seg->way, c);
+            if (wayResult == RobustPointInPolygon::BOUNDARY)
+            {
+                return RobustPointInPolygon::BOUNDARY;
+            }
+            result = RobustPointInPolygon::combineResult(result, wayResult);
+        }
         seg = seg->next;
     }
     while (seg);
-    return tester.isInside() ? PointInPolygon::Location::INSIDE : PointInPolygon::Location::OUTSIDE;
+    assert(result == RobustPointInPolygon::INSIDE ||
+        result == RobustPointInPolygon::OUTSIDE);
+    return result;
 }
 
 
@@ -130,10 +140,12 @@ bool Polygonizer::Ring::contains(const Ring* potentialInner) const
     // lies on the boundary, we check a second point
 
     Coordinate* coords = potentialInner->firstSegment_->coords;
-    PointInPolygon::Location loc = locateCoordinate(coords[0]);
-    if (loc == PointInPolygon::Location::INSIDE) return true;
-    if (loc != PointInPolygon::Location::BOUNDARY) return false;
-    return locateCoordinate(coords[1]) == PointInPolygon::Location::INSIDE;
+    int loc = locateCoordinate(coords[0]);
+    if (loc == RobustPointInPolygon::BOUNDARY) [[unlikely]]
+    {
+        loc = locateCoordinate(coords[1]);
+    }
+    return loc == RobustPointInPolygon::INSIDE;
 }
 
 } // namespace geodesk

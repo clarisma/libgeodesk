@@ -88,7 +88,7 @@ public:
                     TilePtr pTile = store_->fetchTile(currentTip_);
                     if(!pTile)  [[unlikely]]
                     {
-                        // TODO: set flag to indicate missing tiles
+                        missingTiles_ = true;
                         continue;
                     }
                     pExports_ = (pTile + TileConstants::EXPORTS_OFS).follow();
@@ -121,6 +121,11 @@ public:
 
     Tip tip() const { return currentTip_; }
     Tex tex() const { return currentTex_; }
+
+    /// Returns a flag that indicates if any features were
+    /// skipped because tiles were missing
+    ///
+    bool anyTilesMissing() const { return missingTiles_; }
 
 protected:
     Derived* self() noexcept { return static_cast<Derived*>(this); }

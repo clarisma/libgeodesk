@@ -7,7 +7,7 @@
 
 namespace clarisma {
 
-/*
+
 FileBuffer::FileBuffer(FILE* file, size_t capacity) :
 	file_(file)
 {
@@ -40,6 +40,5 @@ void FileBuffer::flush(char* p)
 	p_ = buf_;
 }
 
-*/
 
 } // namespace clarisma
