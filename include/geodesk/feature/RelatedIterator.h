@@ -70,6 +70,7 @@ public:
                     tipDelta >>= 1;     // signed
                     currentTip_ += tipDelta;
                     pExports_ = nullptr;
+                    currentTileAccepted_ = self()->acceptTile(currentTip_);
                 }
                 currentTex_ += member_ >> (4 + ExtraFlags);
             }
@@ -85,6 +86,7 @@ public:
             {
                 if(!pExports_)
                 {
+                    if (!currentTileAccepted_) continue;
                     TilePtr pTile = store_->fetchTile(currentTip_);
                     if(!pTile)  [[unlikely]]
                     {
@@ -130,6 +132,11 @@ public:
 protected:
     Derived* self() noexcept { return static_cast<Derived*>(this); }
 
+    bool acceptTile(Tip tip)    // CRTP override
+    {
+        return true;
+    }
+
     bool readAndAcceptRole()    // CRTP override
     {
         return true;
@@ -144,6 +151,7 @@ protected:
     Tip currentTip_;
     Tex currentTex_;
     int32_t member_;
+    bool currentTileAccepted_ = true;
     bool missingTiles_;
     DataPtr p_;
     DataPtr pExports_;

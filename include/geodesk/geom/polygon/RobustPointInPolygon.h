@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <geodesk/feature/FastMemberIterator.h>
+#include <geodesk/feature/MemberIterator.h>
 #include <geodesk/feature/WayCoordinateIterator.h>
 #include <geodesk/geom/LineSegment.h>
 
@@ -192,6 +192,58 @@ public:
 		return pt.y >= bounds.minY() && pt.y <= bounds.maxY();
 	}
 
+	// TODO: create a common MemberIteratorBase
+	// TODO: restrict to inner/outer
+	class PipMemberIterator : public RelatedIteratorBase<PipMemberIterator,FeaturePtr,1,2>
+	{
+	public:
+		PipMemberIterator(FeatureStore* store, RelationPtr relation, Coordinate pt) :
+			RelatedIteratorBase(store, relation.bodyptr(), Tex::MEMBERS_START_TEX),
+			pt_(pt)
+		{
+		}
+
+		bool readAndAcceptRole()    // CRTP override
+		{
+			if (member_ & MemberFlags::DIFFERENT_ROLE)
+			{
+				int rawRole = p_.getUnsignedShort();
+				p_ += (rawRole & 1) ? 2 : 4;
+			}
+			return true;
+		}
+
+		bool acceptTile(Tip tip) const    // CRTP override
+		{
+			// The test ray runs right from the test point,
+			// so we don't need to consider tiles to the left
+			//
+			// Otherwise, we only consider tiles through which
+			// the ray actually passes, and any tile immediately
+			// above or below it (to catch twin-tile ways)
+
+			Tile tile = store_->reverseTileIndex().lookupFast(tip);
+			int extent = 1 << tile.zoom();
+			int rightCol = std::min(extent - 1, tile.column() + 1);
+			if (pt_.x > Tile::fromColumnRowZoom(rightCol, 0,
+				    tile.zoom()).rightX())
+			{
+				return false;
+			}
+
+			int topRow = std::max(1, tile.row()) - 1;
+			int bottomRow = std::min(extent - 1, tile.row() + 1);
+			int topY = Tile::fromColumnRowZoom(
+				0, topRow, tile.zoom()).topY();
+			int bottomY = Tile::fromColumnRowZoom(
+				0, bottomRow, tile.zoom()).bottomY();
+			return pt_.y >= bottomY && pt_.y <= topY;
+		}
+
+	private:
+		Coordinate pt_;
+	};
+
 	/// Tests the location of a point relative to `rel`.
 	/// If any of the relation's members were skipped due to
 	/// missing tiles, the result is OUTSIDE, unless the point
@@ -215,7 +267,7 @@ public:
 	{
 		assert(rel.isArea());
 		int loc = 0;
-		FastMemberIterator iter(store, rel);
+		PipMemberIterator iter(store, rel, pt);
 			// TODO: constrain roles to outer/inner?
 		for (;;)
 		{

@@ -15,6 +15,7 @@
 #include <geodesk/export.h>
 #include <geodesk/feature/Key.h>
 #include <geodesk/feature/StringTable.h>
+#include <geodesk/feature/ReverseTileIndex.h>
 #include <geodesk/feature/TilePtr.h>
 #include <geodesk/feature/ZoomLevels.h>
 #include <geodesk/match/Matcher.h>
@@ -160,6 +161,7 @@ public:
     DataPtr tileIndex() const noexcept { return DataPtr(reinterpret_cast<byte*>(tileIndex_)); }
         // TODO: standardize on const uint32_t*?
     int tipCount() const noexcept { return header()->tipCount; }
+    const ReverseTileIndex& reverseTileIndex() const { return reverseTileIndex_; }
 
     #ifdef GEODESK_PYTHON
     PyObject* getEmptyTags();
@@ -216,6 +218,7 @@ private:
     #endif
     clarisma::ThreadPool<TileQueryTask> executor_;
     ZoomLevels zoomLevels_;
+    ReverseTileIndex reverseTileIndex_;
 
     friend class Transaction;
 };

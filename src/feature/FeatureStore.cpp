@@ -32,10 +32,11 @@ FeatureStore::FeatureStore() :
 	emptyFeatures_(nullptr),
 	#endif
 	#ifdef NDEBUG
-	executor_(std::thread::hardware_concurrency(), 0)
+	executor_(std::thread::hardware_concurrency(), 0),
 	#else
-	executor_(1, 0)		// run single-threaded in debug mode
+	executor_(1, 0),		// run single-threaded in debug mode
 	#endif
+	reverseTileIndex_(this)
 {
 }
 
