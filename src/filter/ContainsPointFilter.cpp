@@ -6,6 +6,12 @@
 
 namespace geodesk {
 
+// TODO: Mirror the behavior of within; points on the boundary
+//  are not considered "within" the enclosing polygon
+//  The current implementation mirrors the more inclusive "coveredBy"
+//  But careful: intersecting(Node) also delegates to this filter,
+//  and for intersecting(Node) we need to include points on the boundary
+
 bool ContainsPointFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint /* ignored */) const
 {
 	if (feature.isArea())

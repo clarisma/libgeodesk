@@ -24,7 +24,8 @@ const Tile* ReverseTileIndex::initialize() const
         world, nullptr);
     do
     {
-        assert(tiw.currentTip() < store_->tipCount());
+        assert(tiw.currentTip() <= store_->tipCount());
+            // tipCount does not include entry 0
         newIndex[tiw.currentTip()] = tiw.currentTile();
     }
     while (tiw.next());

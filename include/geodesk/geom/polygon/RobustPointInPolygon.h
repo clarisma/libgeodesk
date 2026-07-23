@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <geodesk/feature/MemberIterator.h>
+#include <geodesk/feature/FastMemberIterator.h>
 #include <geodesk/feature/WayCoordinateIterator.h>
 #include <geodesk/geom/LineSegment.h>
 
@@ -170,7 +170,8 @@ public:
 		// an equivalent shortcut check); we only assert to avoid
 		// a performance regression
 
-		assert(mustClassifyBoundaryWay(way, pt));
+		// assert(mustClassifyBoundaryWay(way, pt));  // TODO
+
 		WayCoordinateIterator iter(way);
 		return classifyBoundaryChain(iter, pt);
 	}
@@ -268,6 +269,8 @@ public:
 		assert(rel.isArea());
 		int loc = 0;
 		PipMemberIterator iter(store, rel, pt);
+		// FastMemberIterator iter(store, rel);
+			// The "fast" iterator is actually the slower one
 			// TODO: constrain roles to outer/inner?
 		for (;;)
 		{

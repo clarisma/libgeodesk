@@ -160,6 +160,17 @@ if(NOT GEODESK_PYTHON AND NOT BUILD_SHARED_LIBS)
     target_link_libraries(geodesk-test geodesk Catch2::Catch2WithMain)  # or zlib for shared
     add_test(NAME geodesk-test COMMAND geodesk-test)
 
+    file(GLOB_RECURSE BENCHMARK_SOURCE_FILES "benchmark/*.cpp")
+    add_executable(geodesk-benchmark ${BENCHMARK_SOURCE_FILES})
+    target_include_directories(geodesk-benchmark PRIVATE include src ${Catch2_SOURCE_DIR})
+    target_link_libraries(geodesk-benchmark geodesk Catch2::Catch2WithMain)
+
+    add_custom_target(run_benchmarks
+            COMMAND $<TARGET_FILE:geodesk-benchmark>
+            DEPENDS geodesk
+            USES_TERMINAL
+    )
+
     if(GEODESK_EXAMPLES)
         add_subdirectory(examples)
     endif()
