@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <clarisma/data/HashSet.h>
 #include <geodesk/filter/SpatialFilter.h>
 
 namespace geodesk {
@@ -24,7 +25,7 @@ private:
 	void collectMemberPoints(FeatureStore* store, RelationPtr relation, RecursionGuard& guard);
 
 	uint64_t self_;
-	std::unordered_set<Coordinate> points_;		// TODO: use HashMap
+	clarisma::HashSet<Coordinate> points_;
 };
 
 } // namespace geodesk

@@ -4,10 +4,10 @@
 #pragma once
 
 #include <span>
-#include <unordered_map>
 #ifdef GEODESK_PYTHON
 #include <Python.h>
 #endif
+#include <clarisma/data/HashMap.h>
 #include <clarisma/libero/FreeStore.h>
 #include <clarisma/thread/ThreadPool.h>
 #include <clarisma/util/DateTime.h>
@@ -46,7 +46,7 @@ using clarisma::DateTime;
 class GEODESK_API FeatureStore final : public clarisma::FreeStore
 {
 public:
-    using IndexedKeyMap = std::unordered_map<uint16_t, uint16_t>;
+    using IndexedKeyMap = clarisma::HashMap<uint16_t, uint16_t>;
 
     struct Settings
     {
@@ -191,7 +191,7 @@ private:
 
     void readIndexSchema(DataPtr pSchema);
 
-    static std::unordered_map<std::string, FeatureStore*>& getOpenStores();
+    static clarisma::HashMap<std::string, FeatureStore*>& getOpenStores();
     static std::mutex& getOpenStoresMutex();
 
 #ifdef GEODESK_MULTITHREADED

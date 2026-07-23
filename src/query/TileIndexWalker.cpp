@@ -84,7 +84,7 @@ bool TileIndexWalker::next()
             level->currentCol = level->startCol;
         }
         int childNumber = (level->currentRow << level->step) + level->currentCol;
-        if ((childTileMask & (1LL << childNumber)) != 0)
+        if ((childTileMask & (1ULL << childNumber)) != 0)
         {
             // If the bit in the childTileMask is set,
             // this means that there is actually a tile

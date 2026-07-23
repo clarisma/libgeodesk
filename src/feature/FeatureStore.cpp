@@ -224,9 +224,9 @@ PyFeatures* FeatureStore::getEmptyFeatures()
 #endif
 
 
-std::unordered_map<std::string, FeatureStore*>& FeatureStore::getOpenStores()
+HashMap<std::string, FeatureStore*>& FeatureStore::getOpenStores()
 {
-	static std::unordered_map<std::string, FeatureStore*> openStores;
+	static HashMap<std::string, FeatureStore*> openStores;
 	return openStores;
 }
 
