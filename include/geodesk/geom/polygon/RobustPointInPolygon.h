@@ -19,6 +19,15 @@ public:
 	static constexpr int INSIDE = 1;
 	static constexpr int BOUNDARY = -1;
 
+	// TODO: Unify the values for OUTSIDE/INSIDE/BOUNDARY
+	//  with those used by MCIndex.
+	//  Idea: use 0 = OUTSIDE, 1 = BOUNDARY, 2 = INSIDE
+	//  we could toggle loc ^= 2, and then allow ContainsFilter
+	//  to test for minimum location: 1 => BOUNDARY or INSIDE,
+	//  2 => INSIDE only
+
+
+
 	/// Tests the location of a point relative to a chain of
 	/// coordinates: OUTSIDE (0), INSIDE (1) or BOUNDARY (-1).
 	///

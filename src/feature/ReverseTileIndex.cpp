@@ -18,7 +18,8 @@ const Tile* ReverseTileIndex::initialize() const
     std::lock_guard lock(indexMutex_);
     const Tile* index = index_.load(std::memory_order_relaxed);
     if (index != nullptr) return index;
-    Tile* newIndex = new Tile[store_->tipCount()];
+    Tile* newIndex = new Tile[store_->tipCount() + 1];
+        // tipCount does not include entry 0
     Box world = Box::ofWorld();
     TileIndexWalker tiw(store_->tileIndex(), store_->zoomLevels(),
         world, nullptr);
