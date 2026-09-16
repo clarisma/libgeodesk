@@ -57,6 +57,14 @@ public:
 		return static_cast<int32_t>(handle);
 	}
 
+	FeaturePtr getFeature(int32_t handle) const
+	{
+		assert(handle > 0);
+		assert(handle < payloadSize());
+		// TODO: These verifications could be stricter
+		return FeaturePtr(ptr() + handle);
+	}
+
 	/*
 	DataPtr ptr() const { return p_; }
 	DataPtr nodeIndex() const {	return p_ + NODE_INDEX_OFS; }
