@@ -46,14 +46,17 @@ public:
 		return ExportTablePtr((*this + EXPORTS_OFS).follow());
 	}
 
+	bool contains(FeaturePtr feature) const
+	{
+		return feature.ptr().ptr() > ptr() &&
+			feature.ptr().ptr() < ptr() + payloadSize();
+			// TODO: could use stricter bounds
+	}
+
 	int32_t handleOf(FeaturePtr feature) const
 	{
+		assert(contains(feature));
 		ptrdiff_t handle = feature.ptr().ptr() - ptr();
-		// Assert that this feature plausibly lies inside
-		// this tile
-		assert(handle > 0);
-		assert(handle < payloadSize());
-		// TODO: These verifications could be stricter
 		return static_cast<int32_t>(handle);
 	}
 

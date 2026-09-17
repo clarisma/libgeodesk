@@ -46,10 +46,10 @@ void LeafletFormatter::writeHeader(Buffer& out, const LeafletSettings& settings,
 				"L.TileLayer.wmsHeader(" : "new L.TileLayer(") <<
 		"tilesUrl, {minZoom: " << settings.minZoom
 		<< ", maxZoom: " << settings.maxZoom <<
-		", attribution: tilesAttrib}, ";
+		", attribution: tilesAttrib}";
 	if (settings.useRequestedWithHeader)
 	{
-		out << "[{header: 'X-Requested-With', value: '"
+		out << ", [{header: 'X-Requested-With', value: '"
 			<< settings.appId << "'}], null";
 	}
 	out << ");\n"

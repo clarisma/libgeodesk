@@ -64,6 +64,14 @@ public:
   		formatDouble(d);
   		return static_cast<S&>(*this);
   	}
+
+	S& operator<<(const void *p)
+  	{
+  		char buf[32];	// 16 digits + including trailing 0, rounded up
+  		Format::hex(buf, reinterpret_cast<uintptr_t>(p), 16);
+  		writeBytes(buf, 16);
+  		return static_cast<S&>(*this);
+  	}
 };
 
 class StreamWriter : public AbstractStreamWriter<StreamWriter>
