@@ -70,6 +70,8 @@ public:
         uint32_t reserved[8];
     };
 
+    static constexpr uint32_t MAX_URL_LENGTH = 245;
+
     struct Header : FreeStore::Header
     {
         enum Flags
@@ -89,7 +91,7 @@ public:
         uint32_t reserved[2];
         Snapshot snapshots[2];
         uint8_t urlLength;
-        char url[245];
+        char url[MAX_URL_LENGTH];
         uint8_t unused[2];
     };
 

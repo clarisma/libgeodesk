@@ -94,15 +94,34 @@ void FreeStore::open(const char* fileName, OpenMode mode)
                 {
                     throw FreeStoreException("Store locked");
                 }
-                uint64_t size = file.size();
-                if (size < HEADER_SIZE)
+                uint64_t fileSize = file.size();
+                if (fileSize < HEADER_SIZE)
                 {
                     throw FreeStoreException("Invalid store");
                 }
-                mapping = MemoryMapping(file, 0, size);
-                if (reinterpret_cast<const Header*>(
-                    mapping.data())->commitId == basicHeader.commitId)
+                mapping = MemoryMapping(file, 0, fileSize);
+                auto header = reinterpret_cast<const Header*>(mapping.data());
+                if (header->commitId == basicHeader.commitId)   [[likely]]
                 {
+                    // TXID remained the same while we were acquiring the lock;
+                    // that means it wasn't updated by a Writer in the meantime,
+                    // so we can proceed with oening this snapshot
+
+                    uint64_t minSize = (static_cast<uint64_t>(
+                        header->totalPages - 1) << pageSizeShift_)  + 4;
+                        // TODO: Take pageSize from the actual file
+                        //  (instead of the default) once custom page
+                        //  sizes are enabled
+
+                        // The final page may only be partially written
+                        // (but it must at least contain a 4-byte header,
+                        // if it's a single blob)
+                        // TODO: Confirm this in the spec
+
+                    if (fileSize < minSize) [[unlikely]]
+                    {
+                        throw FreeStoreException("Truncated store file");
+                    }
                     break;
                 }
                 mapping.unmap();

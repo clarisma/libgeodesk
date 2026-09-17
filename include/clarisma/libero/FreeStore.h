@@ -86,7 +86,7 @@ protected:
 		uint32_t metaSectionSize;
 	};
 
-	struct Header : BasicHeader
+	struct	Header : BasicHeader
 	{
 		uint32_t totalPages;
 		uint32_t freeRangeIndex;
