@@ -58,6 +58,8 @@ public:
 
     void putTile(Tip tip, std::span<const uint8_t> data);
 
+    void setReplicationUrl(std::string_view url);
+
 protected:
     std::unique_ptr<uint32_t[]> tileIndex_;
 };

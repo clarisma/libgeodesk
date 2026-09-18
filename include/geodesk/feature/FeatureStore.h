@@ -70,6 +70,8 @@ public:
         uint32_t reserved[8];
     };
 
+    static constexpr size_t MAX_URL_LENGTH = 245;
+
     struct Header : FreeStore::Header
     {
         enum Flags
@@ -89,7 +91,7 @@ public:
         uint32_t reserved[2];
         Snapshot snapshots[2];
         uint8_t urlLength;
-        char url[245];
+        char url[MAX_URL_LENGTH];
         uint8_t unused[2];
     };
 
@@ -162,6 +164,10 @@ public:
         // TODO: standardize on const uint32_t*?
     int tipCount() const noexcept { return header()->tipCount; }
     const ReverseTileIndex& reverseTileIndex() const { return reverseTileIndex_; }
+    std::string_view replicationUrl() const
+    {
+        return { header()->url, header()->urlLength };
+    }
 
     #ifdef GEODESK_PYTHON
     PyObject* getEmptyTags();
