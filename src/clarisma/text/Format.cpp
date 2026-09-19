@@ -104,6 +104,17 @@ char* doubleReverse(char** pEnd, double d, int precision, bool zeroFill)
     return integerReverse(intPart, start);
 }
 
+// TODO: Change:
+//  >30 days but < 45 days: "last month"
+//  months if <= 17
+//  years if > 17 months
+
+// < 45 days?
+//   Yes:
+//     < 30 days?
+//       Yes:
+//
+
 char* timeAgo(char* buf, int64_t secs)
 {
     int64_t d;

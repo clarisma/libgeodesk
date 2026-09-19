@@ -144,6 +144,7 @@ void FeatureStore::Transaction::commit(bool isFinal)
 	FreeStore::Transaction::commit(isFinal);
 }
 
+// TODO: compare URLs and mark tx as dirty if changed
 void FeatureStore::Transaction::setReplicationUrl(std::string_view url)
 {
 	memset(header().url, 0, MAX_URL_LENGTH);
