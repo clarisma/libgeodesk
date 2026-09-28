@@ -43,7 +43,10 @@ public:
 
 	ExportTablePtr exports() const
 	{
-		return ExportTablePtr((*this + EXPORTS_OFS).follow());
+		DataPtr ppExports(*this + EXPORTS_OFS);
+		int32_t ptr = ppExports.getInt();
+		if (ptr == 0) return ExportTablePtr();
+		return ExportTablePtr(ppExports + ptr);
 	}
 
 	bool contains(FeaturePtr feature) const
