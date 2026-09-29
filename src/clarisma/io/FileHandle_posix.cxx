@@ -139,7 +139,7 @@ std::string FileHandle::errorMessage()
 {
     char buf[256];
 
-#if defined(__GLIBC__) && defined(_GNU_SOURCE)
+#if (defined(__GLIBC__) || defined(__ANDROID__)) && defined(_GNU_SOURCE)
     char* p = strerror_r(errno, buf, sizeof(buf));
     return std::string(p);
 #else
@@ -153,7 +153,7 @@ std::string FileHandle::errorMessage(const char* fileName)
     char buf[256];
     const char *msg;
 
-#if defined(__GLIBC__) && defined(_GNU_SOURCE)
+#if (defined(__GLIBC__) || defined(__ANDROID__)) && defined(_GNU_SOURCE)
     msg = strerror_r(errno, buf, sizeof(buf));
 #else
     int res = strerror_r(errno, buf, sizeof(buf));

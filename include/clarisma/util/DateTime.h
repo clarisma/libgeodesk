@@ -71,7 +71,7 @@ public:
 	{
 		auto now = std::chrono::system_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
-		return DateTime(duration.count());
+		return DateTime(static_cast<int64_t>(duration.count()));
 	}
 
 	operator int64_t() const { return timestamp_; }		// NOLINT: implicit conv ok
