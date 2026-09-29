@@ -122,8 +122,9 @@ MCIndex MCIndexBuilder::build(Box bounds)
 
 #ifdef GEODESK_WITH_GEOS
 
-void MCIndexBuilder::segmentizeCoords(GEOSContextHandle_t context, const GEOSCoordSequence* coords)
+void MCIndexBuilder::segmentizeCoords(geos::geom::GeometryFactory& context, const geos::geom::CoordinateSequence& coords)
 {
+	if (coords.size() < 2) return;
 	CoordSequenceSlicer slicer(context, coords);
 	do
 	{
@@ -142,20 +143,18 @@ void MCIndexBuilder::segmentizeCoords(GEOSContextHandle_t context, const GEOSCoo
 }
 
 
-void MCIndexBuilder::segmentizePolygon(GEOSContextHandle_t context, const GEOSGeometry* polygon)
+void MCIndexBuilder::segmentizePolygon(geos::geom::GeometryFactory& context, const geos::geom::Polygon& polygon)
 {
-	// TODO: empty polygons
-	const GEOSGeometry* ring = GEOSGetExteriorRing_r(context, polygon);
-	if (ring == NULL) return;
-	const GEOSCoordSequence* seq = GEOSGeom_getCoordSeq_r(context, ring);
-	segmentizeCoords(context, seq);
-	int holeCount = GEOSGetNumInteriorRings_r(context, polygon);
+	if (polygon.isEmpty()) return;
+	const geos::geom::LinearRing& ring = *polygon.getExteriorRing();
+	const geos::geom::CoordinateSequence::Ptr seq = ring.getCoordinates();
+	segmentizeCoords(context, *seq);
+	int holeCount = polygon.getNumInteriorRing();
 	for (int i = 0; i < holeCount; ++i) 
 	{
-		ring = GEOSGetInteriorRingN_r(context, polygon, i);
-		if (ring == NULL) continue;
-		seq = GEOSGeom_getCoordSeq_r(context, ring);
-		segmentizeCoords(context, seq);
+		const geos::geom::LinearRing& ring = *polygon.getInteriorRingN(i);
+		const geos::geom::CoordinateSequence::Ptr seq = ring.getCoordinates();
+		segmentizeCoords(context, *seq);
 	}
 }
 

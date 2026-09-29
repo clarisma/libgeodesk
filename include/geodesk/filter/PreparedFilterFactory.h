@@ -4,7 +4,8 @@
 #pragma once
 
 #ifdef GEODESK_WITH_GEOS
-#include <geos_c.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/Geometry.h>
 #endif
 #include <geodesk/feature/RelationPtr.h>
 #include <geodesk/geom/index/MCIndexBuilder.h>
@@ -17,7 +18,7 @@ class PreparedFilterFactory
 public:
 	const Filter* forFeature(FeatureStore* store, FeaturePtr feature);
 	#ifdef GEODESK_WITH_GEOS
-	const Filter* forGeometry(GEOSContextHandle_t geosContext, const GEOSGeometry* geom);
+	const Filter* forGeometry(geos::geom::GeometryFactory& geosContext, const geos::geom::Geometry& geom);
 	#endif
 	const Filter* forBox(const Box& box);
 	virtual const Filter* forCoordinate(Coordinate point) { return nullptr; };
@@ -39,7 +40,7 @@ protected:
 		return nullptr;
 	};
 	#ifdef GEODESK_WITH_GEOS
-	virtual const Filter* forGeometryCollection(GEOSContextHandle_t geosContext, const GEOSGeometry* geom)
+	virtual const Filter* forGeometryCollection(geos::geom::GeometryFactory& geosContext, const geos::geom::Geometry& geom)
 	{
 		return nullptr;
 	};

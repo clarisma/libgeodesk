@@ -8,7 +8,8 @@
 #include <geodesk/feature/forward.h>
 #include <geodesk/geom/Coordinate.h>
 #ifdef GEODESK_WITH_GEOS
-#include <geos_c.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/Geometry.h>
 #endif
 
 namespace geodesk {
@@ -25,10 +26,10 @@ public:
     static const Filter* containsPoint(Coordinate xy);
     static const Filter* crossing(Feature feature);
 #ifdef GEODESK_WITH_GEOS
-    static const Filter* intersecting(GEOSContextHandle_t context, const GEOSGeometry* geom);
-    static const Filter* within(GEOSContextHandle_t context, const GEOSGeometry* geom);
-    static const Filter* containing(GEOSContextHandle_t context, const GEOSGeometry* geom);
-    static const Filter* crossing(GEOSContextHandle_t context, const GEOSGeometry* geom);
+    static const Filter* intersecting(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom);
+    static const Filter* within(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom);
+    static const Filter* containing(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom);
+    static const Filter* crossing(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom);
 #endif
     static const Filter* maxMetersFrom(double meters, Coordinate xy);
     static const Filter* withRole(std::span<const std::string_view> roles, const StringTable& strings);

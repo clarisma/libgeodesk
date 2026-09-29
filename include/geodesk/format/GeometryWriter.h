@@ -5,7 +5,8 @@
 
 #include <clarisma/util/BufferWriter.h>
 #ifdef GEODESK_WITH_GEOS
-#include <geos_c.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/Geometry.h>
 #endif
 #include <geodesk/feature/WayPtr.h>
 #include <geodesk/feature/RelationPtr.h>
@@ -53,23 +54,26 @@ protected:
 
 	void writeCoordinateSegment(bool isFirst, const Coordinate* coords, size_t count);
 	#ifdef GEODESK_WITH_GEOS
-	void writeCoordSequence(GEOSContextHandle_t context, const GEOSCoordSequence* coords);
-	void writePointCoordinates(GEOSContextHandle_t context, const GEOSGeometry* point);
-	void writeLineStringCoordinates(GEOSContextHandle_t context, const GEOSGeometry* line);
-	void writePolygonCoordinates(GEOSContextHandle_t context, const GEOSGeometry* polygon);
-	void writeMultiPolygonCoordinates(GEOSContextHandle_t context, const GEOSGeometry* multiPolygon);
-	void writeGeometryCoordinates(GEOSContextHandle_t context, int type, const GEOSGeometry* geom);
+	void writeCoordSequence(geos::geom::GeometryFactory& context, const geos::geom::CoordinateSequence& coords);
+	void writePointCoordinates(geos::geom::GeometryFactory& context, const geos::geom::Point& point);
+	void writeLineStringCoordinates(geos::geom::GeometryFactory& context, const geos::geom::LineString& line);
+	void writePolygonCoordinates(geos::geom::GeometryFactory& context, const geos::geom::Polygon& polygon);
+	void writeMultiPolygonCoordinates(geos::geom::GeometryFactory& context, const geos::geom::MultiPolygon& multiPolygon);
+	void writeGeometryCoordinates(geos::geom::GeometryFactory& context, geos::geom::GeometryTypeId type, const geos::geom::Geometry& geom);
 
+	template <typename MultiType, typename WriteFunc>
 	void writeMultiGeometryCoordinates(
-		GEOSContextHandle_t context, const GEOSGeometry* multi, 
-		std::function<void(GEOSContextHandle_t, const GEOSGeometry*)> writeFunc)
+		geos::geom::GeometryFactory& context,
+		const MultiType& multi,
+		WriteFunc&& writeFunc)
 	{
 		writeByte(coordGroupStartChar_);
-		int count = GEOSGetNumGeometries_r(context, multi);
-		for (int i = 0; i < count; i++) 
+		std::size_t count = multi.getNumGeometries();
+		for (std::size_t i = 0; i < count; i++)
 		{
-			if(i > 0) writeByte(',');
-			const GEOSGeometry* geom = GEOSGetGeometryN_r(context, multi, i);
+			if (i > 0) writeByte(',');
+			// 'geom' deduces to Point&, Polygon&, or Geometry& based on MultiType
+			const auto& geom = *multi.getGeometryN(i);
 			writeFunc(context, geom);
 		}
 		writeByte(coordGroupEndChar_);

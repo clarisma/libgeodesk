@@ -65,7 +65,7 @@ const Filter* Filters::withRole(std::span<const std::string_view> roles, const S
 #ifdef GEODESK_WITH_GEOS
 
 const Filter* filter(PreparedFilterFactory&& factory,
-    GEOSContextHandle_t context, const GEOSGeometry* geom)
+    geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom)
 {
     const Filter* filter = factory.forGeometry(context, geom);
     if(filter == nullptr)
@@ -76,17 +76,17 @@ const Filter* filter(PreparedFilterFactory&& factory,
 }
 
 
-const Filter* Filters::intersecting(GEOSContextHandle_t context, const GEOSGeometry* geom)
+const Filter* Filters::intersecting(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom)
 {
     return filter(IntersectsFilterFactory(), context, geom);
 }
 
-const Filter* Filters::within(GEOSContextHandle_t context, const GEOSGeometry* geom)
+const Filter* Filters::within(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom)
 {
     return filter(WithinFilterFactory(), context, geom);
 }
 
-const Filter* Filters::containing(GEOSContextHandle_t context, const GEOSGeometry* geom)
+const Filter* Filters::containing(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom)
 {
     Coordinate centroid;
     if (!Geos::centroid(context, geom, &centroid))
@@ -96,7 +96,7 @@ const Filter* Filters::containing(GEOSContextHandle_t context, const GEOSGeometr
     return new ContainsPointFilter(centroid);
 }
 
-const Filter* Filters::crossing(GEOSContextHandle_t context, const GEOSGeometry* geom)
+const Filter* Filters::crossing(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom)
 {
     return filter(CrossesFilterFactory(), context, geom);
 }

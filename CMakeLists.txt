@@ -43,8 +43,7 @@ FetchContent_MakeAvailable(gtl)
 #         URL https://download.osgeo.org/geos/geos-3.13.1.tar.bz2
 #         DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 # FetchContent_MakeAvailable(geos)
-# set(GEOS_INCLUDE_PATHS "${geos_SOURCE_DIR}/include" "${geos_BINARY_DIR}/capi" CACHE INTERNAL "")
-
+# set(GEOS_INCLUDE_PATHS "${geos_SOURCE_DIR}/include" CACHE INTERNAL "")
 
 set(PREVIOUS_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF)
@@ -82,7 +81,7 @@ if(GEODESK_WITH_GEOS)
     endif()
     message(STATUS "GEOS_INCLUDE_PATHS = ${GEOS_INCLUDE_PATHS}")
     list(APPEND INCLUDES ${GEOS_INCLUDE_PATHS})
-    target_link_libraries(geodesk PUBLIC geos geos_c)
+    target_link_libraries(geodesk PUBLIC GEOS::geos)
 else()
     message(STATUS "GeoDesk: Building *without* GEOS support.")
 endif()
