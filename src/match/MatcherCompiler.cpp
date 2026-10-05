@@ -19,7 +19,9 @@ const MatcherHolder* MatcherCompiler::getMatcher(const char* query)
 {
 	MatcherParser parser(store_, query);
 	Selector* sel = parser.parse();
-	uint32_t indexBits = parser.indexBits();  // TODO
+	uint32_t indexBits = parser.indexBits();
+	uint32_t indexMin = parser.keyMin();
+		// TODO: Consider per-type keyBits/keyMin
 	const MatcherHolder* matcher = nullptr;
 
 	// OpNode* node = graph->root();
@@ -73,7 +75,7 @@ const MatcherHolder* MatcherCompiler::getMatcher(const char* query)
 	}
 	if (!matcher)
 	{
-		matcher = compileMatcher(parser.graph(), sel, indexBits);
+		matcher = compileMatcher(parser.graph(), sel, indexBits, indexMin);
 #ifdef _DEBUG
 		DynamicBuffer buf(1024);
 		BufferWriter out(&buf);
@@ -94,7 +96,8 @@ const MatcherHolder* MatcherCompiler::getMatcher(const char* query)
 	return matcher;
 }
 
-const MatcherHolder* MatcherCompiler::compileMatcher(OpGraph& graph, Selector* firstSel, uint32_t indexBits)
+const MatcherHolder* MatcherCompiler::compileMatcher(OpGraph& graph, Selector* firstSel,
+	uint32_t indexBits, uint32_t keyMin)
 {
 	MatcherValidator validator(graph);
 	OpNode* root = validator.validate(firstSel);
@@ -105,7 +108,7 @@ const MatcherHolder* MatcherCompiler::compileMatcher(OpGraph& graph, Selector* f
 	MatcherHolder* matcherHolder = reinterpret_cast<MatcherHolder*>(matcherData + resourceSize);
 	uint16_t* pCode = reinterpret_cast<uint16_t*>(matcherData + resourceSize + sizeof(MatcherHolder));
 	
-	new (matcherHolder)MatcherHolder(validator.featureTypes(), indexBits, indexBits==0 ? 0 : 1);
+	new (matcherHolder)MatcherHolder(validator.featureTypes(), indexBits, keyMin);
 		// TODO: Specifying 1 for keyMin means that index buckets are selected if they
 		// contain *any* of the keys in the query; some queries may require *all* keys
 		// to be present, in which case setting keyMin to keyMask would result in 
