@@ -98,7 +98,7 @@ void FeatureStore::Transaction::setup(
 
 void FeatureStore::Transaction::putTile(Tip tip, std::span<const uint8_t> data)
 {
-	// TODO: Free existing tile
+	// TODO: Free existing tile here?
 
 	TileIndexEntry prevEntry(tileIndex_[tip]);
 	uint32_t page = addBlob(data);

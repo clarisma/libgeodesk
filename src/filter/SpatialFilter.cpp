@@ -4,6 +4,7 @@
 #include <geodesk/filter/SpatialFilter.h>
 #include <geodesk/feature/FastMemberIterator.h>
 #include <geodesk/feature/IntersectingMemberIterator.h>
+#include <clarisma/util/log.h>
 
 namespace geodesk {
 
@@ -53,6 +54,10 @@ bool SpatialFilter::acceptMembers(FeatureStore* store, RelationPtr relation, Rec
 		}
 		else
 		{
+			if (memberType != 2)
+			{
+				LOGS << "Invalid member in relation/" << relation.id();
+			}
 			assert(memberType == 2);
 			if(guard)
 			{

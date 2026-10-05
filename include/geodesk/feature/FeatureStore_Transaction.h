@@ -52,6 +52,12 @@ public:
     void setup(const Metadata& metadata, std::unique_ptr<uint32_t[]>&& tileIndex);
     // void addTile(Tip tip, std::span<byte> data);
 
+    Snapshot& targetSnapshot()
+    {
+        // TODO: Currently, we're writing exclusively, so Snapshot 0
+        //  is always active; update this once we support concurrent writes
+        return header().snapshots[0];
+    }
     // TileIndex contains the *payload size* in the first word
     // (*not* the tipcount)
     const uint32_t* tileIndex() const { return tileIndex_.get(); }
