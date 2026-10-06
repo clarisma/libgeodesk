@@ -11,4 +11,5 @@ static constexpr int WAY_INDEX_OFS = 12;
 static constexpr int AREA_INDEX_OFS = 16;
 static constexpr int RELATION_INDEX_OFS = 20;
 static constexpr int EXPORTS_OFS = 24;
+static constexpr int HEADER_SIZE = 28;
 }
