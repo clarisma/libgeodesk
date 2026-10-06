@@ -167,7 +167,7 @@ char* timeAgo(char* buf, int64_t secs)
 }
 
 
-static const double FILE_SIZE_INTERVALS[] =
+static constexpr double FILE_SIZE_INTERVALS[] =
 {
     1,
     1024.0,                  // KB
@@ -178,43 +178,63 @@ static const double FILE_SIZE_INTERVALS[] =
     1024.0 * 1024 * 1024 * 1024 * 1024 * 1024 // EB
 };
 
-static const char FILE_SIZE_UNITS[] = "\0KMGTPE";
+static constexpr char FILE_SIZE_UNITS[] = "\0KMGTPE";
 
-// TODO: pre-rounding 12500000 bytes should be 12 MB
-
+/// @brief Formats bytes using powers of 1024.
+/// @param p Destination buffer with sufficient space.
+/// @param size Size in bytes.
+/// @return Pointer to the terminating null character.
 char* fileSizeNice(char* p, uint64_t size)
 {
-    double d = static_cast<double>(size);
-    int i=1;
-    for (; i<7; i++)
+    const double bytes = static_cast<double>(size);
+    int unitIndex = 0;
+
+    while ( unitIndex < 6)
     {
-        if (d < FILE_SIZE_INTERVALS[i]) break;
+        if (bytes < FILE_SIZE_INTERVALS[unitIndex+1]) break;
+        ++unitIndex;
     }
-    d /= FILE_SIZE_INTERVALS[i-1];
-    double rounded = std::floor(d * 10.0 + 0.5) / 10.0;
-    double whole;
-    if (rounded >= 10.0)
+
+    const double value = bytes / FILE_SIZE_INTERVALS[unitIndex];
+    int64_t whole;
+    int digit = 0;
+    if (value < 100.0)
     {
-        whole = std::floor(rounded + 0.5);
+        const auto tenths =
+            static_cast<int64_t>(std::floor(value * 10.0 + 0.5));
+        whole = tenths / 10;
+        digit = static_cast<int>(tenths % 10);
     }
     else
     {
-        whole = std::floor(rounded);
+        whole = static_cast<int64_t>(std::floor(value + 0.5));
     }
 
-    p = integer(p, static_cast<int64_t>(whole));
-    if (d < 10.0 && rounded != whole)
+    // Promote values that round up to the next unit.
+    if (whole == 1024 && unitIndex < 6)
+    {
+        whole = 1;
+        digit = 0;
+        ++unitIndex;
+    }
+
+    p = integer(p, whole);
+
+    if (digit != 0)
     {
         *p++ = '.';
-        *p++ = '0' + static_cast<char>((rounded - whole) * 10.0);
+        *p++ = static_cast<char>('0' + digit);
     }
+
     *p++ = ' ';
-    char unit = FILE_SIZE_UNITS[i-1];
-    if (unit) *p++ = unit;
+    const char unit = FILE_SIZE_UNITS[unitIndex];
+    if (unit != '\0') *p++ = unit;
     *p++ = 'B';
     *p = '\0';
+
     return p;
 }
+
 
 // 0-terminates
 inline char* formatFractional(char* buf, unsigned long long d, int precision, bool zeroFill)

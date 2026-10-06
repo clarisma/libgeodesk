@@ -73,6 +73,13 @@ public:
 		return file_.allocatedSize();
 	}
 
+	void deallocate(uint32_t firstPage, uint32_t pageCount)
+	{
+		file_.deallocate(
+			static_cast<uint64_t>(firstPage) << pageSizeShift_,
+			static_cast<uint64_t>(pageCount) << pageSizeShift_);
+	}
+
 protected:
 	struct BasicHeader
 	{
