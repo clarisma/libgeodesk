@@ -4,7 +4,8 @@
 #pragma once
 
 #ifdef GEODESK_WITH_GEOS
-#include <geos_c.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/Geometry.h>
 #endif
 #include <geodesk/geom/index/MonotoneChain.h>
 #include <geodesk/geom/index/MCIndex.h>
@@ -22,8 +23,8 @@ public:
 	void addLineSegment(Coordinate start, Coordinate end);
 	void segmentizeWay(WayPtr way);
 	#ifdef GEODESK_WITH_GEOS
-	void segmentizeCoords(GEOSContextHandle_t context, const GEOSCoordSequence* coords);
-	void segmentizePolygon(GEOSContextHandle_t context, const GEOSGeometry* polygon);
+	void segmentizeCoords(geos::geom::GeometryFactory& context, const geos::geom::CoordinateSequence& coords);
+	void segmentizePolygon(geos::geom::GeometryFactory& context, const geos::geom::Polygon& polygon);
 	#endif
 	void segmentizeAreaRelation(FeatureStore* store, RelationPtr rel);
 	void segmentizeMembers(FeatureStore* store, RelationPtr rel, RecursionGuard& guard);

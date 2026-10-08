@@ -10,7 +10,7 @@
 namespace geodesk {
 
 // TODO: ensure proper init order
-CoordSequenceSlicer::CoordSequenceSlicer(GEOSContextHandle_t context, const GEOSCoordSequence* coords) :
+CoordSequenceSlicer::CoordSequenceSlicer(geos::geom::GeometryFactory& context, const geos::geom::CoordinateSequence& coords) :
 	iter_(context, coords),
 	first_(iter_.next()),
 	second_(iter_.next()),

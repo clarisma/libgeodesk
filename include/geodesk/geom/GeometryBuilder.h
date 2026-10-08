@@ -5,7 +5,9 @@
 
 #ifdef GEODESK_WITH_GEOS
 
-#include <geos_c.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/Geometry.h>
+#include <geos/geom/CoordinateSequence.h>
 #include <geodesk/feature/RelationPtr.h>
 #include <geodesk/feature/WayPtr.h>
 #include <geodesk/geom/Box.h>
@@ -17,29 +19,29 @@ namespace geodesk {
 class GeometryBuilder
 {
 public:
-	static GEOSGeometry* buildFeatureGeometry(FeatureStore* store, FeaturePtr feature, GEOSContextHandle_t geosContext);
-	static GEOSGeometry* buildNodeGeometry(NodePtr node, GEOSContextHandle_t geosContext);
-	static GEOSGeometry* buildWayGeometry(FeaturePtr way, GEOSContextHandle_t geosContext);
-	static GEOSGeometry* buildAreaRelationGeometry(FeatureStore* store, RelationPtr relation, GEOSContextHandle_t geosContext);
-	static GEOSGeometry* buildRelationGeometry(FeatureStore *store, RelationPtr relation, GEOSContextHandle_t geosContext);
-	static GEOSGeometry* buildPointGeometry(int32_t x, int32_t y, GEOSContextHandle_t geosContext);
-	static GEOSGeometry* buildBoxGeometry(const Box& box, GEOSContextHandle_t geosContext);
+	static geos::geom::Geometry::Ptr buildFeatureGeometry(FeatureStore* store, FeaturePtr feature, geos::geom::GeometryFactory& geosContext);
+	static geos::geom::Geometry::Ptr buildNodeGeometry(NodePtr node, geos::geom::GeometryFactory& geosContext);
+	static geos::geom::Geometry::Ptr buildWayGeometry(FeaturePtr way, geos::geom::GeometryFactory& geosContext);
+	static geos::geom::Geometry::Ptr buildAreaRelationGeometry(FeatureStore* store, RelationPtr relation, geos::geom::GeometryFactory& geosContext);
+	static geos::geom::Geometry::Ptr buildRelationGeometry(FeatureStore *store, RelationPtr relation, geos::geom::GeometryFactory& geosContext);
+	static geos::geom::Geometry::Ptr buildPointGeometry(int32_t x, int32_t y, geos::geom::GeometryFactory& geosContext);
+	static geos::geom::Geometry::Ptr buildBoxGeometry(const Box& box, geos::geom::GeometryFactory& geosContext);
 };
 
 
 class RelationGeometryBuilder
 {
 public:
-	RelationGeometryBuilder(FeatureStore* store, RelationPtr relation, GEOSContextHandle_t geosContext);
-	GEOSGeometry* build();
+	RelationGeometryBuilder(FeatureStore* store, RelationPtr relation, geos::geom::GeometryFactory& geosContext);
+	geos::geom::Geometry::Ptr build();
 
 private:
 	void gatherMembers(RelationPtr relation);
 
 	FeatureStore* store_;
-	GEOSContextHandle_t context_;
+	geos::geom::GeometryFactory& context_;
 	RecursionGuard guard_;
-	std::vector< GEOSGeometry*> geoms_;
+	std::vector< geos::geom::Geometry::Ptr> geoms_;
 };
 
 // \endcond

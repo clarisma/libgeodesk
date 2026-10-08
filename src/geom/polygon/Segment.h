@@ -49,7 +49,7 @@ public:
     }
 
     #ifdef GEODESK_WITH_GEOS
-    void copyTo(GEOSContextHandle_t context, GEOSCoordSequence* seq, int destPos) const;
+    void copyTo(geos::geom::GeometryFactory& context, geos::geom::CoordinateSequence& seq, int destPos) const;
     #endif
     #ifdef GEODESK_WITH_OGR
     void copyTo(OGRSimpleCurve* curve, int destPos) const;

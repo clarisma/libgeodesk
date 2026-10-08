@@ -92,7 +92,7 @@ Features FeatureBase<T>::parents(const char* query) const
 
 #ifdef GEODESK_WITH_GEOS
 template<typename T>
-GEOSGeometry* FeatureBase<T>::toGeometry(GEOSContextHandle_t geosContext) const
+geos::geom::Geometry::Ptr FeatureBase<T>::toGeometry(geos::geom::GeometryFactory& geosContext) const
 {
     if (isWay())
     {

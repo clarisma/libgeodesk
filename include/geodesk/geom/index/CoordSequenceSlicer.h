@@ -5,7 +5,8 @@
 
 #ifdef GEODESK_WITH_GEOS
 
-#include <geos_c.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/Geometry.h>
 #include <geodesk/geom/index/MonotoneChain.h>
 #include <geodesk/geom/Coordinate.h>
 #include <geodesk/geom/geos/GeosCoordinateIterator.h>
@@ -17,7 +18,7 @@ namespace geodesk {
 class CoordSequenceSlicer
 {
 public:
-	CoordSequenceSlicer(GEOSContextHandle_t context, const GEOSCoordSequence* coords);
+	CoordSequenceSlicer(geos::geom::GeometryFactory& context, const geos::geom::CoordinateSequence& coords);
 	bool hasMore() const { return hasMore_; }
 	void slice(MonotoneChain* chain, int maxVertexes);
 

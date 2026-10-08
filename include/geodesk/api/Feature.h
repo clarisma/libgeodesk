@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <memory>
 #include <geodesk/feature/FeaturePtr.h>
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/geom/Box.h>
@@ -15,8 +16,11 @@ class Tags;
 class TagValue;
 }
 
-class GEOSGeometry;
-class GEOSContextHandle_t;
+namespace geos::geom
+{
+class Geometry;
+class GeometryFactory;
+}
 class OGRGeometry;
 
 namespace geodesk {
@@ -225,19 +229,18 @@ public:
     double length() const;
 
 
-    /// @brief Creates a `GEOSGeometry` based on this Feature's geometry.
+    /// @brief Creates a GEOS geometry based on this Feature's geometry.
     /// Coordinates will be in Mercator projection. The caller assumes
-    /// ownership of the newly created `GEOSGeometry` and is responsible
-    /// for its cleanup.
+    /// ownership of the newly created geometry.
     ///
     /// This method is only available if build option `GEODESK_WITH_GEOS`
     /// is enabled (off by default).
     ///
-    /// @param geosContext The GEOS context o use
+    /// @param geosContext The GEOS geometry factory to use
     ///
-    /// @returns the pointer to the newly-created `GEOSGeometry`
+    /// @returns the newly-created GEOS geometry
     ///
-    GEOSGeometry* toGeometry(GEOSContextHandle_t geosContext) const;
+    std::unique_ptr<geos::geom::Geometry> toGeometry(geos::geom::GeometryFactory& geosContext) const;
 
     /// @brief Creates an `OGRGeometry` based on this Feature's geometry.
     /// Coordinates will be in EPSG:4326 (WGS-84 longitude/latitude).
@@ -318,6 +321,5 @@ public:
 };
 
 } // namespace geodesk
-
 
 
