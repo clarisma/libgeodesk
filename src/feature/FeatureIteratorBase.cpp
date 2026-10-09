@@ -105,6 +105,8 @@ void FeatureIteratorBase::initParentWaysIterator(const View& view)
     new (&storage_.parents.parentWayQuery) Query(
         view.store(), Box(xy),
         view.types() & FeatureTypes::WAYS, view.matcher(), filter);
+        // TODO: should restrict to WAYNODE_FLAG if we're
+        //  querying parent ways of feature nodes?
 }
 
 void FeatureIteratorBase::initParentRelationsIterator(FeatureStore* store, FeaturePtr member,
