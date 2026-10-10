@@ -52,7 +52,11 @@ public:
 			throw std::runtime_error("Invalid date/time format");
 		}
 
-		std::time_t time = std::mktime(&tm);
+#ifdef _WIN32
+		std::time_t time = _mkgmtime(&tm);
+#else
+		std::time_t time = timegm(&tm);
+#endif
 		if (time == -1)
 		{
 			throw std::runtime_error("Failed to convert time");
