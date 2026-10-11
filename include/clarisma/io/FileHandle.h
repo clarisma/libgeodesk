@@ -256,9 +256,9 @@ public:
     std::string fileName() const;
 
     void makeSparse();
-    void allocate(uint64_t ofs, size_t length);
-    void deallocate(uint64_t ofs, size_t length);
-    void zeroFill(uint64_t ofs, size_t length);
+    void allocate(uint64_t ofs, uint64_t length);
+    void deallocate(uint64_t ofs, uint64_t length);
+    void zeroFill(uint64_t ofs, uint64_t length);
 
     /// @brief Attempts to lock the specified region without
     /// blocking.
