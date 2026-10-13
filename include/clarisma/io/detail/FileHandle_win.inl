@@ -510,7 +510,7 @@ inline void FileHandle::sync()
     syncData();
 }
 
-inline void FileHandle::deallocate(uint64_t ofs, size_t length)
+inline void FileHandle::deallocate(uint64_t ofs, uint64_t length)
 {
     zeroFill(ofs, length);
 }

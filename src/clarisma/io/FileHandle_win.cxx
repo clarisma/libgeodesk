@@ -36,7 +36,7 @@ void FileHandle::makeSparse()
     }
 }
 
-void FileHandle::zeroFill(uint64_t ofs, size_t length)
+void FileHandle::zeroFill(uint64_t ofs, uint64_t length)
 {
     FILE_ZERO_DATA_INFORMATION zeroDataInfo;
     zeroDataInfo.FileOffset.QuadPart = ofs;
