@@ -8,12 +8,12 @@
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 namespace clarisma {
 
@@ -34,6 +34,7 @@ public:
         queue_(std::make_unique<std::optional<T>[]>(size)),
         size_(size)
     {
+        assert(size > 0);
         static_assert(std::is_nothrow_move_constructible_v<T>);
         static_assert(std::is_nothrow_destructible_v<T>);
     }
@@ -153,11 +154,11 @@ public:
     /// Producers must be stopped before calling this method.
     void clear()
     {
-        std::unique_lock<std::mutex> lock(mutex_);
+        std::unique_lock lock(mutex_);
 
-        for (auto& slot : queue_)
+        for (size_t i=0; i<size_; i++)
         {
-            slot.reset();
+            queue_[i].reset();
         }
 
         next_ = 0;
@@ -171,7 +172,7 @@ private:
     std::mutex mutex_;
     std::condition_variable notEmpty_;
     std::condition_variable notFull_;
-    const int size_;
+    const size_t size_;
     std::uint64_t next_ = 0;
 };
 
