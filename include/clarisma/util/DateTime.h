@@ -4,14 +4,18 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <iomanip>
 #include <istream>
+#include <stdexcept>
 #include <clarisma/util/StringViewBuffer.h>
 #include <clarisma/util/streamable.h> // for << operator support
 
 // TODO: Use std::time_t instead?
 
 namespace clarisma {
+
+// TODO: Only works for Windows
 
 class DateTime
 {
@@ -48,7 +52,11 @@ public:
 			throw std::runtime_error("Invalid date/time format");
 		}
 
-		std::time_t time = std::mktime(&tm);
+#ifdef _WIN32
+		std::time_t time = _mkgmtime(&tm);
+#else
+		std::time_t time = timegm(&tm);
+#endif
 		if (time == -1)
 		{
 			throw std::runtime_error("Failed to convert time");

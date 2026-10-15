@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdint>
 #include <span>
+#include <utility>
 
 #include "FileHandle.h"
 

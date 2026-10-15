@@ -60,7 +60,9 @@ void MappedFile::prefetch(void* address, uint64_t length)
 
 void MappedFile::discard(void* address, uint64_t length)
 {
-    DiscardVirtualMemory(address, length);
+    // Calling VirtualUnlock on unlocked mapped pages removes them from the
+    // working set; FALSE with ERROR_NOT_LOCKED is the expected result.
+    (void)VirtualUnlock(address, static_cast<SIZE_T>(length));
 }
 
 } // namespace clarisma

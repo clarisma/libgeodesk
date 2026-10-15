@@ -22,7 +22,6 @@ option(GEODESK_PYTHON "Build GeoDesk with Python support" OFF)
 option(GEODESK_PYTHON_WHEELS "Enable Support for Python Wheels" OFF)
 option(GEODESK_EXAMPLES "Build example applications" OFF)
 option(GEODESK_MULTITHREADED "Allow multiple threads to use the same GOL" OFF)
-option(GEODESK_LIBERO "Enable Libero storage engine" ON)
 option(GEODESK_WITH_GEOS "Build GeoDesk with GEOS support" OFF)
 option(GEODESK_WITH_OGR "Build GeoDesk with OGR support" OFF)
 
@@ -50,7 +49,6 @@ FetchContent_MakeAvailable(gtl)
 set(PREVIOUS_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF)
 set(CATCH_BUILD_STATIC_LIBRARY ON)
-set(GEODESK_LIBERO ON)
 # Fetch Catch2 from its GitHub repository
 FetchContent_Declare(Catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -72,12 +70,6 @@ if(GEODESK_MULTITHREADED)
     target_compile_definitions(geodesk PUBLIC GEODESK_MULTITHREADED)
 else()
     message(STATUS "GeoDesk: Single-threaded query access")
-endif()
-if(GEODESK_LIBERO)
-    message(STATUS "GeoDesk: Libero storage engine enabled")
-    target_compile_definitions(geodesk PUBLIC GEODESK_LIBERO)
-else()
-    message(STATUS "GeoDesk: Legacy BlobStore storage engine enabled")
 endif()
 target_compile_features(geodesk PUBLIC cxx_std_20)
 set_target_properties(geodesk PROPERTIES CXX_VISIBILITY_PRESET hidden)
@@ -145,6 +137,7 @@ target_include_directories(geodesk PRIVATE ${GEODESK_EXTRA_INCLUDE_DIRS} src ${b
 
 target_link_libraries(geodesk PUBLIC gtl)
 
+
 # Define where the library and public headers should be installed
 install(TARGETS geodesk
         RUNTIME DESTINATION bin
@@ -153,17 +146,30 @@ install(TARGETS geodesk
 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ 
         DESTINATION include 
-        FILES_MATCHING PATTERN "*.h")
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.inl")
 
 if(NOT GEODESK_PYTHON AND NOT BUILD_SHARED_LIBS)
     # Define a simple test target (optional)
     enable_testing()
+    set(TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/test/data")
     file(GLOB_RECURSE TEST_SOURCE_FILES "test/*.cpp")
     add_executable(geodesk-test ${TEST_SOURCE_FILES})
-    # add_executable(geodesk-test test/test_main.cpp test/test_concur.cpp)
+    target_compile_definitions(geodesk-test PRIVATE
+            TEST_DATA_DIR="${TEST_DATA_DIR}")
     target_include_directories(geodesk-test PRIVATE include src ${Catch2_SOURCE_DIR})
     target_link_libraries(geodesk-test geodesk Catch2::Catch2WithMain)  # or zlib for shared
     add_test(NAME geodesk-test COMMAND geodesk-test)
+
+    file(GLOB_RECURSE BENCHMARK_SOURCE_FILES "benchmark/*.cpp")
+    add_executable(geodesk-benchmark ${BENCHMARK_SOURCE_FILES})
+    target_include_directories(geodesk-benchmark PRIVATE include src ${Catch2_SOURCE_DIR})
+    target_link_libraries(geodesk-benchmark geodesk Catch2::Catch2WithMain)
+
+    add_custom_target(run_benchmarks
+            COMMAND $<TARGET_FILE:geodesk-benchmark>
+            DEPENDS geodesk
+            USES_TERMINAL
+    )
 
     if(GEODESK_EXAMPLES)
         add_subdirectory(examples)

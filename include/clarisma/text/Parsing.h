@@ -6,6 +6,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <string_view>
 
 namespace clarisma {
 namespace Parsing {

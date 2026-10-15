@@ -55,6 +55,10 @@ public:
 	 * 
 	 * TODO: just count +2 for crossings? Saves multiplication and
 	 *  also stays consistent with PointInPolygon class
+	 *
+	 *  TODO: See note in RobustPointInPolygon, would be easier
+	 *   to use 0 = OUTSIDE, 1 = BOUNDARY, 2 = INSIDE
+	 *   We could store state in just 2 bits
 	 */
 	int location() const
 	{

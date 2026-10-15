@@ -403,6 +403,16 @@ public:
 
     /// @}
 
+/*
+protected:
+    FeatureBase(FeatureStore* store, int64_t id, Coordinate xy)
+    {
+        store_ = TaggedPtr<FeatureStore,3>(store, ExtendedFeatureType::ANONYMOUS_NODE);
+        feature_.id = id;
+        feature_.xy = xy;
+    }
+*/
+
 private:
     enum class ExtendedFeatureType
     {
@@ -554,6 +564,13 @@ using Feature = FeatureBase<FeaturePtr>;
 using Node = FeatureBase<NodePtr>;
 using Way = FeatureBase<WayPtr>;
 using Relation = FeatureBase<RelationPtr>;
+
+/*
+class Node : public FeatureBase<NodePtr>
+{
+    using FeatureBase::FeatureBase;
+};
+*/
 
 // \endcond
 

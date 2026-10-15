@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <utility>
 
 namespace clarisma {
@@ -10,7 +11,7 @@ namespace clarisma {
 namespace sorting
 {
     template <typename ItemType, typename KeyType, typename IndexType, IndexType Sentinel>
-    void rearrage(ItemType* items, std::pair< KeyType,IndexType>* indices, size_t count)
+    void rearrange(ItemType* items, std::pair< KeyType,IndexType>* indices, size_t count)
     {
         for (size_t i = 0; i < count; ++i)
         {

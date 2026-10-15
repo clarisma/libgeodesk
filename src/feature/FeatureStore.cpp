@@ -33,10 +33,11 @@ FeatureStore::FeatureStore() :
 	emptyFeatures_(nullptr),
 	#endif
 	#ifdef NDEBUG
-	executor_(std::thread::hardware_concurrency(), 0)
+	executor_(std::thread::hardware_concurrency(), 0),
 	#else
-	executor_(1, 0)		// run single-threaded in debug mode
+	executor_(1, 0),		// run single-threaded in debug mode
 	#endif
+	reverseTileIndex_(this)
 {
 }
 
@@ -65,7 +66,7 @@ FeatureStore* FeatureStore::openSingle(std::string_view relativeFileName)
 	try
 	{
 		std::lock_guard lock(getOpenStoresMutex());
-		auto openStores = getOpenStores();
+		auto& openStores = getOpenStores();
 
 		auto it = openStores.find(fileName);
 		if (it != openStores.end())
@@ -110,15 +111,15 @@ void FeatureStore::initialize(const byte* data)
 
 FeatureStore::~FeatureStore()
 {
-	LOG("Destroying FeatureStore...");
+	// LOG("Destroying FeatureStore...");
 	#ifdef GEODESK_PYTHON
 	Py_XDECREF(emptyTags_);
 	Py_XDECREF(emptyFeatures_);
 	#endif
-	LOG("Destroyed FeatureStore.");
+	// LOG("Destroyed FeatureStore.");
 
 	std::lock_guard lock(getOpenStoresMutex());
-	auto openStores = getOpenStores();
+	auto& openStores = getOpenStores();
 	openStores.erase(fileName());
 }
 
@@ -233,9 +234,9 @@ PyFeatures* FeatureStore::getEmptyFeatures()
 #endif
 
 
-std::unordered_map<std::string, FeatureStore*>& FeatureStore::getOpenStores()
+HashMap<std::string, FeatureStore*>& FeatureStore::getOpenStores()
 {
-	static std::unordered_map<std::string, FeatureStore*> openStores;
+	static HashMap<std::string, FeatureStore*> openStores;
 	return openStores;
 }
 

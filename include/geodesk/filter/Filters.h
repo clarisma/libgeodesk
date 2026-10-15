@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <span>
 #include <geodesk/export.h>
 #include <geodesk/feature/forward.h>
 #include <geodesk/geom/Coordinate.h>
@@ -13,6 +14,7 @@
 namespace geodesk {
 
 class Filter;
+class StringTable;
 
 /// \cond lowlevel
 class GEODESK_API Filters
@@ -29,6 +31,7 @@ public:
     static const Filter* crossing(GEOSContextHandle_t context, const GEOSGeometry* geom);
 #endif
     static const Filter* maxMetersFrom(double meters, Coordinate xy);
+    static const Filter* withRole(std::span<const std::string_view> roles, const StringTable& strings);
 };
 
 // \endcond

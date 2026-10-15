@@ -36,7 +36,7 @@ std::string FileHandle::fileName() const
 }
 
 
-void FileHandle::allocate(uint64_t ofs, size_t length)
+void FileHandle::allocate(uint64_t ofs, uint64_t length)
 {
 #ifdef __APPLE__
     // TODO: no native implementation of fallocate() on MacOS,
@@ -50,13 +50,30 @@ void FileHandle::allocate(uint64_t ofs, size_t length)
 #endif
 }
 
-void FileHandle::deallocate(uint64_t ofs, size_t length)
+void FileHandle::deallocate(uint64_t ofs, uint64_t length)
 {
-    // TODO: do nothing for now
+    const off_t offset = static_cast<off_t>(ofs);
+    const off_t size = static_cast<off_t>(length);
+
+#if defined(__APPLE__)
+    fpunchhole_t punch = {};
+    punch.fp_offset = offset;
+    punch.fp_length = size;
+    if (::fcntl(handle_, F_PUNCHHOLE, &punch) != 0)
+    {
+        throw IOException();
+    }
+#else
+    if (fallocate(handle_, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
+        offset, size) != 0)
+    {
+        throw IOException();
+    }
+#endif
 }
 
 
-void FileHandle::zeroFill(uint64_t ofs, size_t length)
+void FileHandle::zeroFill(uint64_t ofs, uint64_t length)
 {
     // TODO: do nothing for now
 }

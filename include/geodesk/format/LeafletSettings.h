@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#include <geodesk/version.h>
 
 
 #include "FeatureFormatter.h"
@@ -17,9 +18,11 @@ struct LeafletSettings
     const char* leafletUrl = "https://unpkg.com/leaflet@{leaflet_version}/dist/leaflet.js";
     const char* leafletStylesheetUrl = "https://unpkg.com/leaflet@{leaflet_version}/dist/leaflet.css";
     const char* leafletVersion = "1.8.0";
+    const char* appId = "libgeodesk/" GEODESK_VERSION;
     // std::string_view defaultMarkerStyle_;
     int minZoom = 0;
     int maxZoom = 19;
+    bool useRequestedWithHeader = true;
 };
 
 } // namespace geodesk

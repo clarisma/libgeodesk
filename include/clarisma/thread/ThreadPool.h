@@ -88,10 +88,24 @@ public:
             notFull_.wait(lock);  // Wait for a signal that a task has been completed
         }
         // When the loop exits, all tasks have been completed
+        // TODO: Not true, only means tasks have been dequeued
+        //  In reality, we use awaitCompletion() to ensure the workers
+        //  have dequeued all tasks before we signal them to stop
 
         // TODO: This does not work, because condition is signaled 
         //  when the thread takes the task from the queue, not when it completes it
         // We need a counter that indicates the number of threads still running
+
+        // TODO: renaming to awaiTasksDequeued() would make it clear
+
+        // ThreadPool: awaitCompletion() is misnamed, it ensures that the
+        // workers have dequeued all pending tasks. If we call shutDown()
+        // before (signaling the workers to end),it would cause some pending
+        // tasks to be dropped (workers check for the shutdown signal before
+        // dequeuing a task) -- should be called "awaitTasksDequeued()".
+        // So end() always calls awaitCompletion(), then shutDown() --
+        // this isn't "cancel all tasks", but "process all remaining
+        // tasks, then shut down"
     }
 
     void shutdown()

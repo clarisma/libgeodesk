@@ -15,10 +15,10 @@ class FeatureHeader
 public:
     explicit FeatureHeader(uint64_t bits) : bits_(bits) {}
 
-    // TODO: This will change in 2.0
+    // TODO: may change in future
     static FeatureHeader forTypeAndId(FeatureType type, uint64_t id)
     {
-        return FeatureHeader((id << 12) | (static_cast<int>(type) << 3));
+        return FeatureHeader((id << 12) | (static_cast<uint64_t>(type) << 3));
     }
 
     uint64_t bits() const noexcept { return bits_; }

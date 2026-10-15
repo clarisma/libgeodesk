@@ -12,6 +12,7 @@ namespace clarisma {
 
 namespace Threads
 {
+    /*
     void kill(std::thread& thread)
     {
         #ifdef _WIN32
@@ -22,5 +23,6 @@ namespace Threads
         pthread_cancel(nativeThread);
         #endif
     }
+    */
 }
 } // namespace clarisma

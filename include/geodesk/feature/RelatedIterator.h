@@ -70,6 +70,7 @@ public:
                     tipDelta >>= 1;     // signed
                     currentTip_ += tipDelta;
                     pExports_ = nullptr;
+                    currentTileAccepted_ = self()->acceptTile(currentTip_);
                 }
                 currentTex_ += member_ >> (4 + ExtraFlags);
             }
@@ -85,10 +86,11 @@ public:
             {
                 if(!pExports_)
                 {
+                    if (!currentTileAccepted_) continue;
                     TilePtr pTile = store_->fetchTile(currentTip_);
                     if(!pTile)  [[unlikely]]
                     {
-                        // TODO: set flag to indicate missing tiles
+                        missingTiles_ = true;
                         continue;
                     }
                     pExports_ = (pTile + TileConstants::EXPORTS_OFS).follow();
@@ -122,8 +124,18 @@ public:
     Tip tip() const { return currentTip_; }
     Tex tex() const { return currentTex_; }
 
+    /// Returns a flag that indicates if any features were
+    /// skipped because tiles were missing
+    ///
+    bool anyTilesMissing() const { return missingTiles_; }
+
 protected:
     Derived* self() noexcept { return static_cast<Derived*>(this); }
+
+    bool acceptTile(Tip tip)    // CRTP override
+    {
+        return true;
+    }
 
     bool readAndAcceptRole()    // CRTP override
     {
@@ -139,6 +151,7 @@ protected:
     Tip currentTip_;
     Tex currentTex_;
     int32_t member_;
+    bool currentTileAccepted_ = true;
     bool missingTiles_;
     DataPtr p_;
     DataPtr pExports_;

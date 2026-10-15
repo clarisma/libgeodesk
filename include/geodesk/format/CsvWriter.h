@@ -4,6 +4,7 @@
 #pragma once
 
 #include <geodesk/format/FeatureWriter.h>
+#include <vector>
 #include <geodesk/format/StringHolder.h>
 
 namespace geodesk {

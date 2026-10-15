@@ -28,7 +28,8 @@ public:
 	const MatcherHolder* getMatcher(const char* query);
 
 private:
-	const MatcherHolder* compileMatcher(OpGraph& graph, Selector* firstSel, uint32_t indexBits);
+	const MatcherHolder* compileMatcher(OpGraph& graph, Selector* firstSel,
+		uint32_t indexBits, uint32_t keyMin);
 
 	FeatureStore* store_;
 	// asmjit::JitRuntime runtime_;

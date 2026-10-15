@@ -108,6 +108,38 @@ public:
 		return static_cast<int>(leftX() + extent - 1);
 	}
 
+	/// Checks if the given bounding box intersects the bounding
+	/// box of this tile and its 8 immediate neighbors.
+	///
+	/// @box a *simple* `Box`
+	/// @return true if `box` intersects the 3x3 grid
+	///
+	bool intersectsNeighborsSimple(const Box& box) const
+	{
+		assert(box.isSimple());
+
+		// Since we cast to int64, we don't have to worry about
+		// overflow at the edges of the map
+
+		const int shift = 32 - zoom();
+		const int64_t extent = int64_t{1} << shift;
+		const int64_t tripleExtent = extent * 3;
+
+		const int64_t left = -(int64_t{1} << 31) +
+			(static_cast<int64_t>(column()) << shift) - extent;
+		const int64_t bottom = (int64_t{1} << 31) -
+			(static_cast<int64_t>(row() + 2) << shift);
+
+		const int64_t rightPlusOne = left + tripleExtent;
+		const int64_t topPlusOne = bottom + tripleExtent;
+
+		return
+			box.maxX() >= left &&
+			box.minX() < rightPlusOne &&
+			box.maxY() >= bottom &&
+			box.minY() < topPlusOne;
+	}
+
 	Box bounds() const
 	{
 		int z = zoom();

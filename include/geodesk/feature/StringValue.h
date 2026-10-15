@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#include <functional>
 #include <clarisma/util/ShortVarString.h>
 #include <clarisma/util/Strings.h>
 #include <clarisma/util/streamable.h> // for << operator support

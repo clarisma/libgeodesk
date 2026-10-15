@@ -82,7 +82,7 @@ public:
 		return Box(min, min, max, max);
 	}
 
-	/// @brief Returns a Box that encompasses is bounded by
+	/// @brief Returns a Box that is bounded by
 	///		   the given coordinates (degrees WGS-84)
 	///
 	static Box ofWSEN(double west, double south, double east, double north)
@@ -125,10 +125,12 @@ public:
 
 	bool contains(int32_t x, int32_t y) const
 	{
-		if (minX() > maxX())
+		if (minX() > maxX())	[[unlikely]]
 		{
+			// TODO: check, tests should be the same for Anti-meridian-
+			// crosssing box
 			// empty or Antimeridian-crossing
-			if (minY() > maxY()) return false;  // empty box cannot contain anything
+			if (minY() > maxY()) [[unlikely]] return false;  // empty box cannot contain anything
 			// If 180 longitude crossed, minX and maxY are swapped
 			return (x >= maxX() && x <= minX() &&
 				y >= minY() && y <= maxY());
@@ -141,12 +143,12 @@ public:
 		return (!(x > m_maxX || y > m_maxY || x < m_minX || y < m_minY));
 	}
 
-	inline bool containsSimple(Coordinate c) const
+	bool containsSimple(Coordinate c) const
 	{
 		return containsSimple(c.x, c.y);
 	}
 
-	inline bool contains(Coordinate c) const
+	bool contains(Coordinate c) const
 	{
 		return contains(c.x, c.y);
 	}
@@ -154,7 +156,7 @@ public:
 	/**
 	 * Assumes neither box is empty, and neither crosses Antimeridian.
 	 */
-	inline bool containsSimple(const Box& other) const
+	bool containsSimple(const Box& other) const
 	{
 		return other.minX() >= m_minX &&
 			other.maxX() <= m_maxX &&
@@ -166,10 +168,10 @@ public:
 	{
 		bool isSimple = minX() <= maxX();
 		bool isOtherSimple = other.minX() <= other.maxX();
-		if (isSimple && isOtherSimple) return containsSimple(other);
+		if (isSimple && isOtherSimple) [[likely]] return containsSimple(other);
 
 		// Either of the boxes is empty --> cannot contain or be contained
-		if (minY() < maxY() || other.minY() < other.maxY()) return false;
+		if (isEmpty() || other.isEmpty()) [[unlikely]] return false;
 		
 		return std::min(other.minX(), other.maxX()) >= std::min(minX(), maxX()) &&
 			std::max(other.minX(), other.maxX()) <= std::max(minX(), maxX()) &&
@@ -196,20 +198,20 @@ public:
 		return Box(x1, y1, x2, y2);
 	}
 
-	int64_t widthSimple() const
+	constexpr int64_t widthSimple() const
 	{
 		return static_cast<int64_t>(maxX()) -
 			static_cast<int64_t>(minX()) + 1;
 	}
 
-	int64_t height() const
+	constexpr int64_t height() const
 	{
 		return static_cast<int64_t>(maxY()) -
 			static_cast<int64_t>(minY()) + 1;
 	}
 
 
-	double area() const
+	constexpr double area() const
 	{
 		double w = (double)maxX() - (double)minX();
 		double h = (double)maxY() - (double)minY();
@@ -243,17 +245,25 @@ public:
 		}
 	}
 
-	Coordinate center() const
+	constexpr int32_t x() const
 	{
-		return Coordinate(
-			static_cast<int32_t>((static_cast<int64_t>(minX()) + maxX()) / 2),
-			static_cast<int32_t>((static_cast<int64_t>(minY()) + maxY()) / 2));
+		return static_cast<int32_t>((static_cast<int64_t>(minX()) + maxX()) / 2);
 	}
 
-	int minX() const { return m_minX; } 
-	int minY() const { return m_minY; }
-	int maxX() const { return m_maxX; }
-	int maxY() const { return m_maxY; }
+	constexpr int32_t y() const
+	{
+		return static_cast<int32_t>((static_cast<int64_t>(minY()) + maxY()) / 2);
+	}
+
+	constexpr Coordinate center() const
+	{
+		return Coordinate(x(), y());
+	}
+
+	constexpr int minX() const { return m_minX; }
+	constexpr int minY() const { return m_minY; }
+	constexpr int maxX() const { return m_maxX; }
+	constexpr int maxY() const { return m_maxY; }
 	double minLon() const { return Mercator::lonFromX(minX()); }
 	double minLat() const { return Mercator::latFromY(minY()); }
 	double maxLon() const { return Mercator::lonFromX(maxX()); }
@@ -376,7 +386,7 @@ private:
 	 * @param y
 	 * @return the result of the addition; or the highest positive value in case of an overflow
 	 */
-	static inline int trimmedAdd(int32_t x, int32_t y)
+	static int trimmedAdd(int32_t x, int32_t y)
 	{
 		int r = x + y;
 		if (((x ^ r) & (y ^ r)) < 0) return INT_MAX;

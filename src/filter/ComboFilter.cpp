@@ -27,10 +27,10 @@ ComboFilter::ComboFilter(const Filter* a, const Filter* b)
     if (strictBoundsFlag)
     {
         const Box& aBounds = reinterpret_cast<const SpatialFilter*>(a)->bounds();
-        const Box& bBounds = reinterpret_cast<const SpatialFilter*>(a)->bounds();
+        const Box& bBounds = reinterpret_cast<const SpatialFilter*>(b)->bounds();
         bounds_ = Box::simpleIntersection(aBounds, bBounds);
         if (bounds_.isEmpty()) acceptedTypes_ = 0;
-        // If the strict bound shave no overlap, the filter will never match anything
+        // If the strict bound share no overlap, the filter will never match anything
     }
     else
     {
@@ -94,4 +94,33 @@ int ComboFilter::acceptTile(Tile tile) const
     }
     return fast;
 }
+
+
+const RoleFilter* ComboFilter::roleFilter() const
+{
+    for (const Filter* f : filters_)
+    {
+        if (f->isRoleFilter()) return reinterpret_cast<const RoleFilter*>(f);
+    }
+    return nullptr;
+}
+
+// TODO: what if there are multiple RoleFilters?
+const Filter* ComboFilter::withoutRoleFilter() const
+{
+    std::vector<const Filter*> newFilters;
+    for (const Filter* f : filters_)
+    {
+        if (!f->isRoleFilter())
+        {
+            f->addref();
+            newFilters.push_back(f);
+        }
+    }
+    if (newFilters.empty()) [[unlikely]] return nullptr;
+    if (newFilters.size() == 1) return newFilters[0];
+    return new ComboFilter(*this, std::move(newFilters));
+}
+
+
 } // namespace geodesk

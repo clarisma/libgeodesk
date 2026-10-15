@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#ifdef false
+
 #include <clarisma/util/Bytes.h>
 #include <clarisma/data/StringList.h>
 #include <clarisma/data/StringLookup.h>
@@ -116,3 +118,5 @@ private:
 };
 
 } // namespace clarisma
+
+#endif

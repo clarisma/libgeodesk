@@ -56,6 +56,8 @@ class Query : public QueryBase
 public:
     Query(FeatureStore* store, const Box& box, FeatureTypes types, 
         const MatcherHolder* matcher, const Filter* filter); 
+    Query(FeatureStore* store, const Box& box, FeatureTypes types) :
+        Query(store, box, types, store->borrowAllMatcher(), nullptr) {}
     ~Query();
 
     void offer(QueryResults* results);

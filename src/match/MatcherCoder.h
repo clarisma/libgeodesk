@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#ifdef false
 
 // #define ASMJIT_STATIC 
 #include <asmjit/asmjit.h>
@@ -86,3 +87,5 @@ private:
 };
 
 } // namespace geodesk
+
+#endif

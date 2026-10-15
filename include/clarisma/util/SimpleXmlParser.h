@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdlib>
+#include <string_view>
 #include <clarisma/util/Parser.h>
 
 namespace clarisma {

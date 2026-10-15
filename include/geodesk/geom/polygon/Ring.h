@@ -57,7 +57,15 @@ private:
      * (assumes containsBoundsOf() has already been checked)
      */
     bool contains(const Ring* potentialInner) const;
-    PointInPolygon::Location locateCoordinate(Coordinate c) const;
+
+    /**
+     * Determines if the given Coordinate lies OUTSIDE (0),
+     * INSIDE (1) or on the BOUNDARY (-1) of this Ring.
+     *
+     * @param c
+     * @return 0, 1 or -1
+     */
+    int locateCoordinate(Coordinate c) const;
 
     void addInner(Ring* inner)
     {

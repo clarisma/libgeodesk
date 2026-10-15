@@ -7,6 +7,9 @@
 #include <clarisma/util/ShortVarString.h>
 #include <geodesk/feature/FeaturePtr.h>
 #include <geodesk/feature/FeatureStore.h>
+#include <geodesk/filter/RoleFilter.h>
+
+#include "geodesk/filter/ComboFilter.h"
 
 namespace geodesk {
 
@@ -26,18 +29,18 @@ namespace geodesk {
 /// \cond lowlevel
 ///
 
-class MemberIterator : public RelatedIterator<MemberIterator,FeaturePtr,1,2>
+class MemberIteratorBase : public RelatedIterator<MemberIteratorBase,FeaturePtr,1,2>
 {
 public:
-	MemberIterator(FeatureStore* store, DataPtr pMembers,
+	MemberIteratorBase(FeatureStore* store, DataPtr pMembers,
 		FeatureTypes types, const MatcherHolder* matcher, const Filter* filter) :
 		RelatedIterator(store, pMembers, Tex::MEMBERS_START_TEX,
 		matcher, filter),
 		types_(types),
 		currentRoleCode_(0),
-		currentRoleStr_(nullptr)
+		currentRoleStr_(nullptr),
+		roleFilter_(nullptr)
 	{
-		currentMatcher_ = &matcher->mainMatcher(); // TODO: select based on role
 		#ifdef GEODESK_PYTHON
 		// currentRoleObject_ = store->strings().getStringObject(0);
 		// TODO: this bumps the refcount; let's use a "borrow" function instead!
@@ -49,11 +52,23 @@ public:
 		#endif
 	}
 
-	MemberIterator(FeatureStore* store, DataPtr pMembers) :
-		MemberIterator(store, pMembers, FeatureTypes::ALL,
+	void setRoleFilter(const RoleFilter* roleFilter)
+	{
+		if(roleFilter)
+		{
+			roleFilter_ = roleFilter;
+			if (!roleFilter->acceptRole(currentRoleCode_, currentRoleStr_))
+			{
+				currentRoleCode_ = REJECTED_ROLE;
+			}
+		}
+	}
+
+	MemberIteratorBase(FeatureStore* store, DataPtr pMembers) :
+		MemberIteratorBase(store, pMembers, FeatureTypes::ALL,
 		store->borrowAllMatcher(), nullptr) {}
 
-	~MemberIterator()
+	~MemberIteratorBase()
 	{
 		#ifdef GEODESK_PYTHON
 		Py_XDECREF(currentRoleObject_);
@@ -172,39 +187,86 @@ public:
 					Py_DECREF(currentRoleObject_);
 					currentRoleObject_ = nullptr;
 				}
-				// currentRoleObject_ = currentRoleStr_.toStringObject();
-				// assert(currentRoleObject_);
 #endif
 				p_ += 2;
 			}
-			// TODO: we may increase efficiency by only fetching the currentRoleStr_
-			// if the role is accepted by the matcher, but this design is simpler
-
-			// TODO: get matcher for this new role
-			// (null if role is not accepted)
-			// currentMatcher = matcher.acceptRole(role, roleString);
+			if (roleFilter_ && !roleFilter_->acceptRole(currentRoleCode_, currentRoleStr_))
+			{
+				currentRoleCode_ = REJECTED_ROLE;
+			}
 		}
-
-		return currentMatcher_ != nullptr;
+		return currentRoleCode_ != REJECTED_ROLE;
 	}
 
 	bool accept(FeaturePtr feature) const	// CRTP override
 	{
 		if (!types_.acceptFlags(feature.flags())) return false;
-		if (!currentMatcher_->accept(feature)) return false;
-		return filter_ == nullptr || filter_->accept(
+		if (!matcher_->mainMatcher().accept(feature)) return false;
+        return filter_ == nullptr || filter_->accept(
 			store_, feature, FastFilterHint());
 	}
 
 protected:
+	static constexpr int REJECTED_ROLE = -2;
+
 	FeatureTypes types_;
 	int currentRoleCode_;
 	const clarisma::ShortVarString* currentRoleStr_;
+
+private:
+	const RoleFilter* roleFilter_;
 	#ifdef GEODESK_PYTHON
 	PyObject* currentRoleObject_;
 	#endif
-	const Matcher* currentMatcher_;
 };
+
+class MemberIterator : public MemberIteratorBase
+{
+public:
+	MemberIterator(FeatureStore* store, DataPtr pMembers,
+		FeatureTypes types, const MatcherHolder* matcher, const Filter* filter) :
+		MemberIteratorBase(store, pMembers, types, matcher, filter)
+	{
+		if (filter)	[[unlikely]]
+		{
+			const RoleFilter* roleFilter = nullptr;
+			if (filter->isRoleFilter())
+			{
+				roleFilter = reinterpret_cast<const RoleFilter*>(filter);
+				filter_ = nullptr;
+			}
+			else if (filter->isCombo())
+			{
+				// extract RoleFilter from combo
+				const ComboFilter* comboFilter = reinterpret_cast<const ComboFilter*>(filter);
+				roleFilter = comboFilter->roleFilter();
+				if (roleFilter)
+				{
+					ownedFilter_ = comboFilter->withoutRoleFilter();
+					filter_ = ownedFilter_;
+				}
+			}
+			setRoleFilter(roleFilter);
+		}
+	}
+
+	MemberIterator(FeatureStore* store, DataPtr pMembers) :
+		MemberIteratorBase(store, pMembers)
+	{
+	}
+
+	~MemberIterator()
+	{
+		if (ownedFilter_)	[[unlikely]]
+		{
+			ownedFilter_->release();
+		}
+	}
+
+private:
+	const Filter* ownedFilter_ = nullptr;
+};
+
 
 /// \endcond
 } // namespace geodesk

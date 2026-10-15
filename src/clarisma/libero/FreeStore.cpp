@@ -39,7 +39,7 @@ void FreeStore::open(const char* fileName, OpenMode mode)
         {
             if (hasAny(mode, OpenMode::EXCLUSIVE | OpenMode::TRY_EXCLUSIVE))
             {
-                if (!file.tryLock(LOCK_OFS, 3), !writable)
+                if (!file.tryLock(LOCK_OFS, 3, !writable))
                 {
                     if (has(mode, OpenMode::TRY_EXCLUSIVE))
                     {
@@ -55,7 +55,7 @@ void FreeStore::open(const char* fileName, OpenMode mode)
             else
             {
                 // Try to lock for writing
-                if (!file.tryLock(LOCK_OFS + 1, 1), false)
+                if (!file.tryLock(LOCK_OFS + 1, 1, false))
                 {
                     throw FreeStoreException("Store locked");
                 }

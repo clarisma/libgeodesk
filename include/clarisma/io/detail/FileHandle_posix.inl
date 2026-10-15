@@ -435,9 +435,9 @@ inline byte* FileHandle::map(uint64_t offset, uint64_t length, bool writable)
     return static_cast<byte*>(mappedAddress);
 }
 
-inline void FileHandle::unmap(void* address, uint64_t length)
+inline void FileHandle::unmap(const void* address, uint64_t length)
 {
-    munmap(address, length);
+    munmap(const_cast<void*>(address), length);
 }
 
 

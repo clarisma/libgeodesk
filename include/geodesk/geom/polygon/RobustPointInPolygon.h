@@ -1,0 +1,360 @@
+// Copyright (c) 2024 Clarisma / GeoDesk contributors
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#pragma once
+
+#include <geodesk/feature/FastMemberIterator.h>
+#include <geodesk/feature/IntersectingMemberIterator.h>
+#include <geodesk/feature/WayCoordinateIterator.h>
+#include <geodesk/geom/LineSegment.h>
+
+namespace geodesk {
+
+///
+/// \cond lowlevel
+///
+class RobustPointInPolygon
+{
+public:
+	static constexpr int OUTSIDE = 0;
+	static constexpr int INSIDE = 1;
+	static constexpr int BOUNDARY = -1;
+
+	// TODO: Unify the values for OUTSIDE/INSIDE/BOUNDARY
+	//  with those used by MCIndex.
+	//  Idea: use 0 = OUTSIDE, 1 = BOUNDARY, 2 = INSIDE
+	//  we could toggle loc ^= 2, and then allow ContainsFilter
+	//  to test for minimum location: 1 => BOUNDARY or INSIDE,
+	//  2 => INSIDE only
+
+
+
+	/// Tests the location of a point relative to a chain of
+	/// coordinates: OUTSIDE (0), INSIDE (1) or BOUNDARY (-1).
+	///
+	/// This method works for both fully-closed individual
+	/// polygons and linestrings that make up the exterior
+	/// of the polygon (in which case the result of individual
+	/// linestrings must be combined with `^` after checking
+	/// first for BOUNDARY (-1), which short-circuits testing of
+	/// further linestrings.)
+	///
+	/// The supplied `Iterator` must implement a `next()` method
+	/// that supplies the next coordinate. A `null` `Coordinate`
+	/// ends the linestring. The `Iterator` must supply at least
+	/// one `Coordinate`, or the behavior of this method is undefined.
+	///
+	/// @param iter an object that supplies polygon Coordinates via `next()`
+	/// @param pt the Coordinate to test
+	///
+	/// @return OUTSIDE (0) if `pt` lies outside
+	///			INSIDE(1) if `pt` lies inside
+	///		    BOUNDARY(-1) if `pt` lies on the boundary
+	///
+	/// TODO: Cannot use CoordinateSpanIterator for this,
+	///  because it terminates iteration differently
+	///
+	template<typename Iterator>
+	static int classifyBoundaryChain(Iterator& iter, Coordinate pt) noexcept
+	{
+		Coordinate prev = iter.next();
+		int odd = 0;
+		assert(!prev.isNull());
+		for (;;)
+		{
+			Coordinate next = iter.next();
+			if (next.isNull()) break;
+			Coordinate lower = prev.y < next.y ? prev : next;
+			Coordinate upper = prev.y < next.y ? next : prev;
+
+			// Both boundary membership and ray crossing require the
+            // point to lie within the edge's inclusive vertical range.
+
+			if (pt.y >= lower.y && pt.y <= upper.y)
+            {
+	            const std::int32_t minX =
+					std::min(lower.x, upper.x);
+            	const std::int32_t maxX =
+					std::max(lower.x, upper.x);
+
+            	// The half-open Y interval excludes the upper endpoint from
+				// the crossing count.
+
+            	const bool crossesY = pt.y < upper.y;
+
+            	if (pt.x < minX)
+            	{
+            		// The complete edge lies east of the point, so an active
+            		// edge necessarily crosses the eastward ray.
+
+            		odd ^= static_cast<int>(crossesY);
+            	}
+            	else if (pt.x <= maxX)
+            	{
+            		const std::uint64_t dy =
+						static_cast<std::uint64_t>(
+							static_cast<std::int64_t>(upper.y) -
+							lower.y);
+            		const std::uint64_t py =
+						static_cast<std::uint64_t>(
+							static_cast<std::int64_t>(pt.y) -
+							lower.y);
+
+            		std::uint64_t dx;
+            		std::uint64_t px;
+            		bool crosses;
+
+            		if (lower.x <= upper.x)
+            		{
+            			dx = static_cast<std::uint64_t>(
+							static_cast<std::int64_t>(upper.x) -
+							lower.x);
+            			px = static_cast<std::uint64_t>(
+							static_cast<std::int64_t>(pt.x) -
+							lower.x);
+
+            			const std::uint64_t left = dx * py;
+            			const std::uint64_t right = dy * px;
+
+            			if (left == right) return -1;
+
+            			crosses = left > right;
+            		}
+            		else
+            		{
+            			dx = static_cast<std::uint64_t>(
+							static_cast<std::int64_t>(lower.x) -
+							upper.x);
+            			px = static_cast<std::uint64_t>(
+							static_cast<std::int64_t>(lower.x) -
+							pt.x);
+
+            			const std::uint64_t left = dx * py;
+            			const std::uint64_t right = dy * px;
+
+            			if (left == right) return -1;
+
+            			crosses = right > left;
+            		}
+
+            		odd ^= static_cast<int>(crossesY && crosses);
+            	}
+            }
+			prev = next;
+		}
+		return odd;
+	}
+
+	/// Combines the INNER/OUTER results of two segment checks
+	/// (It is not suitable for BOUNDARY, which should be treated
+	/// as a conclusive result)
+	///
+	static int combineResult(int a, int b) noexcept
+	{
+		assert(a == 0 || a == 1);
+		assert(b == 0 || b == 1);
+		return a ^ b;
+	}
+
+	/// Tests the location of a point relative to `way` that
+	/// is either an area way or an inner/outer member way
+	/// of a relation.
+	///
+	/// @param way
+	/// @param pt the Coordinate to test
+	///
+	/// @return OUTSIDE (0) if `pt` lies outside
+	///			INSIDE(1) if `pt` lies inside
+	///		    BOUNDARY(-1) if `pt` lies on the boundary
+	///
+	///	This method does not consider the way's bbox for
+	///	shortcuts; it assumes the caller has already performed
+	///	any appropriate bbox shortcuts.
+	///
+	static int classifyBoundaryWay(const WayPtr way, Coordinate pt) noexcept
+	{
+		// Not strictly needed, but the equivalent of
+		// classifyBoundaryWay() previously performed this
+		// shortcut test, which now should be done by the client
+		// (we omit it here because the client may have performed
+		// an equivalent shortcut check); we only assert to avoid
+		// a performance regression
+
+		// assert(mustClassifyBoundaryWay(way, pt));  // TODO
+
+		WayCoordinateIterator iter(way);
+		return classifyBoundaryChain(iter, pt);
+	}
+
+	/// Checks if a full classification of a boundary way is needed
+	/// based on its bounding box. If way is an area polygon, a return
+	/// value of `false` means the point lies outside the polygon.
+	///
+	/// @param way
+	/// @param pt
+	///
+	/// @return true if a call to classifyBoundaryWay() is required,
+	///    or false if the crossing-ray does not pass through the way's
+	///    bbox (so `pt` cannot be INSIDE or on the way's BOUNDARY)
+	///
+	static bool mustClassifyBoundaryWay(const WayPtr way, Coordinate pt) noexcept
+	{
+		Box bounds = way.bounds();
+		return pt.y >= bounds.minY() && pt.y <= bounds.maxY();
+	}
+
+	// TODO: create a common MemberIteratorBase
+	// TODO: restrict to inner/outer
+	class PipMemberIterator : public RelatedIteratorBase<PipMemberIterator,FeaturePtr,1,2>
+	{
+	public:
+		PipMemberIterator(FeatureStore* store, RelationPtr relation, Coordinate pt) :
+			RelatedIteratorBase(store, relation.bodyptr(), Tex::MEMBERS_START_TEX),
+			pt_(pt)
+		{
+		}
+
+		bool readAndAcceptRole()    // CRTP override
+		{
+			if (member_ & MemberFlags::DIFFERENT_ROLE)
+			{
+				int rawRole = p_.getUnsignedShort();
+				p_ += (rawRole & 1) ? 2 : 4;
+			}
+			return true;
+		}
+
+		bool acceptTile(Tip tip) const    // CRTP override
+		{
+			// The test ray runs right from the test point,
+			// so we don't need to consider tiles to the left
+			//
+			// Otherwise, we only consider tiles through which
+			// the ray actually passes, and any tile immediately
+			// above or below it (to catch twin-tile ways)
+
+			Tile tile = store_->reverseTileIndex().lookupFast(tip);
+			int extent = 1 << tile.zoom();
+			int rightCol = std::min(extent - 1, tile.column() + 1);
+			if (pt_.x > Tile::fromColumnRowZoom(rightCol, 0,
+				    tile.zoom()).rightX())
+			{
+				return false;
+			}
+
+			int topRow = std::max(1, tile.row()) - 1;
+			int bottomRow = std::min(extent - 1, tile.row() + 1);
+			int topY = Tile::fromColumnRowZoom(
+				0, topRow, tile.zoom()).topY();
+			int bottomY = Tile::fromColumnRowZoom(
+				0, bottomRow, tile.zoom()).bottomY();
+			return pt_.y >= bottomY && pt_.y <= topY;
+		}
+
+	private:
+		Coordinate pt_;
+	};
+
+	/// Tests the location of a point relative to `rel`.
+	/// If any of the relation's members were skipped due to
+	/// missing tiles, the result is OUTSIDE, unless the point
+	/// is located on the boundary of a present member way
+	/// (This avoids INSIDE being falsely reported for incomplete
+	/// relation geometries caused by missing tiles -- see #43)
+	///
+	/// @param store
+	/// @param rel
+	/// @param pt the Coordinate to test
+	///
+	/// @return OUTSIDE (0) if `pt` lies outside
+	///			INSIDE(1) if `pt` lies inside
+	///		    BOUNDARY(-1) if `pt` lies on the boundary
+	///
+	///	This method does not consider the way's bbox for
+	///	shortcuts; it assumes the caller has already performed
+	///	any appropriate bbox shortcuts.
+	///
+	static int classifyAreaRelation(FeatureStore* store, const RelationPtr rel, Coordinate pt)
+	{
+		assert(rel.isArea());
+		int loc = 0;
+		IntersectingMemberIterator iter(store, rel, Box(
+		 	pt.x, pt.y, INT_MAX, pt.y),
+		 	Box::ofWorld());
+			// We don't pass the actual relation bounds, because
+			// tile culling is only skipped if the relation lies
+			// fully within the query bounds (and the query bounds
+			// here are the ray, which won't contain any actual
+			// relation)
+
+		// PipMemberIterator iter(store, rel, pt);
+		// FastMemberIterator iter(store, rel);
+			// The "fast" iterator is actually the slower one
+			// TODO: constrain roles to outer/inner?
+		for (;;)
+		{
+			FeaturePtr member = iter.next();
+			if (member.isNull()) break;
+			if (!member.isWay()) continue;
+			WayPtr way(member);
+			if (way.isPlaceholder()) continue;
+			// TODO: do we need to check for inner/outer role?
+			// Can we establish that area relations must
+			// not have non-boundary ways?
+			// No, admin areas often have sub-areas, which could be ways
+			if (mustClassifyBoundaryWay(way, pt))
+			{
+				// Shortcut: We only consider the way if the horizontal
+				// crossing ray passes through its bbox
+				// (Note: we cannot check if the x-coordinate lies within
+				// the bbox, because we need to treat the member way
+				// as merely a boundary instead of a complete polygon)
+
+				int memberLoc = classifyBoundaryWay(way, pt);
+				if (memberLoc == BOUNDARY) return BOUNDARY;
+				loc = combineResult(loc, memberLoc);
+			}
+		}
+		return loc & static_cast<int>(!iter.anyTilesMissing());
+	}
+
+
+	/*
+	template<typename Iterator>
+	static int isInsideNonRobust(Iterator& iter, Coordinate pt)
+	{
+		double px = pt.x;
+		double py = pt.y;
+		Coordinate prev = iter.next();
+		int odd = 0;
+		assert(!prev.isNull());
+		for (;;)
+		{
+			Coordinate next = iter.next();
+			if (next.isNull()) break;
+			Coordinate c1 = prev.y < next.y ? prev : next;
+			Coordinate c2 = prev.y < next.y ? next : prev;
+			if (pt.y >= c1.y && pt.y < c2.y)
+			{
+				double x1 = c1.x;
+				double y1 = c1.y;
+				double x2 = c2.x;
+				double y2 = c2.y;
+
+				// compute edge-ray intersect x-coordinate
+				double vt = (py - y1) / (y2 - y1);
+				if (px < x1 + vt * (x2 - x1)) // P.x < intersect
+				{
+					odd ^= 1;
+				}
+			}
+			prev = next;
+		}
+		return odd;
+	}
+	*/
+};
+
+/// \endcond
+
+} // namespace geodesk

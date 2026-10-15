@@ -14,6 +14,8 @@ struct QueryResults;
 
 /// \cond lowlevel
 
+// TODO: This wastes 4 bytes due to padding
+//  Either consolidate, or put the TIP into the extra slot
 struct QueryResultsHeader
 {
     QueryResults* next;

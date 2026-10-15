@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <functional>
 #include <geodesk/feature/types.h>
 #include <clarisma/compile/unreachable.h>
 #include <clarisma/text/Format.h>

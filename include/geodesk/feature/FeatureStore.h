@@ -6,10 +6,10 @@
 #include <memory>
 #include <mutex>
 #include <span>
-#include <unordered_map>
 #ifdef GEODESK_PYTHON
 #include <Python.h>
 #endif
+#include <clarisma/data/HashMap.h>
 #include <clarisma/libero/FreeStore.h>
 #include <clarisma/thread/ThreadPool.h>
 #include <clarisma/util/DateTime.h>
@@ -17,6 +17,7 @@
 #include <geodesk/export.h>
 #include <geodesk/feature/Key.h>
 #include <geodesk/feature/StringTable.h>
+#include <geodesk/feature/ReverseTileIndex.h>
 #include <geodesk/feature/TilePtr.h>
 #include <geodesk/feature/ZoomLevels.h>
 #include <geodesk/match/Matcher.h>
@@ -49,7 +50,7 @@ using clarisma::DateTime;
 class GEODESK_API FeatureStore final : public clarisma::FreeStore
 {
 public:
-    using IndexedKeyMap = std::unordered_map<uint16_t, uint16_t>;
+    using IndexedKeyMap = clarisma::HashMap<uint16_t, uint16_t>;
 
     struct Settings
     {
@@ -72,6 +73,8 @@ public:
         uint32_t reserved[8];
     };
 
+    static constexpr size_t MAX_URL_LENGTH = 245;
+
     struct Header : FreeStore::Header
     {
         enum Flags
@@ -91,7 +94,7 @@ public:
         uint32_t reserved[2];
         Snapshot snapshots[2];
         uint8_t urlLength;
-        char url[245];
+        char url[MAX_URL_LENGTH];
         uint8_t unused[2];
     };
 
@@ -163,6 +166,11 @@ public:
     DataPtr tileIndex() const noexcept { return DataPtr(reinterpret_cast<byte*>(tileIndex_)); }
         // TODO: standardize on const uint32_t*?
     int tipCount() const noexcept { return header()->tipCount; }
+    const ReverseTileIndex& reverseTileIndex() const { return reverseTileIndex_; }
+    std::string_view replicationUrl() const
+    {
+        return { header()->url, header()->urlLength };
+    }
 
     #ifdef GEODESK_PYTHON
     PyObject* getEmptyTags();
@@ -198,7 +206,7 @@ private:
 
     void readIndexSchema(DataPtr pSchema);
 
-    static std::unordered_map<std::string, FeatureStore*>& getOpenStores();
+    static clarisma::HashMap<std::string, FeatureStore*>& getOpenStores();
     static std::mutex& getOpenStoresMutex();
 
 #ifdef GEODESK_MULTITHREADED
@@ -225,6 +233,7 @@ private:
     ZoomLevels zoomLevels_;
     std::unique_ptr<IdIndex> idIndex_;
     mutable std::once_flag idIndexInitFlag_;
+    ReverseTileIndex reverseTileIndex_;
 
     friend class Transaction;
 };

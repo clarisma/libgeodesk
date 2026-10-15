@@ -12,7 +12,11 @@
 #define CLARISMA_TARGET_ARM_CRC
 #elif defined(__GNUC__) || defined(__clang__)
 // GCC/Clang: enable intrinsics only for these functions
+#if defined(__x86_64__) || defined(_M_X64)
 #define CLARISMA_TARGET_SSE42 __attribute__((target("sse4.2")))
+#else
+#define CLARISMA_TARGET_SSE42
+#endif
 #if defined(__aarch64__) || defined(_M_ARM64)
   // On AArch64, CRC is an optional extension; enable just for armRaw
   #define CLARISMA_TARGET_ARM_CRC __attribute__((target("+crc")))

@@ -98,7 +98,7 @@ void FeatureStore::Transaction::setup(
 
 void FeatureStore::Transaction::putTile(Tip tip, std::span<const uint8_t> data)
 {
-	// TODO: Free existing tile
+	// TODO: Free existing tile here?
 
 	TileIndexEntry prevEntry(tileIndex_[tip]);
 	uint32_t page = addBlob(data);
@@ -144,6 +144,14 @@ void FeatureStore::Transaction::commit(bool isFinal)
 	FreeStore::Transaction::commit(isFinal);
 }
 
+// TODO: compare URLs and mark tx as dirty if changed
+void FeatureStore::Transaction::setReplicationUrl(std::string_view url)
+{
+	memset(header().url, 0, MAX_URL_LENGTH);
+	size_t len = std::min(url.length(), MAX_URL_LENGTH);
+	memcpy(header().url, url.data(), len);
+	header().urlLength = static_cast<uint8_t>(len);
+}
 
 } // namespace geodesk
 

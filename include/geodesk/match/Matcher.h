@@ -127,7 +127,7 @@ public:
 
     bool acceptIndex(FeatureIndexType index, uint32_t keys) const
     {
-        assert(index >= 0 && index <= 4);
+        assert(index >= 0 && index < 4);
         const IndexMask& mask = indexMasks_[index];
         return ((keys & mask.keyMask) >= mask.keyMin);
     }

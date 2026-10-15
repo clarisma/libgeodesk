@@ -48,7 +48,10 @@ Selector* MatcherParser::expectSelector()
 		TagClause* clause = expectTagClause();
 		expect(']');
 		sel->addClause(clause);
-		indexBits_ |= sel->indexBits; // TODO
+		uint32_t indexBits = sel->indexBits;
+		indexBits_ |= indexBits;
+		if(indexBits < keyMin_) keyMin_ = indexBits;
+			// TODO: Consider breaking out keyMask/keyMin by feature type
 	}
 	return sel;
 }

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <clarisma/text/Format.h>
 #include <clarisma/util/streamable.h> // for << operator support
 

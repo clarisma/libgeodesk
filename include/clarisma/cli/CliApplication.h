@@ -16,6 +16,12 @@ public:
 
 	void run(int argc, char* argv[]);
 
+	bool allowTermination() const { return allowTermination_; }
+	void setAllowTermination(bool allowTermination)
+	{
+		allowTermination_ = allowTermination;
+	}
+
 	ConsoleWriter& out() { return out_; }
 	static CliApplication* get() { return theApp_; }
 
@@ -26,6 +32,7 @@ public:
 protected:
 	Console console_;
 	ConsoleWriter out_;		// TODO: not needed
+	bool allowTermination_ = true;
 
 	static CliApplication* theApp_;
 };

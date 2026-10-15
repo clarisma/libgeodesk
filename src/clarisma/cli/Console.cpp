@@ -203,6 +203,8 @@ char* Console::formatStatus(char* buf, int secs, int percentage, const char* tas
 
 void Console::setProgress(int percentage)
 {
+	assert(percentage >= 0 && percentage <= 100);
+
 	if(consoleState_ < ConsoleState::PROGRESS)	[[unlikely]]
 	{
 		return;

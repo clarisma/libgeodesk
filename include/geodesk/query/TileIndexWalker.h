@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <unordered_set>
+#include <clarisma/data/HashSet.h>
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/feature/TileIndexEntry.h>
 #include <geodesk/feature/Tip.h>
@@ -98,7 +98,7 @@ private:
     uint32_t turboFlags_;
     bool tileBasedAcceleration_;
     bool trackAcceptedTiles_;
-    std::unordered_set<Tile> acceptedTiles_;
+    clarisma::HashSet<Tile> acceptedTiles_;
     Level levels_[MAX_LEVELS-1];
         // -1 because leaf tiles don't need a Level
 };

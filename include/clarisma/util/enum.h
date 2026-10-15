@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#include <cstdint>
 #include <type_traits>
 
 #define CLARISMA_ENUM_FLAGS(EnumType)                                        \

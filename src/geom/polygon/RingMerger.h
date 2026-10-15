@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <clarisma/data/HashMap.h>
 #include <geodesk/geom/polygon/Polygonizer.h>
 #include <geodesk/geom/polygon/Ring.h>
 #include "Segment.h"
 #include <geodesk/geom/LineSegment.h>
-#include <unordered_map>
 
 namespace geodesk {
 
@@ -45,7 +45,7 @@ private:
         }
 
     private:
-        std::unordered_map<LineSegment, int> counts_;
+        clarisma::HashMap<LineSegment, int> counts_;
     };
 
     class SegmentCollector

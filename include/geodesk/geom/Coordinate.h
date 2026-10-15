@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <functional>	// for std::hash
 #include <geodesk/geom/Mercator.h>
@@ -45,6 +46,16 @@ public:
 	/// @brief The Y-coordinate, converted to latitude (WGS-84)
 	///
 	double lat() const noexcept { return Mercator::latFromY(y); }
+
+	void translateX(int64_t deltaX)
+	{
+		x = static_cast<int32_t>(static_cast<int64_t>(x) + deltaX);
+	}
+
+	void translateY(int64_t deltaY)
+	{
+		y = static_cast<int32_t>(static_cast<int64_t>(y) + deltaY);
+	}
 
 	/// @brief Checks whether both X and Y are `0`.
 	///

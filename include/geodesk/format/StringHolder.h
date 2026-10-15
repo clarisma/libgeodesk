@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <clarisma/math/Decimal.h>
 #include <clarisma/util/ShortVarString.h>

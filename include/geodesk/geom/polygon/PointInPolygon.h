@@ -7,10 +7,16 @@
 #include <geodesk/feature/WayCoordinateIterator.h>
 #include <geodesk/geom/LineSegment.h>
 
+// Use RobustPointInPolygon
+
+#ifdef false
+
 namespace geodesk {
 
 ///
 /// \cond lowlevel
+///
+/// TODO: replace with PointInPolygon2
 ///
 class PointInPolygon
 {
@@ -35,6 +41,12 @@ public:
 	 * the given way. Shortcuts if point lies on boundary.
 	 * 
 	 * @return true if point lies on boundary, else false.
+	 *
+	 * TODO: use half-open rule to match MCIndex::countCrossings
+	 *  (only count either the upper or lower vertex)
+	 *   No, that's the whole point of the "1-point for vertex,
+	 *    2 points for segment" rule so we don't double-count
+	 *  TODO: verify horizontal ways
 	 */
 	bool testAgainstWay(const WayPtr way)
 	{
@@ -55,7 +67,9 @@ public:
 			// we normalize the vector so it always points upwards
 			Coordinate start = prev.y < next.y ? prev : next;
 			Coordinate end = prev.y < next.y ? next : prev;
-			
+
+			// TODO: (point_.y >= start.y && point_.y < end.y)
+			//  and get rid of the half-counts
 			if (point_.y >= start.y && point_.y <= end.y)
 			{
 				// TODO: this could be more efficient
@@ -98,3 +112,5 @@ private:
 /// \endcond
 
 } // namespace geodesk
+
+#endif

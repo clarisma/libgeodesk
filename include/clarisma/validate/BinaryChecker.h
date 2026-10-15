@@ -5,6 +5,7 @@
 #include <clarisma/validate/Checker.h>
 #include <clarisma/validate/Validate.h>
 #include <clarisma/util/varint_safe.h>
+#include <clarisma/util/varint.h>
 
 namespace clarisma {
 
@@ -23,6 +24,12 @@ protected:
     const uint8_t* start() const { return start_; };
     const uint8_t* end() const { return end_; };
 
+    const uint8_t* moveTo(const uint8_t* p)
+    {
+        const uint8_t* old = p_;
+        p_ = p;
+        return old;
+    }
     void mark() { mark_ = p_; }
 
     template <typename... Args>
@@ -67,7 +74,7 @@ protected:
         const uint8_t* p = p_;
         try
         {
-            return clarisma::safeReadVarint32(p_, end_);
+            return safeReadVarint32(p_, end_);
         }
         catch(std::runtime_error& e)
         {
@@ -82,13 +89,18 @@ protected:
         const uint8_t* p = p_;
         try
         {
-            return clarisma::safeReadVarint64(p_, end_);
+            return safeReadVarint64(p_, end_);
         }
         catch(std::runtime_error& e)
         {
             fatal(p, e.what());
             return 0;
         }
+    }
+
+    int64_t readSignedVarint64()
+    {
+        return fromZigzag(readVarint64());
     }
 
     const ShortVarString* readString()

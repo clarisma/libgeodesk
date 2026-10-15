@@ -44,9 +44,9 @@ public:
 		return currentOfs_ + (static_cast<int_fast32_t>(member_) >> 1);
 	}
 
-	DataPtr ptr() const { return pTile_ + ofs_; }
+	clarisma::DataPtr ptr() const { return pTile_ + ofs_; }
 	int_fast32_t currentOfs() const { return currentOfs_;  }
-	DataPtr currentPtr() const { return pTile_ + currentOfs_; }
+	clarisma::DataPtr currentPtr() const { return pTile_ + currentOfs_; }
 
 protected:
 	bool isLast() const

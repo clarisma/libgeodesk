@@ -60,10 +60,17 @@ public:
 	Tile second() const
 	{
 		return first().relative(
-			(tile_ >> EXTENDS_EAST_BIT) & 1,
-			tile_ >> EXTENDS_SOUTH_BIT);
+			static_cast<int>((tile_ >> EXTENDS_EAST_BIT) & 1),
+			static_cast<int>(tile_ >> EXTENDS_SOUTH_BIT));
 	}
 
+	Tile operator[](size_t index) const
+	{
+		assert(index==0 || index==1);
+		return first().relative(
+			static_cast<int>((tile_ >> EXTENDS_EAST_BIT) & index),
+			static_cast<int>((tile_ >> EXTENDS_SOUTH_BIT) & index));
+	}
 	
 	TilePair& operator+=(const TilePair& other)
 	{

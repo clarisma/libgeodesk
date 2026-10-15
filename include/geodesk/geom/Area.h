@@ -41,6 +41,16 @@ public:
      */
     static double ofRelation(FeatureStore* store, RelationPtr relation);
 
+	/**
+	 * Returns the area (in square meters) of the given feature.
+	 */
+	static double ofFeature(FeatureStore* store, FeaturePtr feature)
+	{
+		if (!feature.isArea()) return 0;
+		if (feature.isWay()) return ofWay(WayPtr(feature));
+		return ofRelation(store, RelationPtr(feature));
+	}
+
 private:
 	template<typename Iter>
 	static double signedMercatorOfAbstractRing(Iter& iter)

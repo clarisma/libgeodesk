@@ -3,6 +3,8 @@
 
 #include <geodesk/filter/SpatialFilter.h>
 #include <geodesk/feature/FastMemberIterator.h>
+#include <geodesk/feature/IntersectingMemberIterator.h>
+#include <clarisma/util/log.h>
 
 namespace geodesk {
 
@@ -22,7 +24,16 @@ bool SpatialFilter::acceptFeature(FeatureStore* store, FeaturePtr feature) const
 // TODO: check member bboxes as a quick way to eliminate
 bool SpatialFilter::acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
 {
-	FastMemberIterator iter(store, relation);
+	// TODO: We could split into two paths: Use
+	//  IntersectingMemberIterator only if the relation bbox
+	//  extends beyond the query bbox (and check member bboxes
+	//  prior to eact test), otherwise use a simple iterator
+	//  (and don't check member bboxes, since all of them
+	//  will lie fully inside the query bbox)
+
+	// FastMemberIterator iter(store, relation);
+	IntersectingMemberIterator iter(store, relation,
+		bounds(), relation.bounds());
 	for (;;)
 	{
 		FeaturePtr member = iter.next();
@@ -43,6 +54,10 @@ bool SpatialFilter::acceptMembers(FeatureStore* store, RelationPtr relation, Rec
 		}
 		else
 		{
+			if (memberType != 2)
+			{
+				LOGS << "Invalid member in relation/" << relation.id();
+			}
 			assert(memberType == 2);
 			if(guard)
 			{

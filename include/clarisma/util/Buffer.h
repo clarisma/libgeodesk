@@ -114,7 +114,7 @@ protected:
 	void ensureCapacityUnsafe(size_t len)
 	{
 		// We never fully fill a buffer
-		if (capacityRemaining() < len) filled(p_);
+		if (capacityRemaining() <= len) filled(p_);
 		assert(capacityRemaining() > len);
 	}
 
@@ -194,6 +194,7 @@ public:
 private:
 	FILE* file_;
 };
+
 
 inline Buffer& operator<<(Buffer& buf, std::string_view s)
 {

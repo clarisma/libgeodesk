@@ -5,7 +5,7 @@
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/feature/FastMemberIterator.h>
 #include <geodesk/feature/WayPtr.h>
-#include <geodesk/geom/polygon/PointInPolygon.h>
+#include <geodesk/geom/polygon/RobustPointInPolygon.h>
 #include <geodesk/geom/Distance.h>
 
 namespace geodesk {
@@ -52,21 +52,16 @@ bool PointDistanceFilter::isWithinDistance(WayPtr way) const
     if (way.isArea())
     {
         if (segmentsWithinDistance(way, FeatureFlags::AREA)) return true;
+
         // The distance of a point that lies within a polygon is zero;
         // we need to perform p-in-p check because the edges themselves
         // may be far away from the comparison point
-        // TODO: check bbox first?
+
         Box bounds = way.bounds();
         if (!bounds.contains(point_)) return false;
-        PointInPolygon pip(point_);
-        pip.testAgainstWay(way);
-        return pip.isInside();
-        /*
-        if (point_.y >= bounds.minY() && point_.y <= bounds.maxY())
-        {
-            return way.containsPointFast(point_.x, point_.y);
-        }
-        */
+
+        return RobustPointInPolygon::classifyBoundaryWay(way, point_) !=
+            RobustPointInPolygon::OUTSIDE;
     }
     return segmentsWithinDistance(way, 0);
 }
@@ -76,8 +71,8 @@ bool PointDistanceFilter::isAreaWithinDistance(FeatureStore* store, RelationPtr 
 {
     // measure distance to the ways that define shell and holes, and
     // also perform point in polygon test
-    int odd = 0;
-    PointInPolygon pip(point_);
+    int loc = 0;
+
     FastMemberIterator iter(store, relation);
     for (;;)
     {
@@ -88,20 +83,16 @@ bool PointDistanceFilter::isAreaWithinDistance(FeatureStore* store, RelationPtr 
         if (memberWay.isPlaceholder()) continue;
         int memberFlags = member.flags();
         if (segmentsWithinDistance(memberWay, memberFlags)) return true;
-        /*
-        Box bounds = memberWay.bounds();
-        if (point_.y >= bounds.minY() && point_.y <= bounds.maxY())
+        if (RobustPointInPolygon::mustClassifyBoundaryWay(memberWay, point_))
         {
-            odd ^= memberWay.containsPointFast(point_.x, point_.y);
-            LOG("odd = %d", odd);
+            int memberLoc = RobustPointInPolygon::classifyBoundaryWay(memberWay, point_);
+            loc = RobustPointInPolygon::combineResult(loc, memberLoc);
         }
-        */
-        // No bbox check needed, testAgainstWay() does it
-        pip.testAgainstWay(memberWay);
     }
-    // LOG("final odd = %d", odd);
-    // return odd != 0;
-    return pip.isInside();
+    return loc != RobustPointInPolygon::OUTSIDE;
+        // INSIDE or BOUNDARY
+        // TODO: It can't be BOUNDARY, because we'd get a distance of 0,
+        //  so may be just check for INSIDE (which is 1, i.e. true)
 }
 
 

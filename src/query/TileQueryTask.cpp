@@ -94,7 +94,7 @@ void TileQueryTask::searchNodeLeaf(DataPtr p)
 	for (;;)
 	{
 		int32_t flags = (p+8).getInt();
-		if (box.contains(p.getInt(), (p+4).getInt()))
+		if (box.contains(p.getInt(), (p+4).getInt()))	// TODO: Use containsSimple() for efficiency?
 		{
 			if (acceptedTypes.acceptFlags(flags))
 			{

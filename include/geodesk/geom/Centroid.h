@@ -27,6 +27,9 @@ private:
 	public:
 		Areal() : areaSum_(0), areaCentroidX_(0), areaCentroidY_(0) {}
 
+		// TODO: mishandles clockwise-wound holes
+		//  make the sign depend on both factors, e.g. sign = (isShell ? 1.0 : -1.0) * (ringSum >= 0 ? 1.0 : -1.0)
+
 		template<typename Iter>
 		void addRing(Iter& iter, bool isShell)
 		{

@@ -15,6 +15,8 @@ BOOL WINAPI consoleHandler(DWORD signal)
 {
 	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT)
 	{
+		if (!CliApplication::get()->allowTermination()) return TRUE;
+
 		CliApplication::shutdown("Cancelled.");
 		// Unregister the handler to avoid further signals during cleanup
 		SetConsoleCtrlHandler(consoleHandler, FALSE);

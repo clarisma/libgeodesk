@@ -5,7 +5,9 @@
 
 #include <algorithm> // For std::swap
 #include <cmath>
+#include <cstddef>
 #include <functional> // For std::function
+#include <stack>
 
 namespace clarisma {
 

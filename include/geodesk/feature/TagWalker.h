@@ -52,6 +52,11 @@ public:
 		//   Move pointer to the next tag (bit 1 indicates whether value is
 		//   2 or 4 bytes wide)
 		p_ = lastFlag ? (tags_.hasLocalKeys() ? (tags_.ptr() - 6) : DataPtr()) : (p_ + 4 + (tag & 2));
+		if (keyCode_ == 0) [[unlikely]]
+		{
+			if (tags_.hasLocalKeys()) return next();
+			return false;
+		}
 		return true;
 	}
 
@@ -78,6 +83,11 @@ public:
 	const clarisma::ShortVarString* globalStringValueFast() const
 	{
 		return tags_.globalString(value_, strings_);
+	}
+
+	uint32_t narrowValueFast() const
+	{
+		return tags_.rawNarrowValue(value_);
 	}
 
 	const clarisma::ShortVarString* localStringValueFast() const

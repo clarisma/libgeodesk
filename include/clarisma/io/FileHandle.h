@@ -63,27 +63,12 @@ public:
 
     /// @brief Copyable: copies the same native handle (no ownership).
     FileHandle(const FileHandle&) = default;
-
-    /// @brief Move-construct; steals the native handle and invalidates @p other.
-    FileHandle(FileHandle&& other) noexcept :
-        handle_(other.handle_)
-    {
-        other.handle_ = INVALID;
-    }
+    FileHandle(FileHandle&&) noexcept = default;
 
     /// @brief Copy-assign: aliases the same native handle (no ownership).
-    FileHandle& operator=(const FileHandle&) = default;
-
-    /// @brief Move-assign; steals the native handle and invalidates @p other.
-    FileHandle& operator=(FileHandle&& other) noexcept
-    {
-        if (this != &other)
-        {
-            handle_ = other.handle_;
-            other.handle_ = INVALID;
-        }
-        return *this;
-    }
+    FileHandle& operator=(const FileHandle&) noexcept = default;
+    /// @brief Move-assign; aliases the same native handle (no ownership).
+    FileHandle& operator=(FileHandle&& other) noexcept = default;
 
     // Keep the values of READ,WRITE and CREATE stable for
     // use in other classes
@@ -271,9 +256,9 @@ public:
     std::string fileName() const;
 
     void makeSparse();
-    void allocate(uint64_t ofs, size_t length);
-    void deallocate(uint64_t ofs, size_t length);
-    void zeroFill(uint64_t ofs, size_t length);
+    void allocate(uint64_t ofs, uint64_t length);
+    void deallocate(uint64_t ofs, uint64_t length);
+    void zeroFill(uint64_t ofs, uint64_t length);
 
     /// @brief Attempts to lock the specified region without
     /// blocking.
@@ -300,7 +285,7 @@ public:
     bool tryUnlock(uint64_t ofs, uint64_t length);
 
     byte* map(uint64_t offset, uint64_t length, bool writable = false);
-    static void unmap(void* address, uint64_t length);
+    static void unmap(const void* address, uint64_t length);
 
 protected:
     Native handle_ = INVALID;

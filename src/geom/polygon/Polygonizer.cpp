@@ -76,6 +76,16 @@ void Polygonizer::createRings(FeatureStore* store, RelationPtr relation)
         // are always global strings (may not be the case for very small
         // datasets where their string count falls below the minimum)
 
+        // TODO: In 2.0, "outer" and "inner" are fixed global codes
+        //  RoleFilter would be overkill here, as we already get
+        //  rid of label and admin_centre nodes and sub-areas by
+        //  only requesting ways
+        //   No! Type check requires fetching the feature, so
+        //   a RoleFilter would still be beneficial
+        //   Since MemberIterator is templated, the compiler should
+        //   be able to devirtualize the call to acceptRole()
+        //   better yet, subclass MemberIterator
+
         std::string_view role = iter.currentRole();
         if (role == "outer")
         {

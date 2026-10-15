@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <vector>
 #include <clarisma/io/File.h>
 #include <clarisma/io/FileBuffer3.h>
 #include <clarisma/io/MemoryMapping.h>
@@ -70,6 +71,13 @@ public:
 	uint64_t allocatedSize() const
 	{
 		return file_.allocatedSize();
+	}
+
+	void deallocate(uint32_t firstPage, uint32_t pageCount)
+	{
+		file_.deallocate(
+			static_cast<uint64_t>(firstPage) << pageSizeShift_,
+			static_cast<uint64_t>(pageCount) << pageSizeShift_);
 	}
 
 protected:

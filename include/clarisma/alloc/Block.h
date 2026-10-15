@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <memory>
 #include <span>
 #include <utility>

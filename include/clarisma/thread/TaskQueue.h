@@ -4,9 +4,10 @@
 #pragma once
 
 #include <cassert>
-#include <vector>
 #include <condition_variable>
 #include <functional>
+#include <mutex>
+#include <vector>
 #include <clarisma/util/log.h>
 
 namespace clarisma {

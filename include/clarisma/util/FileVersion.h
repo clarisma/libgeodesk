@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <clarisma/text/Format.h>
 #include <clarisma/util/streamable.h> // for << operator support
 

@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <clarisma/util/DataPtr.h>
-#include <geodesk/feature/TileConstants.h>
+#include <geodesk/feature/ExportTablePtr.h>
+
+namespace geodesk {
 
 /// \cond lowlevel
 
@@ -35,6 +36,41 @@ public:
 		return payloadSize() + headerSize();
 	}
 
+	uint32_t revision() const
+	{
+		return (*this + REVISION_OFS).getUnsignedInt();
+	}
+
+	ExportTablePtr exports() const
+	{
+		DataPtr ppExports(*this + EXPORTS_OFS);
+		int32_t ptr = ppExports.getInt();
+		if (ptr == 0) return ExportTablePtr();
+		return ExportTablePtr(ppExports + ptr);
+	}
+
+	bool contains(FeaturePtr feature) const
+	{
+		return feature.ptr().ptr() > ptr() &&
+			feature.ptr().ptr() < ptr() + payloadSize();
+			// TODO: could use stricter bounds
+	}
+
+	int32_t handleOf(FeaturePtr feature) const
+	{
+		assert(contains(feature));
+		ptrdiff_t handle = feature.ptr().ptr() - ptr();
+		return static_cast<int32_t>(handle);
+	}
+
+	FeaturePtr getFeature(int32_t handle) const
+	{
+		assert(handle > 0);
+		assert(handle < payloadSize());
+		// TODO: These verifications could be stricter
+		return FeaturePtr(ptr() + handle);
+	}
+
 	/*
 	DataPtr ptr() const { return p_; }
 	DataPtr nodeIndex() const {	return p_ + NODE_INDEX_OFS; }
@@ -61,3 +97,4 @@ public:
 };
 
 /// \endcond lowlevel
+} // namespace geodesk

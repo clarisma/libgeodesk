@@ -8,6 +8,9 @@
 
 namespace geodesk {
 
+// TODO: Don't need to store the point, we already have the bbox
+//  which *is* the point
+
 class ContainsPointFilter : public SpatialFilter
 {
 public:
