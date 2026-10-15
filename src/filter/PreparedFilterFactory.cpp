@@ -43,46 +43,40 @@ const Filter* PreparedFilterFactory::forFeature(FeatureStore* store, FeaturePtr 
 }
 
 #ifdef GEODESK_WITH_GEOS
-const Filter* PreparedFilterFactory::forGeometry(GEOSContextHandle_t context, const GEOSGeometry* geom)
+const Filter* PreparedFilterFactory::forGeometry(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom)
 {
-	int geomType = GEOSGeomTypeId_r(context, geom);
-	unsigned int coordLen;
-	const GEOSCoordSequence* seq;
+	geos::geom::GeometryTypeId geomType = geom.getGeometryTypeId();
 	switch (geomType)
 	{
-	case GEOS_POINT:
-		seq = GEOSGeom_getCoordSeq_r(context, geom);
-		if (seq == NULL) return nullptr;
-		GEOSCoordSeq_getSize_r(context, seq, &coordLen);
+	case geos::geom::GeometryTypeId::GEOS_POINT: {
+		auto& pt = dynamic_cast<const geos::geom::Point&>(geom);
+		if (pt.isEmpty()) return nullptr;
+		return forCoordinate(Coordinate(pt.getX(), pt.getY()));
+	}
+	case geos::geom::GeometryTypeId::GEOS_LINESTRING:
+	case geos::geom::GeometryTypeId::GEOS_LINEARRING: {
+		const geos::geom::CoordinateSequence::Ptr seq = geom.getCoordinates();
+		unsigned int coordLen = seq->getSize();
 		if (coordLen == 0) return nullptr;
-		double x, y;
-		GEOSCoordSeq_getXY_r(context, seq, 0, &x, &y);
-		return forCoordinate(Coordinate(x, y));
-
-	case GEOS_LINESTRING:
-	case GEOS_LINEARRING:
-		seq = GEOSGeom_getCoordSeq_r(context, geom);
-		if (seq == NULL) return nullptr;
-		GEOSCoordSeq_getSize_r(context, seq, &coordLen);
-		if (coordLen == 0) return nullptr;
-		indexBuilder_.segmentizeCoords(context, seq);
+		indexBuilder_.segmentizeCoords(context, *seq);
 		bounds_ = Geos::getEnvelope(context, geom);
 		return forLineal();
-
-	case GEOS_POLYGON:
-		indexBuilder_.segmentizePolygon(context, geom);
+	}
+	case geos::geom::GeometryTypeId::GEOS_POLYGON: {
+		indexBuilder_.segmentizePolygon(context, dynamic_cast<const geos::geom::Polygon&>(geom));
 		bounds_ = Geos::getEnvelope(context, geom);
 		return forPolygonal();
-
-	case GEOS_MULTIPOLYGON:
+	}
+	case geos::geom::GeometryTypeId::GEOS_MULTIPOLYGON:
 	{
-		int count = GEOSGetNumGeometries_r(context, geom);
+		auto& multiPoly = dynamic_cast<const geos::geom::MultiPolygon&>(geom);
+		int count = multiPoly.getNumGeometries();
 		for (int i = 0; i < count; i++)
 		{
-			const GEOSGeometry* child = GEOSGetGeometryN_r(context, geom, i);
+			const geos::geom::Polygon& child = *multiPoly.getGeometryN(i);
 			indexBuilder_.segmentizePolygon(context, child);
 		}
-		bounds_ = Geos::getEnvelope(context, geom);
+		bounds_ = Geos::getEnvelope(context, multiPoly);
 		return forPolygonal();
 	}
 

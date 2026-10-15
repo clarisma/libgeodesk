@@ -185,7 +185,7 @@ void MapWriter::writeItem(PyMap::Element* item)
 	schema_.clear();
 }
 
-void MapWriter::writeGeometry(GEOSContextHandle_t context, const GEOSGeometry* geom)
+void MapWriter::writeGeometry(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom)
 {
 	int geomType = GEOSGeomTypeId_r(context, geom);
 	switch (geomType)
@@ -214,7 +214,7 @@ void MapWriter::writeGeometry(GEOSContextHandle_t context, const GEOSGeometry* g
 }
 
 
-void MapWriter::writeGeometryCollection(GEOSContextHandle_t context, const GEOSGeometry* multi)
+void MapWriter::writeGeometryCollection(geos::geom::GeometryFactory& context, const geos::geom::Geometry& multi)
 {
 	writeConstString("L.featureGroup([");
 	int count = GEOSGetNumGeometries_r(context, multi);
@@ -267,10 +267,10 @@ void MapWriter::writeObject(PyObject* obj)
 		}
 		return;		// don't continue to attributes/tooltip/link
 	}
-	else if (Environment::get().getGeosGeometry(obj, (GEOSGeometry**)&geom))
+	else if (Environment::get().getGeosGeometry(obj, (geos::geom::Geometry::Ptr*)&geom))
 	{
-		GEOSContextHandle_t context = Environment::get().getGeosContext();
-		writeGeometry(context, (GEOSGeometry*)geom);
+		geos::geom::GeometryFactory& context = *Environment::get().getGeosContext();
+		writeGeometry(context, *geom);
 		bounds_.expandToIncludeSimple(Box(geom->getEnvelopeInternal()));
 	}
 	else

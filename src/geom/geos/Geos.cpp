@@ -4,44 +4,30 @@
 #ifdef GEODESK_WITH_GEOS
 #include <geodesk/geom/Distance.h>
 #include <geodesk/geom/geos/Geos.h>
+#include <geos/operation/distance/DistanceOp.h>
 
 namespace geodesk {
 
-bool Geos::centroid(GEOSContextHandle_t context,
-    const GEOSGeometry* geom, Coordinate* centroid)
+bool Geos::centroid(geos::geom::GeometryFactory& context,
+    const geos::geom::Geometry& geom, Coordinate* centroid)
 {
-    double x, y;
-    GEOSGeometry* c = GEOSGetCentroid_r(context, geom);
-    if (!c) return false;
-    GEOSGeomGetX_r(context, c, &x);
-    GEOSGeomGetY_r(context, c, &y);
-    GEOSGeom_destroy_r(context, c);
-    *centroid = Coordinate(x, y);
+    std::unique_ptr<geos::geom::Point> c = geom.getCentroid();
+    if (!c || c->isEmpty()) return false;
+    *centroid = Coordinate(c->getX(), c->getY());
     return true;
 }
 
-double Geos::distanceMeters(GEOSContextHandle_t context,
-    const GEOSGeometry* geom1, const GEOSGeometry* geom2)
+double Geos::distanceMeters(geos::geom::GeometryFactory& context,
+    const geos::geom::Geometry& geom1, const geos::geom::Geometry& geom2)
 {
+    auto nearestPoints = geos::operation::distance::DistanceOp::nearestPoints(&geom1, &geom2);
+    if (!nearestPoints || nearestPoints->size() < 2) [[unlikely]] return -1;
+    double x1 = nearestPoints->getX(0);
+    double y1 = nearestPoints->getY(0);
+    double x2 = nearestPoints->getX(1);
+    double y2 = nearestPoints->getY(1);
 
-    GEOSCoordSequence *nearestPoints = GEOSNearestPoints_r
-        (context, geom1, geom2);
-    if (!nearestPoints) [[unlikely]] return -1;
-
-    double d;
-    double x1, x2, y1, y2;
-    if (GEOSCoordSeq_getXY_r(context, nearestPoints, 0, &x1, &y1) &&
-        GEOSCoordSeq_getXY_r(context, nearestPoints, 1, &x2, &y2))
-        [[likely]]
-    {
-        d = Distance::metersBetween(x1,y1,x2,y2);
-    }
-    else
-    {
-        d = -1;
-    }
-    GEOSCoordSeq_destroy(nearestPoints);
-    return d;
+    return Distance::metersBetween(x1, y1, x2, y2);
 }
 
 
@@ -49,4 +35,3 @@ double Geos::distanceMeters(GEOSContextHandle_t context,
 } // namespace geodesk
 
 #endif // GEODESK_WITH_GEOS
-
