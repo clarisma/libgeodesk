@@ -127,7 +127,7 @@ void FeatureStore::Transaction::begin()
 	}
 }
 
-void FeatureStore::Transaction::commit(bool isFinal)
+void FeatureStore::Transaction::commit()
 {
 	// TODO: Currently, we're writing exclusively, so Snapshot 0
 	//  is always active; update this once we support concurrent writes
@@ -141,7 +141,7 @@ void FeatureStore::Transaction::commit(bool isFinal)
 	}
 	activeSnapshot.tileIndex = addBlob(
 		{reinterpret_cast<uint8_t*>(tileIndex_.get()), tileIndexSize});
-	FreeStore::Transaction::commit(isFinal);
+	FreeStore::Transaction::commit();
 }
 
 // TODO: compare URLs and mark tx as dirty if changed

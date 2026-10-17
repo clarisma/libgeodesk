@@ -156,6 +156,11 @@ protected:
 	FileHandle file() { return file_; }
 	uint32_t pageSizeShift() const { return pageSizeShift_; }
 
+	const Header* header() const
+	{
+		return reinterpret_cast<const Header*>(data());
+	}
+
 private:
 	File file_;
 	uint32_t pageSizeShift_ = 12;	// TODO: default 4KB page

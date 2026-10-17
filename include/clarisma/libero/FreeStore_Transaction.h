@@ -32,7 +32,7 @@ public:
 	/// @content the block's current content (must be 4 KB in length)
 	///
 	void stageBlock(uint64_t ofs, const void* content);
-	void commit(bool isFinal = true);
+	void commit();
 	void end();
 
 	uint32_t allocPages(uint32_t requestedPages);
@@ -65,7 +65,8 @@ protected:
 private:
 	void buildFreeRangeIndex();
 	void readFreeRangeIndex();
-	void writeFreeRangeIndex();
+	void coalesceStagedFreeRanges();
+	void writeFreeRangeIndex(uint32_t friPage, uint32_t maxFreeRanges);
 
 	[[nodiscard]] bool isFirstPageOfSegment(uint32_t page) const
 	{
