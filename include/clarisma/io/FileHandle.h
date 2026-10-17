@@ -257,7 +257,9 @@ public:
 
     void makeSparse();
     void allocate(uint64_t ofs, uint64_t length);
+    bool tryDeallocate(uint64_t ofs, uint64_t length);
     void deallocate(uint64_t ofs, uint64_t length);
+    bool tryZeroFill(uint64_t ofs, uint64_t length);
     void zeroFill(uint64_t ofs, uint64_t length);
 
     /// @brief Attempts to lock the specified region without

@@ -384,8 +384,8 @@ void FreeStore::Transaction::performFreePages(uint32_t firstPage, uint32_t pages
 }
 
 
-/// @brief Writes the FRI into the blob reserved by
-/// reserveFreeRangeIndex(). Unused slots are zero-filled.
+/// @brief Writes the FRI into an already-reserved blob.
+/// Unused slots are zero-filled.
 ///
 void FreeStore::Transaction::writeFreeRangeIndex(
     uint32_t page, uint32_t maxFreeRanges)
@@ -407,7 +407,7 @@ void FreeStore::Transaction::writeFreeRangeIndex(
     // readFreeRangeIndex() needs to find it in order to free it.
 
     uint32_t slotCount = maxFreeRanges + 1; // includes the header
-    std::unique_ptr<uint64_t[]> index(new uint64_t[slotCount]());
+    std::unique_ptr<uint64_t[]> index(new uint64_t[slotCount]);
     uint64_t* p = index.get();
     uint64_t* pEnd = index.get() + slotCount;
     *p++ = (slotCount * 8) - 4;
@@ -426,7 +426,7 @@ void FreeStore::Transaction::writeFreeRangeIndex(
     }
 
     store_.file_.writeAllAt(store_.offsetOfPage(page),
-        index.get(), (slotCount+1) * sizeof(uint64_t));
+        index.get(), slotCount * 8);
     header_.freeRangeIndex = page;
 }
 
@@ -524,11 +524,13 @@ void FreeStore::Transaction::endCreateStore()
 ///
 void FreeStore::Transaction::readFreeRangeIndex()
 {
-    uint32_t count = header_.freeRanges;
-    if (count == 0) [[unlikely]]
+    if (header_.freeRangeIndex == 0 ||
+        header_.freeRangeIndex == INVALID_FREE_RANGE_INDEX) [[unlikely]]
     {
         return;
     }
+
+    uint32_t count = header_.freeRanges;
 
     std::unique_ptr<uint64_t[]> ranges(new uint64_t[count+1]);
     store_.file_.readAllAt(

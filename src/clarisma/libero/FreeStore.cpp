@@ -159,9 +159,13 @@ void FreeStore::open(const char* fileName, OpenMode mode)
 
 void FreeStore::close()
 {
-    uint64_t fileSize = static_cast<uint64_t>(header()->totalPages) << pageSizeShift_;
+    uint64_t fileSize = 0;
+    if (data()) // when creating a store, we don't have a mapping
+    {
+        fileSize = static_cast<uint64_t>(header()->totalPages) << pageSizeShift_;
+    }
     mapping_.unmap();
-    if (writeable_)
+    if (writeable_ && fileSize != 0)
     {
         file_.truncate(fileSize);
     }

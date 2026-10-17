@@ -515,6 +515,10 @@ inline void FileHandle::deallocate(uint64_t ofs, uint64_t length)
     zeroFill(ofs, length);
 }
 
+inline bool FileHandle::tryDeallocate(uint64_t ofs, uint64_t length)
+{
+    return tryZeroFill(ofs, length);
+}
 
 inline std::string FileHandle::fileName() const
 {
