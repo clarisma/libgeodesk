@@ -50,7 +50,7 @@ void FileHandle::allocate(uint64_t ofs, uint64_t length)
 #endif
 }
 
-void FileHandle::deallocate(uint64_t ofs, uint64_t length)
+bool FileHandle::tryDeallocate(uint64_t ofs, uint64_t length)
 {
     const off_t offset = static_cast<off_t>(ofs);
     const off_t size = static_cast<off_t>(length);
@@ -59,19 +59,28 @@ void FileHandle::deallocate(uint64_t ofs, uint64_t length)
     fpunchhole_t punch = {};
     punch.fp_offset = offset;
     punch.fp_length = size;
-    if (::fcntl(handle_, F_PUNCHHOLE, &punch) != 0)
-    {
-        throw IOException();
-    }
+    return ::fcntl(handle_, F_PUNCHHOLE, &punch) == 0;
 #else
-    if (fallocate(handle_, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
-        offset, size) != 0)
-    {
-        throw IOException();
-    }
+    return fallocate(handle_, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
+        offset, size) == 0;
 #endif
 }
 
+
+void FileHandle::deallocate(uint64_t ofs, uint64_t length)
+{
+    if (!tryDeallocate(ofs, length))
+    {
+        throw IOException();
+    }
+}
+
+
+bool FileHandle::tryZeroFill(uint64_t ofs, uint64_t length)
+{
+    // TODO: do nothing for now
+    return true;
+}
 
 void FileHandle::zeroFill(uint64_t ofs, uint64_t length)
 {

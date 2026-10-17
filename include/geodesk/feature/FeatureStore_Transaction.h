@@ -47,7 +47,7 @@ public:
     }
 
     void begin();
-    void commit(bool isFinal = true);
+    void commit();
 
     void setup(const Metadata& metadata, std::unique_ptr<uint32_t[]>&& tileIndex);
     // void addTile(Tip tip, std::span<byte> data);

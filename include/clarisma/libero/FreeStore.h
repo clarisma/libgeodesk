@@ -74,9 +74,9 @@ public:
 		return file_.allocatedSize();
 	}
 
-	void deallocate(uint32_t firstPage, uint32_t pageCount)
+	bool deallocate(uint32_t firstPage, uint32_t pageCount)
 	{
-		file_.deallocate(
+		return file_.tryDeallocate(
 			static_cast<uint64_t>(firstPage) << pageSizeShift_,
 			static_cast<uint64_t>(pageCount) << pageSizeShift_);
 	}
@@ -155,6 +155,11 @@ protected:
 
 	FileHandle file() { return file_; }
 	uint32_t pageSizeShift() const { return pageSizeShift_; }
+
+	const Header* header() const
+	{
+		return reinterpret_cast<const Header*>(data());
+	}
 
 private:
 	File file_;

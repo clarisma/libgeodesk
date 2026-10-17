@@ -36,14 +36,14 @@ void FileHandle::makeSparse()
     }
 }
 
-void FileHandle::zeroFill(uint64_t ofs, uint64_t length)
+bool FileHandle::tryZeroFill(uint64_t ofs, uint64_t length)
 {
     FILE_ZERO_DATA_INFORMATION zeroDataInfo;
     zeroDataInfo.FileOffset.QuadPart = ofs;
     zeroDataInfo.BeyondFinalZero.QuadPart = ofs + length;
 
     DWORD bytesReturned = 0;
-    if (!DeviceIoControl(
+    return DeviceIoControl(
         handle_,                 // handle to file
         FSCTL_SET_ZERO_DATA,         // dwIoControlCode
         &zeroDataInfo,               // input buffer
@@ -51,7 +51,13 @@ void FileHandle::zeroFill(uint64_t ofs, uint64_t length)
         NULL,                        // lpOutBuffer
         0,                           // nOutBufferSize
         &bytesReturned,              // lpBytesReturned
-        NULL))                       // lpOverlapped
+        NULL);           // lpOverlapped
+}
+
+
+void FileHandle::zeroFill(uint64_t ofs, uint64_t length)
+{
+    if (!tryZeroFill(ofs, length))
     {
         throw IOException();
     }

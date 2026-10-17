@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <clarisma/libero/FreeStore_Transaction.h>
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <random>
@@ -52,8 +53,23 @@ void FreeStore::Transaction::stageBlock(uint64_t ofs, const void* content)
 }
 
 
-void FreeStore::Transaction::commit(bool isFinal)
+void FreeStore::Transaction::commit()
 {
+    coalesceStagedFreeRanges();
+    uint32_t friPage = 0;
+    uint32_t maxFreeRanges = header_.freeRanges +
+        stagedFreeRanges_.size();
+    if (maxFreeRanges)  [[likely]]
+    {
+        maxFreeRanges++;
+        // +1 because allocating the new FRI may generate
+        // leftover space at the end of a segment, which
+        // becomes a free range
+        friPage = allocPages(store_.pagesForBytes(
+            (maxFreeRanges + 1) * 8));
+        // includes 8-byte header
+    }
+
     // Actually free the staged free ranges
 
     for (uint64_t freeRange : stagedFreeRanges_)
@@ -62,15 +78,8 @@ void FreeStore::Transaction::commit(bool isFinal)
         uint32_t pages = static_cast<uint32_t>(freeRange);
         performFreePages(firstPage, pages);
     }
-    stagedFreeRanges_.clear();
 
-    if (isFinal)
-    {
-        // if (header_.freeRangeIndex == INVALID_FREE_RANGE_INDEX)
-        // {
-        writeFreeRangeIndex();
-        // }
-    }
+    writeFreeRangeIndex(friPage, maxFreeRanges);
 
     header_.commitId++;
     Crc32C crc;
@@ -95,6 +104,18 @@ void FreeStore::Transaction::commit(bool isFinal)
     store_.file_.syncData();
     store_.file_.writeAllAt(0, &header_, sizeof(header_));
     store_.file_.syncData();
+
+    // Now it is safe to physically deallocate the newly freed blobs
+    for (uint64_t freeRange : stagedFreeRanges_)
+    {
+        uint32_t firstPage = static_cast<uint32_t>(freeRange >> 32);
+        uint32_t pages = static_cast<uint32_t>(freeRange);
+        if (firstPage >= header_.totalPages) break;
+            // No point hole-punching ranges at the tail of the file;
+            // instead, we're going to trim the file when we close it
+        store_.deallocate(firstPage, pages);
+    }
+    stagedFreeRanges_.clear();
 }
 
 
@@ -363,45 +384,33 @@ void FreeStore::Transaction::performFreePages(uint32_t firstPage, uint32_t pages
     assert(freeBySize_.size() == header_.freeRanges);
 }
 
-/// @brief Allocates a new blob for the FRI and writes it.
+
+/// @brief Writes the FRI into an already-reserved blob.
+/// Unused slots are zero-filled.
 ///
-void FreeStore::Transaction::writeFreeRangeIndex()
+void FreeStore::Transaction::writeFreeRangeIndex(
+    uint32_t page, uint32_t maxFreeRanges)
 {
-    if (freeByStart_.size() != freeBySize_.size() ||
-        freeByStart_.size() != header_.freeRanges)
-    {
-        //LOGS << "Free by start: " << freeByStart_.size()
-        //    << "\nFree by size:  " << freeBySize_.size()
-        //    << "\nFree ranges:   " << header_.freeRanges;
-    }
     assert(freeByStart_.size() == freeBySize_.size());
     assert(freeByStart_.size() == header_.freeRanges);
 
-    if (header_.freeRanges == 0) [[unlikely]]
+    if (maxFreeRanges == 0) [[unlikely]]
     {
+        assert (page == 0);
+        assert(header_.freeRanges == 0);
         header_.freeRangeIndex = 0;
         return;
     }
+    assert(header_.freeRanges <= maxFreeRanges);
 
-    // After allocating the blob to hold the FRI, the number of
-    // free ranges may differ: It may be one less (if a free range
-    // of the exact size has been found), or one more (a blob has
-    // been appended, but the leftover tail of a 1-GB segment has
-    // been added as a new free range). The free-range count only
-    // stays the same if we're allocating a portion of an existing
-    // free range; therefore, we must request enough space to
-    // store one more entry
+    // Note: If all free ranges were trimmed away, we still write a
+    // (blank) FRI, since its blob has already been allocated and
+    // readFreeRangeIndex() needs to find it in order to free it.
 
-    // +1 for the blob's header (8 bytes) and for one extra entry
-    // (header_.freeRanges may change after the call to allocPages)
-    uint32_t slotCount = header_.freeRanges + 2;
-    uint32_t indexSize = slotCount * sizeof(uint64_t);
-    uint32_t indexSizeInPages = store_.pagesForBytes(indexSize);
-    uint32_t indexPage = allocPages(indexSizeInPages);
-
+    uint32_t slotCount = maxFreeRanges + 1; // includes the header
     std::unique_ptr<uint64_t[]> index(new uint64_t[slotCount]);
     uint64_t* p = index.get();
-    uint64_t* pEnd = p + slotCount;
+    uint64_t* pEnd = index.get() + slotCount;
     *p++ = (slotCount * 8) - 4;
     uint64_t prevEntry = 0;
     for (auto entry : freeByStart_)
@@ -410,22 +419,54 @@ void FreeStore::Transaction::writeFreeRangeIndex()
         assert(entry > prevEntry);
         prevEntry = entry;
     }
-    assert(p == index.get() + header_.freeRanges + 1);
 
-    // put zeroes into leftover slots
-    if (p < pEnd)   [[likely]]
+    // zero out any remaining slots
+    while (p < pEnd)
     {
         *p++ = 0;
-        if (p < pEnd)   [[unlikely]]
-        {
-            *p = 0;
-        }
     }
 
-    store_.file_.writeAllAt(store_.offsetOfPage(indexPage),
-        index.get(), indexSize);
-    header_.freeRangeIndex = indexPage;
+    store_.file_.writeAllAt(store_.offsetOfPage(page),
+        index.get(), slotCount * 8);
+    header_.freeRangeIndex = page;
 }
+
+
+/// @brief Sorts stagedFreeRanges_ by first page and merges ranges
+/// that are directly adjacent. Ranges are never merged across a
+/// 1-GB segment boundary (an allocated range never spans one, so a
+/// coalesced range never does either).
+///
+void FreeStore::Transaction::coalesceStagedFreeRanges()
+{
+    if (stagedFreeRanges_.size() < 2) return;
+
+    // Entries are (firstPage << 32) | pages, so this orders by firstPage
+    std::sort(stagedFreeRanges_.begin(), stagedFreeRanges_.end());
+
+    auto out = stagedFreeRanges_.begin();
+    uint32_t currentFirst = static_cast<uint32_t>(*out >> 32);
+    uint32_t currentPages = static_cast<uint32_t>(*out);
+
+    for (auto it = std::next(out); it != stagedFreeRanges_.end(); ++it)
+    {
+        uint32_t first = static_cast<uint32_t>(*it >> 32);
+        uint32_t pages = static_cast<uint32_t>(*it);
+        assert(first >= currentFirst + currentPages);   // no double/overlapping free
+
+        if (first == currentFirst + currentPages && !isFirstPageOfSegment(first))
+        {
+            currentPages += pages;
+            continue;
+        }
+        *out++ = (static_cast<uint64_t>(currentFirst) << 32) | currentPages;
+        currentFirst = first;
+        currentPages = pages;
+    }
+    *out++ = (static_cast<uint64_t>(currentFirst) << 32) | currentPages;
+    stagedFreeRanges_.erase(out, stagedFreeRanges_.end());
+}
+
 
 void FreeStore::Transaction::dumpFreeRanges()
 {
@@ -484,11 +525,19 @@ void FreeStore::Transaction::endCreateStore()
 ///
 void FreeStore::Transaction::readFreeRangeIndex()
 {
-    uint32_t count = header_.freeRanges;
-    if (count == 0) [[unlikely]]
+    if (header_.freeRangeIndex == INVALID_FREE_RANGE_INDEX) [[unlikely]]
+    {
+        // FRI was never written; its free space is lost until
+        // the index can be rebuilt
+        header_.freeRanges = 0;
+        return;
+    }
+    if (header_.freeRangeIndex == 0) [[unlikely]]
     {
         return;
     }
+
+    uint32_t count = header_.freeRanges;
 
     std::unique_ptr<uint64_t[]> ranges(new uint64_t[count+1]);
     store_.file_.readAllAt(
