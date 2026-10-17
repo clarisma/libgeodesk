@@ -4,6 +4,7 @@
 #include <clarisma/libero/FreeStore_Transaction.h>
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
 #include <random>
 
 #include "clarisma/io/MemoryMapping.h"
@@ -524,8 +525,14 @@ void FreeStore::Transaction::endCreateStore()
 ///
 void FreeStore::Transaction::readFreeRangeIndex()
 {
-    if (header_.freeRangeIndex == 0 ||
-        header_.freeRangeIndex == INVALID_FREE_RANGE_INDEX) [[unlikely]]
+    if (header_.freeRangeIndex == INVALID_FREE_RANGE_INDEX) [[unlikely]]
+    {
+        // FRI was never written; its free space is lost until
+        // the index can be rebuilt
+        header_.freeRanges = 0;
+        return;
+    }
+    if (header_.freeRangeIndex == 0) [[unlikely]]
     {
         return;
     }
