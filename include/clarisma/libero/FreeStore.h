@@ -52,6 +52,7 @@ public:
 	void close();
 
 	const std::string& fileName() const { return fileName_; }
+	FileHandle fileHandle() const { return file_; }
 	bool isCreated() const { return created_; }
 	const byte* data() const { return mapping_.data(); }
 	uint64_t offsetOfPage(uint32_t page) const noexcept
