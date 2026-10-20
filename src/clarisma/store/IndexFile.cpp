@@ -81,4 +81,87 @@ void IndexFile::put(uint64_t key, uint32_t value)
 	}
 }
 
+
+IndexFile::Iterator IndexFile::iter()
+{
+    uint64_t endKey = 0;
+    if (isOpen() && valueWidth_ > 0)
+    {
+        uint64_t fileSize = size();
+        uint64_t fullSegments = fileSize / SEGMENT_LENGTH;
+        uint64_t partialBytes = fileSize % SEGMENT_LENGTH;
+        // Only count slots whose bits lie entirely within the file
+        uint64_t partialSlots = std::min<uint64_t>(
+            partialBytes * 8 / valueWidth_,
+            static_cast<uint64_t>(slotsPerSegment_));
+        endKey = fullSegments * static_cast<uint64_t>(slotsPerSegment_)
+            + partialSlots;
+        endKey = std::min<uint64_t>(endKey,
+            static_cast<uint64_t>(maxEntryCount_));
+    }
+    return {*this, endKey};
+}
+
+IndexFile::Iterator::Iterator(IndexFile& file, uint64_t endKey) :
+    file_(file),
+    p_(nullptr),
+    buf_(0),
+    key_(0),
+    endKey_(endKey),
+    remainingInSegment_(0),
+    mask_(endKey ? file.valueMask() : 0),
+    bitsInBuf_(0),
+    valueWidth_(file.valueWidth_)
+{
+}
+
+void IndexFile::Iterator::startSegment()
+{
+    // key_ is always at the start of a segment when we get here
+    uint64_t slotsPerSegment = static_cast<uint64_t>(file_.slotsPerSegment_);
+    assert(key_ % slotsPerSegment == 0);
+    uint64_t segmentNo = key_ / slotsPerSegment;
+    p_ = reinterpret_cast<const uint64_t*>(
+        file_.translate(segmentNo * SEGMENT_LENGTH));
+    // Discard any padding bits left over from the previous segment
+    buf_ = 0;
+    bitsInBuf_ = 0;
+    remainingInSegment_ = std::min(slotsPerSegment, endKey_ - key_);
+}
+
+uint32_t IndexFile::Iterator::next()
+{
+    if (remainingInSegment_ == 0) [[unlikely]]
+    {
+        if (key_ >= endKey_) return 0;
+        startSegment();
+    }
+
+    uint64_t v;
+    if (bitsInBuf_ >= valueWidth_) [[likely]]
+    {
+        // Common case: value is entirely in the buffer
+        v = buf_;
+        buf_ >>= valueWidth_;
+        bitsInBuf_ -= valueWidth_;
+    }
+    else
+    {
+        // Combine the remaining low bits of the value (if any) with
+        // the next word. The word is guaranteed to lie within the
+        // segment, since it holds at least one bit of this value.
+        // Shifts are safe: bitsInBuf_ is in [0, valueWidth_), so
+        // the right shift is in [1, valueWidth_]
+        uint64_t word = *p_++;
+        v = buf_ | (word << bitsInBuf_);
+        int consumed = valueWidth_ - bitsInBuf_;
+        buf_ = word >> consumed;
+        bitsInBuf_ = 64 - consumed;
+    }
+    remainingInSegment_--;
+    key_++;
+    return static_cast<uint32_t>(v & mask_);
+}
+
+
 } // namespace clarisma
