@@ -440,5 +440,9 @@ inline void FileHandle::unmap(const void* address, uint64_t length)
     munmap(const_cast<void*>(address), length);
 }
 
+inline void FileHandle::makeSparse()
+{
+    // No-op, because giles are always sparse on posix
+}
 
 } // namespace clarisma
