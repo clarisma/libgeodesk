@@ -169,6 +169,35 @@ inline void writeVarint14(uint8_t*& p, int val)
 	*p++ = val >> 7;
 }
 
+inline void writeVarint28(uint8_t*& p, uint32_t val)
+{
+	assert(val < 0x1000'0000);
+	if (val >= 0x80)
+	{
+		*p++ = (val & 0x7f) | 0x80;
+		val >>= 7;
+		if (val >= 0x80)
+		{
+			*p++ = (val & 0x7f) | 0x80;
+			val >>= 7;
+			if (val >= 0x80)
+			{
+				*p++ = (val & 0x7f) | 0x80;
+				val >>= 7;
+			}
+		}
+	}
+	*p++ = static_cast<uint8_t>(val);
+}
+
+inline void writeSignedVarint28(uint8_t*& p, int32_t val)
+{
+	assert(val >= -(1 << 27) && val < (1 << 27));
+	const uint32_t zigzag =
+		(static_cast<uint32_t>(val) << 1) ^
+		 static_cast<uint32_t>(val >> 31);
+	writeVarint28(p, zigzag);
+}
 
 inline void writeSignedVarint(uint8_t*& p, int64_t val)
 {
