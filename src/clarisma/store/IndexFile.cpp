@@ -99,10 +99,10 @@ IndexFile::Iterator IndexFile::iter()
         endKey = std::min<uint64_t>(endKey,
             static_cast<uint64_t>(maxEntryCount_));
     }
-    return {*this, endKey};
+    return {*this};
 }
 
-IndexFile::Iterator::Iterator(IndexFile& file, uint64_t endKey) :
+IndexFile::Iterator2::Iterator2(IndexFile& file, uint64_t endKey) :
     file_(file),
     p_(nullptr),
     buf_(0),
@@ -115,7 +115,7 @@ IndexFile::Iterator::Iterator(IndexFile& file, uint64_t endKey) :
 {
 }
 
-void IndexFile::Iterator::startSegment()
+void IndexFile::Iterator2::startSegment()
 {
     // key_ is always at the start of a segment when we get here
     uint64_t slotsPerSegment = static_cast<uint64_t>(file_.slotsPerSegment_);
@@ -129,7 +129,7 @@ void IndexFile::Iterator::startSegment()
     remainingInSegment_ = std::min(slotsPerSegment, endKey_ - key_);
 }
 
-uint32_t IndexFile::Iterator::next()
+uint32_t IndexFile::Iterator2::next()
 {
     if (remainingInSegment_ == 0) [[unlikely]]
     {
@@ -163,5 +163,45 @@ uint32_t IndexFile::Iterator::next()
     return static_cast<uint32_t>(v & mask_);
 }
 
+IndexFile::Iterator::Iterator(IndexFile& file) :
+	mask_(file.valueMask()),
+	valueWidth_(file.valueWidth_),
+	file_(file)
+{
+	startSegment();
+}
+
+
+void IndexFile::Iterator::startSegment()
+{
+	p_ = DataPtr(file_.translate(segment_ * SEGMENT_LENGTH));
+	end_ = p_.ptr() + SEGMENT_LENGTH - 4;
+	buf_ = p_.getUnsignedLong();
+	p_ += 4;
+	bitOfs_ = 0;
+}
+
+uint32_t IndexFile::Iterator::next()
+{
+	int nextBitOfs = bitOfs_ + valueWidth_;
+	if (nextBitOfs > 64) [[unlikely]]
+	{
+		if (p_.ptr() == end_) [[unlikely]]
+		{
+			segment_++;
+			startSegment();
+		}
+		else
+		{
+			buf_ = p_.getUnsignedLong();
+			p_ += 4;
+			bitOfs_ -= 32;
+			nextBitOfs -= 32;
+		}
+	}
+	uint32_t value = static_cast<uint32_t>((buf_ >> bitOfs_) & mask_);
+	bitOfs_ = nextBitOfs;
+	return value;
+}
 
 } // namespace clarisma

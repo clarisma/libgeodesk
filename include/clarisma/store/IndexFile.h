@@ -5,6 +5,8 @@
 #include <cassert>
 #include <clarisma/io/ExpandableMappedFile.h>
 
+#include "clarisma/util/DataPtr.h"
+
 namespace clarisma {
 
 /**
@@ -45,7 +47,7 @@ public:
 	 * yet (if its word has already been loaded); keys beyond the
 	 * extent captured by iter() are not visited.
 	 */
-	class Iterator
+	class Iterator2
 	{
 	public:
 		uint32_t next();
@@ -60,7 +62,7 @@ public:
 		[[nodiscard]] uint64_t key() const { return key_; }
 
 	private:
-		Iterator(IndexFile& file, uint64_t endKey);
+		Iterator2(IndexFile& file, uint64_t endKey);
 		void startSegment();
 
 		IndexFile& file_;
@@ -73,6 +75,27 @@ public:
 		uint64_t mask_;
 		int bitsInBuf_;
 		int valueWidth_;
+
+		friend class IndexFile;
+	};
+
+	class Iterator
+	{
+	public:
+		uint32_t next();
+
+	private:
+		Iterator(IndexFile& file);
+		void startSegment();
+
+		uint64_t buf_;
+		uint32_t mask_;
+		int bitOfs_;
+		int valueWidth_;
+		int segment_ = 0;
+		DataPtr p_;
+		const uint8_t* end_;
+		IndexFile& file_;
 
 		friend class IndexFile;
 	};
