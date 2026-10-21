@@ -200,7 +200,14 @@ uint32_t IndexFile::Iterator::next()
 		{
 			uint64_t nextBuf = p_.getUnsignedLong();
 			p_ += 8;
-			value = static_cast<uint32_t>(buf_ >> (bitOfs_ & 63));
+			if (bitOfs_ == 64) [[unlikely]]
+			{
+				value = static_cast<uint32_t>(nextBuf) & mask_;
+				bitOfs_ = valueWidth_;
+				buf_ = nextBuf;
+				return value;
+			}
+			value = static_cast<uint32_t>(buf_ >> bitOfs_);
 			int remaining = 64 - bitOfs_;
 			value = value | (nextBuf << remaining);
 			value &= mask_;
