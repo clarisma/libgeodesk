@@ -193,6 +193,7 @@ uint32_t IndexFile::Iterator::next()
 		{
 			segment_++;
 			startSegment();
+			nextBitOfs = valueWidth_;
 		}
 		else
 		{
