@@ -174,8 +174,11 @@ IndexFile::Iterator::Iterator(IndexFile& file) :
 
 void IndexFile::Iterator::startSegment()
 {
-	p_ = DataPtr(file_.translate(segment_ * SEGMENT_LENGTH));
-	end_ = p_.ptr() + SEGMENT_LENGTH - 4;
+	uint64_t segmentSize = std::min(
+		file_.mainMappingSize() - SEGMENT_LENGTH * segment_,
+		SEGMENT_LENGTH);
+	p_ = DataPtr(file_.translate(SEGMENT_LENGTH * segment_));
+	end_ = p_.ptr() + segmentSize - 4;
 	buf_ = p_.getUnsignedLong();
 	p_ += 4;
 	bitOfs_ = 0;
