@@ -178,14 +178,15 @@ void IndexFile::Iterator::startSegment()
 		file_.mainMappingSize() - SEGMENT_LENGTH * segment_,
 		SEGMENT_LENGTH);
 	p_ = DataPtr(file_.translate(SEGMENT_LENGTH * segment_));
-	end_ = p_.ptr() + segmentSize - 4;
+	end_ = p_.ptr() + segmentSize;
 	buf_ = p_.getUnsignedLong();
-	p_ += 4;
+	p_ += 8;
 	bitOfs_ = 0;
 }
 
 uint32_t IndexFile::Iterator::next()
 {
+	uint32_t value;
 	int nextBitOfs = bitOfs_ + valueWidth_;
 	if (nextBitOfs > 64) [[unlikely]]
 	{
@@ -197,13 +198,18 @@ uint32_t IndexFile::Iterator::next()
 		}
 		else
 		{
-			buf_ = p_.getUnsignedLong();
-			p_ += 4;
-			bitOfs_ -= 32;
-			nextBitOfs -= 32;
+			uint64_t nextBuf = p_.getUnsignedLong();
+			p_ += 8;
+			value = static_cast<uint32_t>(buf_ >> (bitOfs_ & 63));
+			int remaining = 64 - bitOfs_;
+			value = value | (nextBuf << remaining);
+			value &= mask_;
+			bitOfs_ = nextBitOfs - 64;
+			buf_ = nextBuf;
+			return value;
 		}
 	}
-	uint32_t value = static_cast<uint32_t>((buf_ >> bitOfs_) & mask_);
+	value = static_cast<uint32_t>((buf_ >> bitOfs_) & mask_);
 	bitOfs_ = nextBitOfs;
 	return value;
 }
