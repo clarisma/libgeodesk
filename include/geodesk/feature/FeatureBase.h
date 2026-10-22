@@ -18,7 +18,8 @@
 #include <geodesk/geom/Mercator.h>
 
 #ifdef GEODESK_WITH_GEOS
-#include <geos_c.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/Geometry.h>
 #endif
 
 namespace geodesk {
@@ -369,7 +370,7 @@ public:
     }
 
     #ifdef GEODESK_WITH_GEOS
-    [[nodiscard]] GEOSGeometry* toGeometry(GEOSContextHandle_t geosContext) const;
+    [[nodiscard]] geos::geom::Geometry::Ptr toGeometry(geos::geom::GeometryFactory& geosContext) const;
     #endif
 
     #ifdef GEODESK_WITH_OGR

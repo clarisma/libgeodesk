@@ -8,42 +8,39 @@
 namespace geodesk {
 
 #ifdef GEODESK_WITH_GEOS
-GEOSCoordSequence* Polygonizer::Ring::createCoordSequence(GEOSContextHandle_t context)
+geos::geom::CoordinateSequence Polygonizer::Ring::createCoordSequence(geos::geom::GeometryFactory& context)
 {
-    GEOSCoordSequence* coordSeq = GEOSCoordSeq_create_r(context, vertexCount_, 2);
-    if (coordSeq)
+    geos::geom::CoordinateSequence coordSeq = geos::geom::CoordinateSequence::XY(vertexCount_);
+    Segment* seg = firstSegment_;
+    Coordinate first = seg->backward ? seg->coords[seg->vertexCount - 1] : seg->coords[0];
+    coordSeq.setAt(geos::geom::CoordinateXY(first.x, first.y), 0);
+    int pos = 1;
+    do
     {
-        Segment* seg = firstSegment_;
-        Coordinate first = seg->backward ? seg->coords[seg->vertexCount - 1] : seg->coords[0];
-        GEOSCoordSeq_setXY_r(context, coordSeq, 0, first.x, first.y);
-        int pos = 1;
-        do
-        {
-            seg->copyTo(context, coordSeq, pos);
-            pos += seg->vertexCount - 1;
-            seg = seg->next;
-        }
-        while (seg);
-        assert(pos == vertexCount_);
+        seg->copyTo(context, coordSeq, pos);
+        pos += seg->vertexCount - 1;
+        seg = seg->next;
     }
+    while (seg);
+    assert(pos == vertexCount_);
     return coordSeq;
 }
 
-GEOSGeometry* Polygonizer::Ring::createLinearRing(GEOSContextHandle_t context)
+std::unique_ptr<geos::geom::LinearRing> Polygonizer::Ring::createLinearRing(geos::geom::GeometryFactory& context)
 {
-    GEOSCoordSequence* seq = createCoordSequence(context);
-    return GEOSGeom_createLinearRing_r(context, seq);
+    geos::geom::CoordinateSequence seq = createCoordSequence(context);
+    return context.createLinearRing(std::move(seq));
 }
 
 // TODO: error handling, check for null returns (C API does not throw)
-GEOSGeometry* Polygonizer::Ring::createPolygon(GEOSContextHandle_t context, clarisma::Arena& arena)
+std::unique_ptr<geos::geom::Polygon> Polygonizer::Ring::createPolygon(geos::geom::GeometryFactory& context, clarisma::Arena& arena)
 {
-    GEOSGeometry** holes;
+    std::vector<std::unique_ptr<geos::geom::LinearRing>> holes;
     int holeCount;
     if (firstInner_)
     {
         holeCount = firstInner_->number_;
-        holes = arena.allocArray<GEOSGeometry*>(holeCount);
+        holes.resize(holeCount);
         Ring* inner = firstInner_;
         for (int i = 0; i < holeCount; i++)
         {
@@ -54,11 +51,9 @@ GEOSGeometry* Polygonizer::Ring::createPolygon(GEOSContextHandle_t context, clar
     else
     {
         holeCount = 0;
-        holes = nullptr;
     }
 
-    GEOSGeometry* shell = createLinearRing(context);
-    return GEOSGeom_createPolygon_r(context, shell, holes, holeCount);
+    return context.createPolygon(createLinearRing(context), std::move(holes));
 }
 #endif
 

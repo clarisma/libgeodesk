@@ -168,11 +168,11 @@ void Polygonizer::assignAndMergeHoles()
 }
 
 #ifdef GEODESK_WITH_GEOS
-GEOSGeometry* Polygonizer::createPolygonal(GEOSContextHandle_t context) 
+geos::geom::Geometry::Ptr Polygonizer::createPolygonal(geos::geom::GeometryFactory& context)
 {
     if (outerRings_ == nullptr)
     {
-        return GEOSGeom_createEmptyPolygon_r(context);
+        return context.createPolygon();
     }
 
     int ringCount = 0;
@@ -184,16 +184,16 @@ GEOSGeometry* Polygonizer::createPolygonal(GEOSContextHandle_t context)
     }
     while (ring);
 
-    if(ringCount == 1) return outerRings_->createPolygon(context, arena_);
+    if (ringCount == 1) return outerRings_->createPolygon(context, arena_);
     
-    GEOSGeometry** polygons = arena_.allocArray<GEOSGeometry*>(ringCount);
+    auto polygons = std::vector<std::unique_ptr<geos::geom::Polygon>>(ringCount);
     ring = outerRings_;
     for (int i = 0; i < ringCount; i++)
     {
         polygons[i] = ring->createPolygon(context, arena_);
         ring = ring->next();
     }
-    return GEOSGeom_createCollection_r(context, GEOS_MULTIPOLYGON, polygons, ringCount);
+    return context.createMultiPolygon(std::move(polygons));
 }
 #endif
 

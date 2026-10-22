@@ -30,8 +30,8 @@ public:
     void writeRelation(FeatureStore* store, RelationPtr relation);
     void writeRelationMembers(FeatureStore* store, RelationPtr relation, RecursionGuard& guard);
     bool writeFeature(PyFeature* feature);
-    void writeGeometry(GEOSContextHandle_t context, const GEOSGeometry* geom);
-    void writeGeometryCollection(GEOSContextHandle_t context, const GEOSGeometry* multi);
+    void writeGeometry(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom);
+    void writeGeometryCollection(geos::geom::GeometryFactory& context, const geos::geom::Geometry& multi);
     void writeAttributeValue(PyObject* value);
     void formatAttributeValue(int key, PyObject* value);
     */

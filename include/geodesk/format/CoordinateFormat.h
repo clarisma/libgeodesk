@@ -5,7 +5,8 @@
 
 #include <clarisma/util/Buffer.h>
 #ifdef GEODESK_WITH_GEOS
-#include <geos_c.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/Geometry.h>
 #endif
 #include <geodesk/feature/WayPtr.h>
 #include <geodesk/feature/RelationPtr.h>

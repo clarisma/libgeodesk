@@ -7,7 +7,8 @@
 #include <geodesk/feature/RelationPtr.h>
 #include <clarisma/alloc/Arena.h>
 #ifdef GEODESK_WITH_GEOS
-#include <geos_c.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/Geometry.h>
 #endif
 #ifdef GEODESK_WITH_OGR
 #include <ogr_geometry.h>
@@ -69,7 +70,7 @@ public:
     ///
     void assignAndMergeHoles();
     #ifdef GEODESK_WITH_GEOS
-    GEOSGeometry* createPolygonal(GEOSContextHandle_t context);
+    geos::geom::Geometry::Ptr createPolygonal(geos::geom::GeometryFactory& context);
     #endif
     #ifdef GEODESK_WITH_OGR
     OGRGeometry* createOgrPolygonal() const;

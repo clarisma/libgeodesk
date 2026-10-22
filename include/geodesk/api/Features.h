@@ -16,8 +16,11 @@ class Ways;
 class Relations;
 }
 
-class GEOSGeometry;
-class GEOSContextHandle_t;
+namespace geos::geom
+{
+class Geometry;
+class GeometryFactory;
+}
 class OGRGeometry;
 
 namespace geodesk {
@@ -311,7 +314,7 @@ public:
     /// @param context  GEOS context associated with @p geom
     /// @param geom     GEOS geometry used as the intersection filter
     ///
-    Features intersecting(GEOSContextHandle_t context, const GEOSGeometry* geom) const;
+    Features intersecting(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom) const;
 
     /// @brief Only features that lie entirely inside the geometry
     /// of the given Feature.
@@ -329,7 +332,7 @@ public:
     /// @param context  GEOS context associated with @p geom
     /// @param geom     GEOS geometry used as the containment filter
     ///
-    Features within(GEOSContextHandle_t context, const GEOSGeometry* geom) const;
+    Features within(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom) const;
 
     /// @brief Only features whose geometry contains the
     /// given Feature.
@@ -348,7 +351,7 @@ public:
     /// @param geom     GEOS geometry that must lie entirely within
     ///                 each returned feature's geometry
     ///
-    Features containing(GEOSContextHandle_t context, const GEOSGeometry* geom) const;
+    Features containing(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom) const;
 
     /// @brief Only features whose geometry contains the
     /// given Coordinate.
@@ -379,7 +382,7 @@ public:
     /// @param context  GEOS context associated with @p geom
     /// @param geom     GEOS geometry used as the crossing filter
     ///
-    Features crossing(GEOSContextHandle_t context, const GEOSGeometry* geom) const;
+    Features crossing(geos::geom::GeometryFactory& context, const geos::geom::Geometry& geom) const;
 
     /// @brief Only features whose closest point lies within
     /// `distance` meters of `xy`.
@@ -515,6 +518,5 @@ class Relations : public Features
 };
 
 } // namespace geodesk
-
 
 
