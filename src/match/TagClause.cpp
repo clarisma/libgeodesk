@@ -105,7 +105,7 @@ bool TagClause::isOrClause() const
 /**
  * Merges two tag clauses together, e.g. [k>3][k<5] or [k][k!=a]
  */
-// TODO: Broken !!!!
+// TODO: needs test for #51
 void TagClause::absorb(TagClause* other)
 {
 	assert(keyOp.opcode == other->keyOp.opcode);
@@ -113,6 +113,7 @@ void TagClause::absorb(TagClause* other)
 	{
 		keyOp.setNegated(false);
 		std::swap(keyOp.next[0], keyOp.next[1]);
+		keyOp.next[0] = other->keyOp.next[0];	// fix for #51
 	}
 
 	/*
