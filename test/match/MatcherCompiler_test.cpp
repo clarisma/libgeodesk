@@ -117,4 +117,11 @@ TEST_CASE("Issue 32")
     (void)world("na,n");
 }
 
+// TODO: Proper test
+TEST_CASE("Issue 51")
+{
+    Features world("d:\\geodesk\\tests\\test.gol");
+    REQUIRE(world("[layer]").count() == 550);
+}
+
 

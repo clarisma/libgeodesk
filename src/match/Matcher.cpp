@@ -127,29 +127,31 @@ class GlobalKeyMatcher : public Matcher
 public:
 	GlobalKeyMatcher(int keyCode, int codeNo) :
 		Matcher(matchKeyValue, nullptr),	// don't need store access
-		tagBits_((keyCode << 2) | (codeNo << 16)) {}
+		keyBits_(keyCode << 2),
+		tagBits_((keyCode << 2) | (codeNo << 16) | 1) {}
 
 	static bool matchKeyValue(const Matcher* matcher, FeaturePtr pFeature)
 	{
+		uint32_t keyBits = ((GlobalKeyMatcher*)matcher)->keyBits_;
 		uint32_t tagBits = ((GlobalKeyMatcher*)matcher)->tagBits_;
-		uint16_t keyBits = static_cast<uint16_t>(tagBits);
-		pointer p(pFeature.ptr() + 8);
+		DataPtr p(pFeature.ptr() + 8);
 		p = p.followTagged(~1);
 		for (; ; )
 		{
 			uint32_t key = p.getUnsignedShort();
-			if (key > keyBits)
+			if (key >= keyBits)
 			{
-				uint32_t tag = (p.getUnsignedShort(2) << 16) | (key & 3);
-				return (key & 0x7ffc) == keyBits && tag != 
-					((tagBits & 0xffff'0000) | 1);
-				// key matches, but it's value is not global string "no"
+				uint32_t tag = p.getUnsignedIntUnaligned();
+				return (key & 0x7ffc) == keyBits &&
+					(tag & 0xffff'7fff) != tagBits;
+				// key matches, and its value is not global string "no"
 			}
 			p += 4 + (key & 2);
 		}
 	}
 
 private:
+	uint32_t keyBits_;
 	uint32_t tagBits_;
 };
 
