@@ -77,9 +77,10 @@ void Console::print(Stream stream, const char* s, size_t len)
     write(handle_[streamNo].native(), s, len);
 }
 
-char Console::readKeyPress()
+int Console::readKeyPress()
 {
-    // Read a single character
+    // Read a single character; getchar() returns EOF (-1) if stdin
+    // is closed, redirected from /dev/null, or an error occurs
     return getchar();
 }
 

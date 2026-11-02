@@ -84,7 +84,7 @@ void Console::print(Stream stream, const char* s, size_t len)
 	WriteFile(handle_[streamNo].native(), s, static_cast<DWORD>(len), &written, NULL);
 }
 
-char Console::readKeyPress()
+int Console::readKeyPress()
 {
 	return _getch();  // Read a single key on Windows
 }

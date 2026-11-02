@@ -221,7 +221,15 @@ int ConsoleBuffer::prompt(bool defaultYes)
 	int res = defaultYes;
 	for(;;)
 	{
-		char key = console_->readKeyPress();
+		int key = console_->readKeyPress();
+		if(key < 0)
+		{
+			// stdin is at EOF (e.g. < /dev/null, closed pipe):
+			// no answer will ever arrive, so treat as cancelled
+			// instead of looping forever
+			res = -1;
+			break;
+		}
 		if(key == '\n' || key == '\r') break;
 		if(key == 'y' || key == 'Y')
 		{

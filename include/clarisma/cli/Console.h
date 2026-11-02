@@ -202,7 +202,9 @@ public:
 
 	void print(Stream stream, const char* s, size_t len);
 
-	char readKeyPress();
+	// Returns the key code (0-255), or -1 if stdin is at EOF
+	// or cannot be read.
+	int readKeyPress();
 
 	static constexpr AnsiColor DEFAULT{"\033[0m"};
 	static constexpr AnsiColor BRIGHT_GREEN{"\033[38;5;84m"};
