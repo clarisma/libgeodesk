@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <geodesk/geom/polygon/Ring.h>
+#include "Ring.h"
 #include "Segment.h"
 
 namespace geodesk {
@@ -69,7 +69,5 @@ private:
 	Coordinate* p_;
 	Coordinate* pEndCoords_;
 };
-
-
 
 } // namespace geodesk

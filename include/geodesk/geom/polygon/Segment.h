@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <geodesk/geom/polygon/Polygonizer.h>
+#include "Polygonizer.h"
 #include <clarisma/alloc/Arena.h>
 
 namespace geodesk {
