@@ -3,7 +3,7 @@
 
 #include "geom/LambertArea.h"
 #include <geodesk/feature/WayCoordinateIterator.h>
-#include "geom/polygon/RingCoordinateIterator.h"
+#include <geodesk/geom/polygon/RingCoordinateIterator.h>
 
 namespace geodesk {
 

@@ -4,11 +4,9 @@
 #include <geodesk/geom/Centroid.h>
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/geom/polygon/Polygonizer.h>
-#include "geom/polygon/RingCoordinateIterator.h"
+#include <geodesk/geom/polygon/RingCoordinateIterator.h>
 
 namespace geodesk {
-
-
 
 Coordinate Centroid::ofWay(WayPtr way)
 {

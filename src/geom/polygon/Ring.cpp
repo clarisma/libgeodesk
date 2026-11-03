@@ -3,7 +3,7 @@
 
 #include <geodesk/geom/polygon/Ring.h>
 #include <geodesk/geom/polygon/RobustPointInPolygon.h>
-#include "Segment.h"
+#include <geodesk/geom/polygon/Segment.h>
 
 namespace geodesk {
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/geom/Area.h>
-#include "geom/polygon/RingCoordinateIterator.h"
+#include <geodesk/geom/polygon/RingCoordinateIterator.h>
 
 namespace geodesk {
 

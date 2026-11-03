@@ -6,7 +6,7 @@
 #include <clarisma/data/HashMap.h>
 #include <geodesk/geom/polygon/Polygonizer.h>
 #include <geodesk/geom/polygon/Ring.h>
-#include "Segment.h"
+#include <geodesk/geom/polygon/Segment.h>
 #include <geodesk/geom/LineSegment.h>
 
 namespace geodesk {

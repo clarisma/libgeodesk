@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "RingBuilder.h"
-#include "Segment.h"
+#include <geodesk/geom/polygon/Segment.h>
 #include <geodesk/geom/Coordinate.h>
 #include <clarisma/util/Bits.h>
 

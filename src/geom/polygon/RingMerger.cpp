@@ -3,8 +3,7 @@
 
 #include "RingMerger.h"
 #include "RingBuilder.h"
-#include "Segment.h"
-#include <geodesk/geom/LineSegment.h>
+#include <geodesk/geom/polygon/Segment.h>
 #include <clarisma/util/log.h>
 
 namespace geodesk {
