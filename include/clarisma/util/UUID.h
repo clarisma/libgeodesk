@@ -59,6 +59,8 @@ public:
         out.write(buf, p - buf);
     }
 
+    static constexpr size_t FORMATTED_LENGTH = 36;
+
 private:
     uint8_t guid_[16];
 };
