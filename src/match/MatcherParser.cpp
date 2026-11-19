@@ -48,11 +48,19 @@ Selector* MatcherParser::expectSelector()
 		TagClause* clause = expectTagClause();
 		expect(']');
 		sel->addClause(clause);
-		uint32_t indexBits = sel->indexBits;
-		indexBits_ |= indexBits;
-		if(indexBits < keyMin_) keyMin_ = indexBits;
-			// TODO: Consider breaking out keyMask/keyMin by feature type
 	}
+
+	// Only update the query-wide key mask and minimum once all clauses
+	// of the selector have been parsed; otherwise, the result would
+	// depend on clause order (e.g. in "a[name=X][boundary=administrative]",
+	// the unindexed first clause would set keyMin to 0, which causes
+	// the tag index to be ignored) (#55)
+	// This also ensures that a selector without any tag clauses
+	// (e.g. "n" in "n, a[boundary]") correctly sets keyMin to 0
+	uint32_t indexBits = sel->indexBits;
+	indexBits_ |= indexBits;
+	if(indexBits < keyMin_) keyMin_ = indexBits;
+		// TODO: Consider breaking out keyMask/keyMin by feature type
 	return sel;
 }
 

@@ -30,6 +30,13 @@ void Selector::addClause(TagClause* clause)
 		if (comp == 0)
 		{
 			current->absorb(clause);
+			// The absorbed clause may require the key even if the
+			// existing one doesn't (e.g. "[k!=a][k]"), so we need
+			// to check for index bits here as well (#55)
+			if (current->flags & TagClause::KEY_REQUIRED)
+			{
+				indexBits |= IndexBits::fromCategory(current->category);
+			}
 			return;
 		}
 		break;
