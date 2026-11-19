@@ -138,11 +138,11 @@ public:
 	void writeRing(const Polygonizer::Ring* ring)
 	{
 		RingCoordinateIterator iter(ring);
-		self().writeUnsignedInt(iter.coordinatesRemaining());
-		for (;;)
+		int count = iter.coordinatesRemaining();
+		self().writeUnsignedInt(count);
+		for (int i=0; i<count; i++)
 		{
 			Coordinate c = iter.next();
-			if (c.isNull()) break;
 			self().writeCoordinate(c);
 		}
 	}
