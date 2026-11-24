@@ -7,7 +7,6 @@
 #include <geodesk/query/QueryResults.h>
 #include <geodesk/feature/types.h>
 #include <geodesk/filter/Filter.h>
-#include <geodesk/match/Matcher.h>
 
 namespace geodesk {
 
@@ -22,6 +21,8 @@ class QueryBase;
 ///
 class TileQueryTask
 {
+    using DataPtr = clarisma::DataPtr;
+
 public:
     TileQueryTask(QueryBase* query, uint32_t tipAndFlags, FastFilterHint fastFilterHint) :
         query_(query),

@@ -20,7 +20,7 @@ public:
 
 private:
 	TagTablePtr tags_;
-	DataPtr p_;
+	clarisma::DataPtr p_;
 	StringTable& strings_;
 };
 

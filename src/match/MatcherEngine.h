@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <regex>
 #include <string_view>
-#include <clarisma/util/pointer.h>
+#include <clarisma/util/DataPtr.h>
 #include <clarisma/util/ShortVarString.h>
 #include <geodesk/match/Matcher.h>
 
@@ -34,9 +34,9 @@ private:
 	inline const std::regex* getRegexOperand();
 	inline uint32_t getFeatureTypeOperand();
 
-	clarisma::pointer ip_;
+	clarisma::DataPtr ip_;
 	const uint8_t* pTagTable_;	// with local-keys flag as bit 0
-	clarisma::pointer pTag_;
+	clarisma::DataPtr pTag_;
 	uint16_t tagKey_;
 	int16_t valueOfs_;
 };

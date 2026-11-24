@@ -14,7 +14,7 @@ using namespace clarisma;
 // IN: pTag_, ip_; OUT: tagKey_, valueOfs_
 int MatcherEngine::scanGlobalKeys()
 {
-    assert((pTag_.pointerAsULong() & 1) == 0);
+    assert((reinterpret_cast<uintptr_t>(pTag_.ptr()) & 1) == 0);
 
     // TODO: decide if operand should be the global-key code or the key-bits (already shifted)
     uint16_t operand = ip_.getUnsignedShort() << 2;
@@ -44,14 +44,14 @@ int MatcherEngine::scanGlobalKeys()
 // IN: pTagTable_, pTag_, ip_; OUT: tagKey_
 int MatcherEngine::scanLocalKeys()
 {
-    pointer pTagTableAligned = pointer::ofTagged(pTagTable_, -4);
+    DataPtr pTagTableAligned = DataPtr::ofTagged(pTagTable_, -4);
     std::string_view operand = getStringOperand();
-    pointer pTagOld = pTag_;
+    DataPtr pTagOld = pTag_;
     for (;;)
     {
-        int32_t key = pTag_.getUnalignedInt();
+        int32_t key = pTag_.getIntUnaligned();
         pTag_ -= 6 + (key & 2);
-        pointer pKey = pTagTableAligned + ((key >> 3) << 2);
+        DataPtr pKey = pTagTableAligned + ((key >> 3) << 2);
         StringValue keyString(pKey);
         if (keyString == operand)
         {
@@ -69,16 +69,16 @@ int MatcherEngine::scanLocalKeys()
 std::string_view MatcherEngine::getStringOperand()
 {
     uint16_t opOfs = ip_.getUnsignedShort();
-    pointer p = ip_.asBytePointer() - opOfs; // TODO: relative to Matcher*?
+    DataPtr p = ip_ - opOfs; // TODO: relative to Matcher*?
     ip_ += 2;
     int len = p.getUnsignedShort();
-    return std::string_view(p + 2, len);
+    return std::string_view(p.charPtr() + 2, len);
 }
 
 inline double MatcherEngine::getDoubleOperand()
 {
     uint16_t opOfs = ip_.getUnsignedShort();
-    double d = *((double*)(ip_.asBytePointer() - opOfs));
+    double d = (ip_ - opOfs).getDouble();
     ip_ += 2;
     return d;
 }
@@ -86,14 +86,14 @@ inline double MatcherEngine::getDoubleOperand()
 inline const std::regex *MatcherEngine::getRegexOperand()
 {
     uint16_t opOfs = ip_.getUnsignedShort();
-    std::regex* regex = (std::regex*)(ip_.asBytePointer() - opOfs); // TODO: relative to Matcher*?
+    std::regex* regex = (std::regex*)(ip_.ptr() - opOfs); // TODO: relative to Matcher*?
     ip_ += 2;
     return regex;
 }
 
 inline uint32_t MatcherEngine::getFeatureTypeOperand()
 {
-    uint32_t types = ip_.getUnalignedUnsignedInt();
+    uint32_t types = ip_.getUnsignedIntUnaligned();
         // This should use native-Endianness, as types are written
         // like that by the emitter (we may make pointer little-Endian)
     ip_ += 4;
@@ -108,7 +108,7 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
     double doubleValue;
 
     // The matcher's bytecode begins right after the Matcher structure
-    ctx.ip_ = pointer(reinterpret_cast<const uint8_t*>(matcher) + sizeof(Matcher));
+    ctx.ip_ = DataPtr(reinterpret_cast<const uint8_t*>(matcher) + sizeof(Matcher));
     ctx.pTagTable_ = (pFeature.ptr() + 8).follow();
     for (;;)
     {
@@ -132,17 +132,19 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
 
             case EQ_STR:
             {
-                geodesk::StringValue str(stringValue);
+                StringValue str(stringValue);   // NOLINT initialized
                 matched = (str == ctx.getStringOperand());
             }
             break;
 
             case STARTS_WITH:
-                matched = asStringView(stringValue).starts_with(ctx.getStringOperand());
+                matched = asStringView(stringValue).    // NOLINT initialized
+                    starts_with(ctx.getStringOperand());
                 break;
 
             case ENDS_WITH:
-                matched = asStringView(stringValue).ends_with(ctx.getStringOperand());
+                matched = asStringView(stringValue).    // NOLINT initialized
+                    ends_with(ctx.getStringOperand());
                 break;
 
             case CONTAINS:
@@ -195,7 +197,7 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
 
             case FIRST_GLOBAL_KEY:
             {
-                pointer p = ctx.pTagTable_;
+                DataPtr p = ctx.pTagTable_;
                 ctx.pTag_ = p & (uint64_t)~1;       // mask off the local-keys flag
                 ctx.valueOfs_ = -2;
                 matched = ctx.scanGlobalKeys();
@@ -231,37 +233,26 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
                 break;
 
             case LOAD_CODE:
-                codeValue = ctx.pTag_.getUnsignedShort(-ctx.valueOfs_); // TODO: decide on sign
+                codeValue = (ctx.pTag_ - ctx.valueOfs_).getUnsignedShort(); // TODO: decide on sign
                 matched = ((ctx.tagKey_ & 3) == 1);
                 assert(!matched || matcher->store()->strings().isValidCode(codeValue));
                 break;
 
             case LOAD_STRING:
             {
-                // A local-string value is stored as a 4-byte value (wide string)
-                // which represents an offset that, when added to the location
-                // of the value, yields a pointer to a local string.
-                // We can only read a 4-byte value from the value location if the
-                // value is, in fact, a wide value, because the GOL spec does not
-                // guarantee that memory can legally be read at (pVal + 2) if the
-                // value is narrow. Hence, we read the value as two 16-bit values,
-                // reading the upper half at pVal+2 if wide-string, or at pVal+0
-                // if any other type. This pointer arithmetic avoids a branch.
-                // The resulting pointer may therefore be invalid, but we are only 
-                // dereferencing it if the wide-string check succeeds
+                // A local-string value is stored as a 4-byte signed offset (wide string)
+                // relative to the location of the value itself.
+                // GOL 2.0 tile data ends with a 4-byte checksum, so reading 4 bytes
+                // from the value location is safe even if the value is narrow.
+                // This allows us to read the offset directly without branching.
+                // The resulting pointer is only used if the wide-string check succeeds.
 
-                // TODO: Can simplify this
-                //  Tile data in GOL 2.0 is followed by a 4-byte checksum,
-                //   so we can safely read up to 4 bytes past the end of
-                //   a tagtable
-                pointer pVal = ctx.pTag_ - (int)ctx.valueOfs_;
-                matched = ((ctx.tagKey_ & 3) == 3);      // wide string
-                int32_t rel = pVal.getUnsignedShort();   // read lower half
-                rel |= (pVal + matched * 2).getShort() << 16;
-                // read upper half (or lower again if this isn't a wide-string value)
-                stringValue = pVal.asBytePointer() + rel;
+                DataPtr pVal = ctx.pTag_ - static_cast<int>(ctx.valueOfs_);
+                int32_t rel = pVal.getIntUnaligned();
+                stringValue = pVal.ptr() + rel;
                 // The resulting string pointer (may be invalid, but instructions
                 // will only use it if matched==1)
+                matched = (ctx.tagKey_ & 3) == 3;  // wide string
             }
             break;
 
@@ -270,13 +261,13 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
                 int type = (ctx.tagKey_ & 3);
                 if (type == 0)      // narrow number
                 {
-                    pointer pVal = ctx.pTag_ - (int)ctx.valueOfs_;
-                    doubleValue = ((int32_t)pVal.getUnsignedShort()) + TagValues::MIN_NUMBER;
+                    DataPtr pVal = ctx.pTag_ - (int)ctx.valueOfs_;
+                    doubleValue = static_cast<int32_t>(pVal.getUnsignedShort()) + TagValues::MIN_NUMBER;
                     matched = 1;
                 }
                 else if (type == 2) // wide number
                 {
-                    pointer pVal = ctx.pTag_ - (int)ctx.valueOfs_;
+                    DataPtr pVal = ctx.pTag_ - (int)ctx.valueOfs_;
                     doubleValue = TagValues::doubleFromWideNumber(pVal.getUnsignedInt());
                     matched = 1;
                 }

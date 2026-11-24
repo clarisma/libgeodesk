@@ -47,13 +47,15 @@ class FeatureBase
     static constexpr bool canBeRelation =
         std::is_same_v<T, FeaturePtr> || std::is_same_v<T, RelationPtr>;
 
+    using TaggedPtr = clarisma::TaggedPtr<FeatureStore,3>;
+
     //using Feature_ = FeatureBase<FeaturePtr,true,true,true>;
     //using Node_ = FeatureBase<NodePtr,true,false,false>;
 
 public:
     FeatureBase(FeatureStore* store, FeaturePtr ptr, const clarisma::ShortVarString* role = nullptr)
     {
-        store_ = TaggedPtr<FeatureStore,3>(store, ptr.typeCode() << 1);
+        store_ = TaggedPtr(store, ptr.typeCode() << 1);
         feature_.ptr = T(ptr);
         feature_.role = role;
     }
@@ -425,13 +427,13 @@ private:
     // only used by FeatureIterator
     explicit FeatureBase(FeatureStore* store)
     {
-        store_ = TaggedPtr<FeatureStore,3>(store);
+        store_ = TaggedPtr(store);
         feature_.ptr = nullptr;
         feature_.role = nullptr;
     }
 
     bool isNull() const noexcept { return store_.rawPtr() == nullptr; }
-    void setNull() noexcept { store_ = TaggedPtr<FeatureStore,3>(nullptr); }
+    void setNull() noexcept { store_ = TaggedPtr(nullptr); }
 
     void setTypedFeature(FeaturePtr ptr) noexcept
     {
@@ -523,7 +525,7 @@ private:
         }
     }
 
-    TaggedPtr<FeatureStore,3> store_;
+    TaggedPtr store_;
     union
     {
         struct

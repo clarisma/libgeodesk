@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>  // for std::hash
+#include <type_traits>
 
 namespace clarisma {
 
@@ -23,17 +24,18 @@ public:
     DataPtr(std::byte* p) noexcept : p_(reinterpret_cast<uint8_t*>(p)) {}
     DataPtr(const std::byte* p) noexcept : p_(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(p))) {}
     DataPtr(const uint8_t* p) noexcept : p_(const_cast<uint8_t*>(p)) {}
-    DataPtr(const DataPtr& other) noexcept : p_(other.p_) {}
+    DataPtr(const DataPtr& other) noexcept = default;
+
+    static DataPtr ofTagged(const void* p, uint64_t mask)
+    {
+        return DataPtr(reinterpret_cast<uint64_t>(p) & mask);
+    }
 
     uint8_t* ptr() const noexcept { return p_; }
     std::byte* bytePtr() const noexcept { return reinterpret_cast<std::byte*>(p_); }
     char* charPtr() const noexcept { return reinterpret_cast<char*>(p_); }
 
-    DataPtr& operator=(const DataPtr& other) noexcept
-    {
-        p_ = other.p_;
-        return *this;
-    }
+    DataPtr& operator=(const DataPtr& other) = default;
 
     DataPtr& operator=(uint8_t* p) noexcept
     {
@@ -228,10 +230,11 @@ public:
         return DataPtr(p_ + getInt());
     }
 
-    // TODO: remove, don't allow
-    DataPtr followTagged(uint64_t mask) const
+    DataPtr followTagged(uint32_t mask) const noexcept
     {
-        return DataPtr(p_ + (getInt() & mask));
+        int32_t delta = getInt();
+        delta &= static_cast<int32_t>(mask);
+        return DataPtr(p_ + delta);
     }
 
     DataPtr followUnaligned() const noexcept
@@ -283,3 +286,4 @@ struct std::hash<clarisma::DataPtr>
         return hash<uintptr_t>{}(p);
     }
 };
+

@@ -4,7 +4,7 @@
 #include <geodesk/match/Matcher.h>
 #include <cstddef>   // for offsetof
 #include <regex>
-#include <clarisma/util/pointer.h>
+#include <clarisma/util/DataPtr.h>
 #include "MatcherDecoder.h"
 
 namespace geodesk {

@@ -37,10 +37,6 @@ namespace geodesk {
 */
 typedef int64_t TagBits;
 
-using geodesk::TagValue;
-using clarisma::DataPtr;
-using clarisma::TaggedPtr;
-
 enum TagValueType
 {
 	NARROW_NUMBER = 0,
@@ -51,9 +47,12 @@ enum TagValueType
 
 class GEODESK_API TagTablePtr final
 {
+	using DataPtr = clarisma::DataPtr;
+	using TaggedPtr = clarisma::TaggedPtr<const uint8_t, 1>;
+
 public:
 	TagTablePtr(DataPtr p, bool hasLocalTags) :
-		TagTablePtr(TaggedPtr<const uint8_t, 1>(p, hasLocalTags)) {}
+		TagTablePtr(TaggedPtr(p, hasLocalTags)) {}
 
 	static TagTablePtr empty()
 	{
@@ -62,7 +61,7 @@ public:
 
 	static TagTablePtr readFrom(DataPtr ppTags)
 	{
-		return TagTablePtr(TaggedPtr<const uint8_t, 1>(ppTags + ppTags.getInt()));
+		return TagTablePtr(TaggedPtr(ppTags + ppTags.getInt()));
 	}
 
 	bool isEmpty() const
@@ -129,7 +128,7 @@ public:
 	}
 
 	DataPtr ptr() const { return taggedPtr_.ptr(); }
-	TaggedPtr<const uint8_t, 1> taggedPtr() const { return taggedPtr_; }
+	TaggedPtr taggedPtr() const { return taggedPtr_; }
 	DataPtr alignedBasePtr() const 
 	{ 
 		return taggedPtr_.raw() & 0xffff'ffff'ffff'fffcULL; 
@@ -176,7 +175,7 @@ public:
 	}
 
 private:
-	explicit TagTablePtr(TaggedPtr<const uint8_t,1> taggedPtr) : taggedPtr_(taggedPtr) {}
+	explicit TagTablePtr(clarisma::TaggedPtr<const uint8_t,1> taggedPtr) : taggedPtr_(taggedPtr) {}
 
 	#ifdef GEODESK_PYTHON
 	static PyObject* getGlobalStringObject(TagBits value, StringTable& strings)
@@ -191,7 +190,7 @@ private:
 	}
 	#endif
 
-	TaggedPtr<const uint8_t, 1> taggedPtr_;
+	TaggedPtr taggedPtr_;
 
 	friend class TagIterator;
 	friend class TagWalker;
