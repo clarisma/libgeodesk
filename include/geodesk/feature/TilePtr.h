@@ -9,10 +9,9 @@ namespace geodesk {
 
 /// \cond lowlevel
 
-using clarisma::DataPtr;
 using namespace TileConstants;
 
-class TilePtr : public DataPtr
+class TilePtr : public clarisma::DataPtr
 {
 public:
 	TilePtr() {}

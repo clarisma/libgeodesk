@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>  // for std::hash
-#include <type_traits>
 
 namespace clarisma {
 
@@ -28,7 +27,7 @@ public:
 
     static DataPtr ofTagged(const void* p, uint64_t mask)
     {
-        return DataPtr(reinterpret_cast<uint64_t>(p) & mask);
+        return DataPtr(reinterpret_cast<uintptr_t>(p) & mask);
     }
 
     uint8_t* ptr() const noexcept { return p_; }

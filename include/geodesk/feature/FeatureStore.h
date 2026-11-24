@@ -34,8 +34,6 @@ class MatcherHolder;
 //  - https://github.com/progschj/ThreadPool (Zlib license, header-only)
 
 using std::byte;
-using clarisma::DataPtr;
-using clarisma::DateTime;
 
 
 
@@ -48,6 +46,8 @@ class GEODESK_API FeatureStore final : public clarisma::FreeStore
 {
 public:
     using IndexedKeyMap = clarisma::HashMap<uint16_t, uint16_t>;
+    using DataPtr = clarisma::DataPtr;
+    using DateTime = clarisma::DateTime;
 
     struct Settings
     {
@@ -159,7 +159,6 @@ public:
             code > TagValues::MAX_COMMON_KEY ? -1 : code);
     }
 
-    // const uint32_t* tileIndex() const noexcept { return tileIndex_; }
     DataPtr tileIndex() const noexcept { return DataPtr(reinterpret_cast<byte*>(tileIndex_)); }
         // TODO: standardize on const uint32_t*?
     int tipCount() const noexcept { return header()->tipCount; }

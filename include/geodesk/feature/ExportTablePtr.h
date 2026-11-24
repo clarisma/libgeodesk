@@ -12,10 +12,9 @@ namespace geodesk {
 
 /// \cond lowlevel
 
-using clarisma::DataPtr;
 using namespace TileConstants;
 
-class ExportTablePtr : public DataPtr
+class ExportTablePtr : public clarisma::DataPtr
 {
 public:
 	ExportTablePtr() {}
