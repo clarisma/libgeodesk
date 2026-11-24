@@ -86,6 +86,25 @@ const Filter* PreparedFilterFactory::forGeometry(GEOSContextHandle_t context, co
 		return forPolygonal();
 	}
 
+	case GEOS_MULTILINESTRING:
+	{
+		int count = GEOSGetNumGeometries_r(context, geom);
+		bool hasSegments = false;
+		for (int i = 0; i < count; i++)
+		{
+			const GEOSGeometry* child = GEOSGetGeometryN_r(context, geom, i);
+			seq = GEOSGeom_getCoordSeq_r(context, child);
+			if (seq == NULL) [[unlikely]] continue;
+			GEOSCoordSeq_getSize_r(context, seq, &coordLen);
+			if (coordLen == 0) [[unlikely]] continue;    // skip empty parts
+			indexBuilder_.segmentizeCoords(context, seq);
+			hasSegments = true;
+		}
+		if (!hasSegments) return nullptr;
+		bounds_ = Geos::getEnvelope(context, geom);
+		return forLineal();
+	}
+
 	default:
 		return forGeometryCollection(context, geom);
 	}

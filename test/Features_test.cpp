@@ -305,3 +305,9 @@ TEST_CASE_METHOD(GolFixture, "Features & Features")
 	}
 	REQUIRE(count > 0);
 }
+
+
+TEST_CASE_METHOD(GolFixture, "Same matcher clause with differently typed values (#56)")
+{
+	auto query = monaco("w[highway=primary][highway=6]");
+}
