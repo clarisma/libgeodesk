@@ -45,6 +45,8 @@ const Filter* PreparedFilterFactory::forFeature(FeatureStore* store, FeaturePtr 
 #ifdef GEODESK_WITH_GEOS
 const Filter* PreparedFilterFactory::forGeometry(GEOSContextHandle_t context, const GEOSGeometry* geom)
 {
+	assert(geom);
+	if (GEOSisEmpty_r(context, geom)) [[unlikely]] return nullptr;
 	int geomType = GEOSGeomTypeId_r(context, geom);
 	unsigned int coordLen;
 	const GEOSCoordSequence* seq;

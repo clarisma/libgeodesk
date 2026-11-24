@@ -592,6 +592,8 @@ public:
     }
 
 
+    // TODO: Don't use the current matcher; use the allMatcher of the store
+    //  (otherwise complex matchers hang around longer than needed)
     View empty() const
     {
         store_->addref();
