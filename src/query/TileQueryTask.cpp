@@ -11,7 +11,7 @@ using namespace TileConstants;
 
 namespace geodesk {
 
-QueryResultsHeader QueryResults::EMPTY_HEADER = { EMPTY, DataPtr(), DEFAULT_BUCKET_SIZE };
+QueryResultsHeader QueryResults::EMPTY_HEADER = { EMPTY, clarisma::DataPtr(), DEFAULT_BUCKET_SIZE };
 QueryResults* const QueryResults::EMPTY = reinterpret_cast<QueryResults*>(&EMPTY_HEADER);
 
 // TODO: perform type check prior to matcher

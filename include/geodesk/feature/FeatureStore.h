@@ -59,7 +59,7 @@ public:
         uint32_t    keyIndexMinFeatures;
     };
 
-    struct Snapshot
+    struct SnapshotData
     {
         uint32_t revision;
         uint32_t modifiedSinceRevision;
@@ -89,7 +89,7 @@ public:
         uint32_t metadataChecksum;
         uint32_t tileIndexChecksum;
         uint32_t reserved[2];
-        Snapshot snapshots[2];
+        SnapshotData snapshots[2];
         uint8_t urlLength;
         char url[MAX_URL_LENGTH];
         uint8_t unused[2];
@@ -122,7 +122,7 @@ public:
 #endif
 
     const clarisma::UUID& guid() const { return header()->guid; }
-    const Snapshot& snapshot() const { return header()->snapshots[header()->activeSnapshot]; }
+    const SnapshotData& snapshot() const { return header()->snapshots[header()->activeSnapshot]; }
     uint32_t revision() const { return snapshot().revision; }
     DateTime revisionTimestamp() const { return snapshot().revisionTimestamp; }
     uint32_t tileCount() const { return snapshot().tileCount; }

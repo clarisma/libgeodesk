@@ -232,7 +232,7 @@ FeaturePtr Query::next()
             }
         }
         uint32_t item = currentResults_->items[currentPos_++];
-        DataPtr pTile = currentResults_->pTile;
+        clarisma::DataPtr pTile = currentResults_->pTile;
         return FeaturePtr(pTile + item);
     }
 }

@@ -37,7 +37,7 @@ class Filter;
 class TileIndexWalker
 {
 public:
-    TileIndexWalker(DataPtr pIndex, uint32_t zoomLevels,
+    TileIndexWalker(clarisma::DataPtr pIndex, uint32_t zoomLevels,
         const Box& box, const Filter* filter);
 
     /// Moves to the next tile (depth-first).
@@ -90,7 +90,7 @@ private:
 
     Box box_;
     const Filter* filter_;
-    DataPtr pIndex_;
+    clarisma::DataPtr pIndex_;
     int currentLevel_;
     Tile currentTile_;
     uint32_t currentTip_;

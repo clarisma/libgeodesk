@@ -52,7 +52,7 @@ public:
     void setup(const Metadata& metadata, std::unique_ptr<uint32_t[]>&& tileIndex);
     // void addTile(Tip tip, std::span<byte> data);
 
-    Snapshot& targetSnapshot()
+    SnapshotData& targetSnapshot()
     {
         // TODO: Currently, we're writing exclusively, so Snapshot 0
         //  is always active; update this once we support concurrent writes

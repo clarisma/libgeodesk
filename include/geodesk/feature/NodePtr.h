@@ -13,8 +13,10 @@ class NodePtr : public FeaturePtr
 {
 public:
 	NodePtr() {}
+	NodePtr(const NodePtr& other) = default;
 	explicit NodePtr(FeaturePtr f) : FeaturePtr(f.ptr()) { assert(isNull() || isNode()); }
-	explicit NodePtr(DataPtr p) : FeaturePtr(p) {}
+	explicit NodePtr(clarisma::DataPtr p) : FeaturePtr(p) {}
+
 	// explicit NodePtr(const uint8_t* p) : FeaturePtr(p) {}
 
 	int32_t x() const { return (p_-8).getInt(); }
@@ -35,7 +37,7 @@ public:
 	 * The node must belong to a relation, otherwise the
 	 * result is undefined.
 	 */
-	DataPtr relationTableFast() const
+	clarisma::DataPtr relationTableFast() const
 	{
 		return (p_ + 12).follow();
 	}

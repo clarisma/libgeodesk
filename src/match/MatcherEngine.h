@@ -20,11 +20,13 @@ public:
 private:
 	void jumpIf(int matched) { ip_ += matched ? ip_.getShort() : 2; }
 	inline int scanGlobalKeys();
-	int scanLocalKeys();	// inline not needed for this
-	static inline int isNegated(int op) { return (op >> 8) & 1; }
+	inline int scanLocalKeys();
+		// This is a cold method that we normally wouldn't inline,
+		// but inlining prevents escape of `ctx` and help keep it in regs
+	static int isNegated(int op) { return (op >> 8) & 1; }
 		// TODO: Is negate the only flag? If so, no need for AND
 	inline std::string_view getStringOperand();
-	static inline std::string_view asStringView(const uint8_t* stringValue)
+	static std::string_view asStringView(const uint8_t* stringValue)
 	{
 		const clarisma::ShortVarString* val =
 			reinterpret_cast<const clarisma::ShortVarString*>(stringValue);

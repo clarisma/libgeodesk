@@ -23,6 +23,8 @@ template<typename Derived, typename Ptr, int ExtraFlags, int Step>
 class RelatedIteratorBase
 {
 public:
+    using DataPtr = clarisma::DataPtr;
+
     RelatedIteratorBase(FeatureStore* store, DataPtr p, Tex initialTex) :
         store_(store),
         currentTip_(FeatureConstants::START_TIP),
@@ -163,7 +165,7 @@ template<typename Derived, typename Ptr, int ExtraFlags, int Step>
 class RelatedIterator : public RelatedIteratorBase<Derived,Ptr,ExtraFlags,Step>
 {
 public:
-    RelatedIterator(FeatureStore* store, DataPtr p, Tex initialTex,
+    RelatedIterator(FeatureStore* store, clarisma::DataPtr p, Tex initialTex,
         const MatcherHolder* matcher, const Filter* filter) :
         RelatedIteratorBase<Derived,Ptr,ExtraFlags,Step>(store, p, initialTex),
         matcher_(matcher),

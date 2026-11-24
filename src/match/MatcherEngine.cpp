@@ -42,7 +42,7 @@ int MatcherEngine::scanGlobalKeys()
 }
 
 // IN: pTagTable_, pTag_, ip_; OUT: tagKey_
-int MatcherEngine::scanLocalKeys()
+inline int MatcherEngine::scanLocalKeys()
 {
     DataPtr pTagTableAligned = DataPtr::ofTagged(pTagTable_, -4);
     std::string_view operand = getStringOperand();

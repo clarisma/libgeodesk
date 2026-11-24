@@ -26,12 +26,12 @@ class StringTable;
 ///
 class GEODESK_API FeaturePtr
 {
+	using DataPtr = clarisma::DataPtr;
+
 public:
 	FeaturePtr() {}
 	FeaturePtr(const uint8_t* p) : p_(p) {}
 	FeaturePtr(const FeaturePtr& other) = default;
-
-	using DataPtr = clarisma::DataPtr;
 
 	operator DataPtr () const noexcept { return p_; }
 

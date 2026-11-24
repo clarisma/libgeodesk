@@ -91,6 +91,7 @@ private:
 
     friend class FeatureStore;
     friend class FeatureStore2;     // TODO: rename
+    friend class Snapshot;
 };
 
 } // namespace geodesk

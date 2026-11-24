@@ -114,7 +114,7 @@ void FeatureStore::Transaction::putTile(Tip tip, std::span<const uint8_t> data)
 void FeatureStore::Transaction::begin()
 {
 	FreeStore::Transaction::begin();
-	Snapshot& activeSnapshot = header().snapshots[header().activeSnapshot];
+	SnapshotData& activeSnapshot = header().snapshots[header().activeSnapshot];
 	uint32_t tileIndexPage = activeSnapshot.tileIndex;
 	if (tileIndexPage)	[[likely]]
 	{
@@ -132,7 +132,7 @@ void FeatureStore::Transaction::commit()
 	// TODO: Currently, we're writing exclusively, so Snapshot 0
 	//  is always active; update this once we support concurrent writes
 
-	Snapshot& activeSnapshot = header().snapshots[header().activeSnapshot];
+	SnapshotData& activeSnapshot = header().snapshots[header().activeSnapshot];
 	uint32_t tileIndexSize = tileIndex_[0] + 4;
 	if (activeSnapshot.tileIndex)	[[likely]]
 	{

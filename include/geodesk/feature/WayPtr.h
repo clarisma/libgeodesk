@@ -14,8 +14,9 @@ class WayPtr : public FeaturePtr
 {
 public:
 	WayPtr() {}
+	WayPtr(const WayPtr& other) = default;
 	explicit WayPtr(FeaturePtr f) : FeaturePtr(f.ptr()) { assert(isNull() || isWay()); }
-	explicit WayPtr(DataPtr p) : FeaturePtr(p) {}
+	explicit WayPtr(clarisma::DataPtr p) : FeaturePtr(p) {}
 
 	bool hasFeatureNodes() const noexcept
 	{

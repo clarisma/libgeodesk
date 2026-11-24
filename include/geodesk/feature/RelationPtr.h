@@ -14,8 +14,9 @@ class RelationPtr : public FeaturePtr
 {
 public:
 	RelationPtr() {}
+	RelationPtr(const RelationPtr& other) = default;
 	explicit RelationPtr(FeaturePtr f) : FeaturePtr(f.ptr()) { assert(isNull() || isRelation()); }
-	explicit RelationPtr(DataPtr p) : FeaturePtr(p) {}
+	explicit RelationPtr(clarisma::DataPtr p) : FeaturePtr(p) {}
 
 	bool containsPointFast(double cx, double cy);
 };

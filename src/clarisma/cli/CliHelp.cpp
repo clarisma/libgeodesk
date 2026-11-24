@@ -15,7 +15,7 @@ void CliHelp::command(const char* cmd, const char* description)
 void CliHelp::subCommand(const char* name, const char* description)
 {
     *this << "  " << Console::GOLDEN_YELLOW << name << Console::DEFAULT;
-    writeRepeatedChar(' ', commandIndent_ - strlen(name) - 2);
+    writeRepeatedChar(' ', static_cast<int>(commandIndent_ - strlen(name) - 2));
     *this << description << '\n';
 }
 

@@ -97,7 +97,7 @@ void FeatureStore::initialize(const byte* data)
 	}
 	// TODO: Version check
 
-	const Snapshot* snapshot = &header->snapshots[header->activeSnapshot];
+	const SnapshotData* snapshot = &header->snapshots[header->activeSnapshot];
 	tileIndex_ =
 		const_cast<uint32_t*>(		// TODO
 			reinterpret_cast<const uint32_t*>(data + offsetOfPage(snapshot->tileIndex)));

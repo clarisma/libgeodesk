@@ -48,7 +48,7 @@ void Polygonizer::createRings(FeatureStore* store, RelationPtr relation)
     int outerSegmentCount = 0;
     int innerSegmentCount = 0;
 
-    DataPtr pMembers = relation.bodyptr();
+    clarisma::DataPtr pMembers = relation.bodyptr();
     // TODO: empty relations?
     // TODO: deal with missing tiles
     // TODO: use FastMemberIterator -- no, need role

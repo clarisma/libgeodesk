@@ -14,6 +14,8 @@ namespace geodesk {
 
 class TagWalker
 {
+	using DataPtr = clarisma::DataPtr;
+
 public:
 	TagWalker(TagTablePtr tags, StringTable& strings) :
 		tags_(tags),
