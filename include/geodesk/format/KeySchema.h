@@ -16,8 +16,8 @@ class StringTable;
 class KeySchema 
 {
 public:
-    explicit KeySchema(StringTable* strings) : strings_(strings) {}
-    KeySchema(StringTable* strings, std::string_view keys);
+    explicit KeySchema(const StringTable* strings) : strings_(strings) {}
+    KeySchema(const StringTable* strings, std::string_view keys);
 
     enum SpecialKey
     {
@@ -41,7 +41,7 @@ private:
     void addKey(std::string_view key);
     int checkWildcard(std::string_view key) const;
 
-    StringTable* strings_;
+    const StringTable* strings_;
     std::vector<std::string_view> columns_;
     clarisma::HashMap<uint16_t,uint16_t> globals_;
     clarisma::HashMap<std::string_view,uint16_t> locals_;

@@ -15,7 +15,7 @@ namespace geodesk {
 class FilteredTagWalker : public TagWalker
 {
 public:
-	FilteredTagWalker(TagTablePtr tags, StringTable& strings, const KeySchema* schema) :
+	FilteredTagWalker(TagTablePtr tags, const StringTable& strings, const KeySchema* schema) :
 		TagWalker(tags, strings),
 		schema_(schema)
   	{

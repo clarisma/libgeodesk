@@ -19,7 +19,7 @@ const uint32_t TagValues::EMPTY_TABLE_STRUCT[2] = { 4, TagValues::EMPTY_TABLE_MA
 const double TagValues::SCALE_FACTORS[] = { 1.0, 0.1, 0.01, 0.001 };
 
 #ifdef GEODESK_PYTHON
-PyObject* TagTablePtr::getValue(PyObject* key, StringTable& strings) const
+PyObject* TagTablePtr::getValue(PyObject* key, const StringTable& strings) const
 {
 	int64_t value = getKeyValue(key, strings);
 	return valueAsObject(value, strings);
@@ -119,7 +119,7 @@ Decimal TagTablePtr::wideNumber(TagBits value) const noexcept
 }
 
 #ifdef GEODESK_PYTHON
-PyObject* TagTablePtr::valueAsString(TagBits value, StringTable& strings) const
+PyObject* TagTablePtr::valueAsString(TagBits value, const StringTable& strings) const
 {
 	if (value == 0) return strings.getStringObject(0);
 	int type = valueType(value);
@@ -147,7 +147,7 @@ PyObject* TagTablePtr::valueAsString(TagBits value, StringTable& strings) const
 	return PyUnicode_FromStringAndSize(buf, p-buf);
 }
 
-PyObject* TagTablePtr::valueAsObject(TagBits value, StringTable& strings) const
+PyObject* TagTablePtr::valueAsObject(TagBits value, const StringTable& strings) const
 {
 	if (value == 0)
 	{
@@ -174,7 +174,7 @@ PyObject* TagTablePtr::valueAsObject(TagBits value, StringTable& strings) const
 }
 
 // TODO: Fix !!!!
-PyObject* TagTablePtr::valueAsNumber(TagBits value, StringTable& strings) const
+PyObject* TagTablePtr::valueAsNumber(TagBits value, const StringTable& strings) const
 {
 	if (value == 0) return PyLong_FromLong(0);
 	int type = valueType(value);

@@ -130,7 +130,6 @@ public:
     ZoomLevels zoomLevels() const { return zoomLevels_; }
     const StringTable& strings() const { return snapshot_.strings(); }
     const Snapshot* snapshot() const { return &snapshot_; }
-    std::vector<std::string_view> indexedKeyStrings() const;
     // int getIndexCategory(int keyCode) const;
     const Header* header() const
     {

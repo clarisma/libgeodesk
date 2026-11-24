@@ -3,11 +3,10 @@
 
 #pragma once
 
-#include <clarisma/data/HashMap.h>
+#include <clarisma/util/DataPtr.h>
+#include <geodesk/feature/IndexedKeyMap.h>
 #include <geodesk/feature/Key.h>
 #include <geodesk/feature/StringTable.h>
-#include <geodesk/feature/ZoomLevels.h>
-#include <geodesk/match/Matcher.h>
 
 // \cond
 
@@ -23,7 +22,6 @@ namespace geodesk {
 class Snapshot
 {
 public:
-    using IndexedKeyMap = clarisma::HashMap<uint16_t, uint16_t>;
     using DataPtr = clarisma::DataPtr;
 
     const StringTable& strings() const { return strings_; }

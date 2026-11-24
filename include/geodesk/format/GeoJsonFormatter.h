@@ -72,7 +72,7 @@ public:
 		out.writeByte('\"');
 	}
 
-	void writeTags(clarisma::Buffer& out, TagTablePtr tags, StringTable& strings) const
+	void writeTags(clarisma::Buffer& out, TagTablePtr tags, const StringTable& strings) const
     {
 		FilteredTagWalker iter(tags, strings, schema_);
 		out.writeByte('{');

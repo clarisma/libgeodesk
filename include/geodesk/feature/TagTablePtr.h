@@ -87,10 +87,10 @@ public:
 
 	#ifdef GEODESK_PYTHON
 	TagBits getKeyValue(PyObject* key, const StringTable& strings) const;
-	PyObject* valueAsString(TagBits value, StringTable& strings) const;
-	PyObject* valueAsObject(TagBits value, StringTable& strings) const;
-	PyObject* valueAsNumber(TagBits value, StringTable& strings) const;
-	PyObject* getValue(PyObject* key, StringTable& strings) const;
+	PyObject* valueAsString(TagBits value, const StringTable& strings) const;
+	PyObject* valueAsObject(TagBits value, const StringTable& strings) const;
+	PyObject* valueAsNumber(TagBits value, const StringTable& strings) const;
+	PyObject* getValue(PyObject* key, const StringTable& strings) const;
 	#endif
 
 	TagValue tagValue(TagBits value, const StringTable& strings) const
@@ -178,7 +178,7 @@ private:
 	explicit TagTablePtr(clarisma::TaggedPtr<const uint8_t,1> taggedPtr) : taggedPtr_(taggedPtr) {}
 
 	#ifdef GEODESK_PYTHON
-	static PyObject* getGlobalStringObject(TagBits value, StringTable& strings)
+	static PyObject* getGlobalStringObject(TagBits value, const StringTable& strings)
 	{
 		assert((value & 3) == TagValueType::GLOBAL_STRING);
 		return strings.getStringObject(static_cast<uint32_t>(value) >> 16);

@@ -9,7 +9,7 @@ namespace geodesk {
 
 using namespace clarisma;
 
-KeySchema::KeySchema(StringTable* strings, std::string_view keys) :
+KeySchema::KeySchema(const StringTable* strings, std::string_view keys) :
     strings_(strings)
 {
     addKeys(keys);

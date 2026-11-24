@@ -16,6 +16,8 @@ namespace geodesk {
 template<typename Derived>
 class TileScannerBase
 {
+    using DataPtr = clarisma::DataPtr;
+
 public:
 	bool scanFeatures(const TilePtr pTile)
 	{
