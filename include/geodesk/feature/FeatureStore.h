@@ -17,9 +17,9 @@
 #include <geodesk/feature/StringTable.h>
 #include <geodesk/feature/ReverseTileIndex.h>
 #include <geodesk/feature/TilePtr.h>
+#include <geodesk/feature/Snapshot.h>
 #include <geodesk/feature/ZoomLevels.h>
 #include <geodesk/match/Matcher.h>
-#include <geodesk/match/MatcherCompiler.h>
 #include <geodesk/query/TileQueryTask.h>
 
 // \cond
@@ -45,7 +45,6 @@ using std::byte;
 class GEODESK_API FeatureStore final : public clarisma::FreeStore
 {
 public:
-    using IndexedKeyMap = clarisma::HashMap<uint16_t, uint16_t>;
     using DataPtr = clarisma::DataPtr;
     using DateTime = clarisma::DateTime;
 
@@ -122,17 +121,17 @@ public:
 #endif
 
     const clarisma::UUID& guid() const { return header()->guid; }
-    const SnapshotData& snapshot() const { return header()->snapshots[header()->activeSnapshot]; }
-    uint32_t revision() const { return snapshot().revision; }
-    DateTime revisionTimestamp() const { return snapshot().revisionTimestamp; }
-    uint32_t tileCount() const { return snapshot().tileCount; }
+    const SnapshotData& snapshotData() const { return header()->snapshots[header()->activeSnapshot]; }
+    uint32_t revision() const { return snapshotData().revision; }
+    DateTime revisionTimestamp() const { return snapshotData().revisionTimestamp; }
+    uint32_t tileCount() const { return snapshotData().tileCount; }
 
     bool hasWaynodeIds() const { return header()->flags & Header::Flags::WAYNODE_IDS; }
     ZoomLevels zoomLevels() const { return zoomLevels_; }
-    StringTable& strings() { return strings_; }
-    const IndexedKeyMap& keysToCategories() const { return keysToCategories_; }
+    const StringTable& strings() const { return snapshot_.strings(); }
+    const Snapshot* snapshot() const { return &snapshot_; }
     std::vector<std::string_view> indexedKeyStrings() const;
-    int getIndexCategory(int keyCode) const;
+    // int getIndexCategory(int keyCode) const;
     const Header* header() const
     {
         return reinterpret_cast<const Header*>(data());
@@ -154,7 +153,7 @@ public:
 
     Key key(std::string_view k) const
     {
-        int code = strings_.getCode(k.data(), k.size());
+        int code = strings().getCode(k.data(), k.size());
         return Key(k.data(), static_cast<uint32_t>(k.size()),
             code > TagValues::MAX_COMMON_KEY ? -1 : code);
     }
@@ -196,10 +195,9 @@ private:
     static constexpr uint16_t VERSION_HIGH = 2;
     static constexpr uint16_t VERSION_LOW = 0;
 
-    void readIndexSchema(DataPtr pSchema);
-
     static clarisma::HashMap<std::string, FeatureStore*>& getOpenStores();
     static std::mutex& getOpenStoresMutex();
+    void readIndexSchema(DataPtr pSchema) { snapshot_.readIndexSchema(pSchema); };
 
 #ifdef GEODESK_MULTITHREADED
     std::atomic_size_t refcount_;
@@ -207,10 +205,8 @@ private:
     std::size_t refcount_;
 #endif
 
-    StringTable strings_;
-    IndexedKeyMap keysToCategories_;
+    Snapshot snapshot_;
     uint32_t* tileIndex_ = nullptr;
-    MatcherCompiler matchers_;
     MatcherHolder allMatcher_;
     #ifdef GEODESK_PYTHON
     PyObject* emptyTags_;

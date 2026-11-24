@@ -186,8 +186,8 @@ const MatcherHolder* MatcherHolder::createMatchKeyValue(
 class ComboMatcher : public Matcher
 {
 public:
-	ComboMatcher(FeatureStore* store) :
-		Matcher(matchCombo, store) {}
+	ComboMatcher(const Snapshot* snapshot) :
+		Matcher(matchCombo, snapshot) {}
 
 	static bool matchCombo(const Matcher* matcher, FeaturePtr pFeature)
 	{
@@ -227,7 +227,7 @@ const MatcherHolder* MatcherHolder::combine(
 	new (self)MatcherHolder(
 		a->acceptedTypes() & b->acceptedTypes(), 
 		keyMask, keyMin);
-	new (&self->mainMatcher_)ComboMatcher(a->mainMatcher_.store());
+	new (&self->mainMatcher_)ComboMatcher(a->mainMatcher_.snapshot());
 	self->resourcesLength_ = static_cast<uint32_t>(resourceSize);
 	self->referencedMatcherHoldersCount_ = 2;
 	const MatcherHolder** pChildMatcher = 
@@ -244,7 +244,7 @@ void MatcherHolder::explain(BufferWriter& out) const
 {
 	// TODO: only works for bytecode-based Matcher
 
-	MatcherDecoder decoder(mainMatcher_.store(), out,
+	MatcherDecoder decoder(mainMatcher_.snapshot(), out,
 		reinterpret_cast<const uint16_t*>(
 			reinterpret_cast<const uint8_t*>(this) + sizeof(MatcherHolder)));
 	decoder.decode();

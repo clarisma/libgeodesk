@@ -4,7 +4,7 @@
 #include "MatcherEngine.h"
 #include "OpGraph.h"
 #include <geodesk//feature/StringValue.h>
-#include <geodesk/feature/FeatureStore.h>
+#include <geodesk/feature/Snapshot.h>
 #include <clarisma/math/Math.h>
 
 namespace geodesk {
@@ -235,7 +235,7 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
             case LOAD_CODE:
                 codeValue = (ctx.pTag_ - ctx.valueOfs_).getUnsignedShort(); // TODO: decide on sign
                 matched = ((ctx.tagKey_ & 3) == 1);
-                assert(!matched || matcher->store()->strings().isValidCode(codeValue));
+                assert(!matched || matcher->snapshot()->strings().isValidCode(codeValue));
                 break;
 
             case LOAD_STRING:
@@ -279,7 +279,7 @@ int MatcherEngine::accept(const Matcher* matcher, FeaturePtr pFeature)
             break;
 
             case CODE_TO_STR:
-                stringValue = matcher->store()->strings()
+                stringValue = matcher->snapshot()->strings()
                     .getGlobalString(codeValue)->rawBytes();
                 // Cannot fail, therefore does not branch
                 continue;

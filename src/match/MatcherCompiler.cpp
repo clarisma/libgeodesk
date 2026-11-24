@@ -17,7 +17,7 @@ using namespace clarisma;
 
 const MatcherHolder* MatcherCompiler::getMatcher(const char* query)
 {
-	MatcherParser parser(store_, query);
+	MatcherParser parser(snapshot_, query);
 	Selector* sel = parser.parse();
 	uint32_t indexBits = parser.indexBits();
 	uint32_t indexMin = parser.keyMin();
@@ -79,7 +79,7 @@ const MatcherHolder* MatcherCompiler::getMatcher(const char* query)
 #ifdef _DEBUG
 		DynamicBuffer buf(1024);
 		BufferWriter out(&buf);
-		MatcherDecoder decoder(store_, out,
+		MatcherDecoder decoder(snapshot_, out,
 			reinterpret_cast<const uint16_t*>(
 				reinterpret_cast<const uint8_t*>(&matcher->mainMatcher_) + sizeof(Matcher)));
 		decoder.decode();
@@ -121,7 +121,7 @@ const MatcherHolder* MatcherCompiler::compileMatcher(OpGraph& graph, Selector* f
 	emitter.emit();
 	emitter.fixJumps();
 
-	new (&matcherHolder->mainMatcher_)Matcher((MatcherMethod)MatcherEngine::accept, store_);
+	new (&matcherHolder->mainMatcher_)Matcher((MatcherMethod)MatcherEngine::accept, snapshot_);
 
 	return matcherHolder;
 }

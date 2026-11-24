@@ -11,7 +11,7 @@ namespace geodesk {
 using namespace clarisma;
 
 // TODO: generalize!
-void FeatureWriter::writeTagValue(TagTablePtr tags, TagBits value, StringTable& strings)
+void FeatureWriter::writeTagValue(TagTablePtr tags, TagBits value, const StringTable& strings)
 {
 	if (value & 1) // string
 	{

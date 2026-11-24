@@ -42,14 +42,14 @@ public:
      * @return A Python string object (new reference), or NULL if
      *         the string could not be created.
      */
-    PyObject* getStringObject(int code);
+    PyObject* getStringObject(int code) const;
     #endif
     const clarisma::ShortVarString* getGlobalString(int code) const noexcept
     {
         assert(code >= 0 && code < static_cast<int>(stringCount_));
         return reinterpret_cast<const clarisma::ShortVarString*>(stringBase_ + entries_[code].relPointer);
     }
-    bool isValidCode(int code);
+    bool isValidCode(int code) const;
     int getCode(const char* str, size_t len) const;
     int getCode(std::string_view s) const
     {
@@ -91,7 +91,7 @@ private:
     uint16_t* buckets_;
     Entry* entries_;
     #ifdef GEODESK_PYTHON
-    PyObject** stringObjects_;
+    mutable PyObject** stringObjects_;
     #endif
     // beware of alignment!
 };

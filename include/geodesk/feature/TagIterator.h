@@ -12,16 +12,16 @@ namespace geodesk {
 class GEODESK_API TagIterator
 {
 public:
-	TagIterator(TagTablePtr tags, StringTable& strings);
+	TagIterator(TagTablePtr tags, const StringTable& strings);
 
 	std::pair<const clarisma::ShortVarString*, TagBits> next();
 	TagTablePtr tags() const { return tags_; }
-	StringTable& strings() const { return strings_; }
+	const StringTable& strings() const { return strings_; }
 
 private:
 	TagTablePtr tags_;
 	clarisma::DataPtr p_;
-	StringTable& strings_;
+	const StringTable& strings_;
 };
 
 // \endcond

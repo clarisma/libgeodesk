@@ -15,7 +15,7 @@ uint32_t indexBitsOf(FeatureStore* store, const char* key)
 {
     int code = store->strings().getCode(key, strlen(key));
     REQUIRE(code > 0);
-    int category = store->getIndexCategory(code);
+    int category = store->snapshot()->getIndexCategory(code);
     REQUIRE(category > 0);      // key must be indexed for this test
     return IndexBits::fromCategory(category);
 }

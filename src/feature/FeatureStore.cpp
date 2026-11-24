@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/feature/FeatureStore.h>
+#include <geodesk/match/MatcherCompiler.h>
 #include <geodesk/feature/TileIndexEntry.h>
 #include <filesystem>
 #include <clarisma/io/FilePath.h>
@@ -26,7 +27,6 @@ using namespace clarisma;
 
 FeatureStore::FeatureStore() :
     refcount_(1),
-	matchers_(this),	// TODO: this not initialized yet!
 	#ifdef GEODESK_PYTHON
 	emptyTags_(nullptr),
 	emptyFeatures_(nullptr),
@@ -102,10 +102,10 @@ void FeatureStore::initialize(const byte* data)
 		const_cast<uint32_t*>(		// TODO
 			reinterpret_cast<const uint32_t*>(data + offsetOfPage(snapshot->tileIndex)));
 
-	strings_.create(reinterpret_cast<const uint8_t*>(
+	snapshot_.initStrings(reinterpret_cast<const uint8_t*>(
 		data + header->stringTablePtr));
 	zoomLevels_ = ZoomLevels(header->settings.zoomLevels);
-	readIndexSchema(data + header->indexSchemaPtr);
+	snapshot_.readIndexSchema(data + header->indexSchemaPtr);
 }
 
 FeatureStore::~FeatureStore()
@@ -133,39 +133,6 @@ TilePtr FeatureStore::fetchTile(Tip tip) const
 	return TilePtr(pagePointer(entry.page()));
 }
 
-
-
-void FeatureStore::readIndexSchema(DataPtr p)
-{
-	int32_t count = p.getInt();
-	keysToCategories_.reserve(count);
-	for (int i = 0; i < count; i++)
-	{
-		p += 4;
-		keysToCategories_.insert({ p.getUnsignedShort(), (p+2).getUnsignedShort() });
-	}
-}
-
-int FeatureStore::getIndexCategory(int keyCode) const
-{
-	auto it = keysToCategories_.find(keyCode);
-	if (it != keysToCategories_.end())
-	{
-		return it->second;
-	}
-	return 0;
-}
-
-std::vector<std::string_view> FeatureStore::indexedKeyStrings() const
-{
-	std::vector<std::string_view> keys;
-	keys.reserve(keysToCategories_.size());
-	for(auto& entry: keysToCategories_)
-	{
-		keys.emplace_back(strings_.getGlobalString(entry.first)->toStringView());
-	}
-	return keys;
-}
 
 // TODO: inefficient, should store string table size when initializing
 std::span<byte> FeatureStore::stringTableData() const
@@ -196,7 +163,7 @@ std::span<byte> FeatureStore::propertiesData() const
 
 const MatcherHolder* FeatureStore::getMatcher(const char* query)
 {
-	return matchers_.getMatcher(query);
+	return MatcherCompiler(snapshot()).getMatcher(query);
 }
 
 #ifdef GEODESK_PYTHON

@@ -6,26 +6,27 @@
 #include "OpGraph.h"
 #include "Selector.h"
 #include "TagClause.h"
-#include <geodesk/feature/FeatureStore.h>
 #include <clarisma/util/Parser.h>
+#include <geodesk/feature/GlobalStrings.h>
+#include <geodesk/feature/Snapshot.h>
 
 namespace geodesk {
 
 class MatcherParser : public clarisma::Parser
 {
 public:
-	MatcherParser(FeatureStore* store, const char* pInput);
+	MatcherParser(const Snapshot* snapshot, const char* pInput);
 
 	Selector* parse();
 	OpGraph& graph() { return graph_; }
 	uint32_t indexBits() const { return indexBits_; }
 	uint32_t keyMin() const { return keyMin_; }
-	int codeNo() const { return codeNo_; }
+	static constexpr int codeNo() { return GlobalStrings::NO; }
 
 private:
-	int getStringCode(std::string_view s)
+	int getStringCode(std::string_view s) const
 	{
-		return store_->strings().getCode(s.data(), s.length());
+		return snapshot_->strings().getCode(s.data(), s.length());
 	}
 	Selector* expectSelector();
 	TagClause* expectTagClause();
@@ -38,7 +39,7 @@ private:
 	static const clarisma::CharSchema VALID_FIRST_CHAR;
 	static const clarisma::CharSchema VALID_NEXT_CHAR;
 
-	FeatureStore* store_;
+	const Snapshot* snapshot_;
 	OpGraph graph_;
 	Selector* currentSel_;
 	uint32_t indexBits_;		// TODO: rename to keyMask_
@@ -49,10 +50,6 @@ private:
 		// avoid selecting buckets with "emergency" keys but no "amenity" keys
 		// when querying areas), but these types of queries are rare and this
 		// design is simpler
-		
-	// OpNode* selectorSuccess_;
-	int codeNo_;
-
 };
 
 

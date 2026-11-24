@@ -5,7 +5,7 @@
 #include <clarisma/util/ShortVarString.h>
 #include "MatcherEmitter.h"			// TODO: refactor
 #include "OpGraph.h"
-#include <geodesk/feature/FeatureStore.h>
+#include <geodesk/feature/Snapshot.h>
 
 namespace geodesk {
 
@@ -91,7 +91,7 @@ void MatcherDecoder::writeBranchingOp(const uint16_t* p)
 		case OperandType::CODE:
 		{
 			uint16_t code = *p++;
-			const ShortVarString* str = store_->strings().getGlobalString(code);
+			const ShortVarString* str = snapshot_->strings().getGlobalString(code);
 			out_.writeByte(' ');
 			out_.writeBytes(str->data(), str->length());
 			out_.writeString(" (");

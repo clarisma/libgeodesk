@@ -17,7 +17,7 @@ class TagWalker
 	using DataPtr = clarisma::DataPtr;
 
 public:
-	TagWalker(TagTablePtr tags, StringTable& strings) :
+	TagWalker(TagTablePtr tags, const StringTable& strings) :
 		tags_(tags),
 		p_(tags_.ptr()),
 		strings_(strings)
@@ -63,7 +63,7 @@ public:
 	}
 
 	TagTablePtr tags() const { return tags_; }
-	StringTable& strings() const { return strings_; }
+	const StringTable& strings() const { return strings_; }
     int keyCode() const { return keyCode_; }
 	const clarisma::ShortVarString* key() const { return key_; }
 	TagBits rawValue() const { return value_; };
@@ -112,7 +112,7 @@ private:
     int keyCode_;
     const clarisma::ShortVarString* key_;
     TagBits value_;
-	StringTable& strings_;
+	const StringTable& strings_;
 };
 
 // \endcond

@@ -131,14 +131,14 @@ StringTable::~StringTable()
 }
 
 
-bool StringTable::isValidCode(int code)
+bool StringTable::isValidCode(int code) const
 {
 	return code >= 0 && code < static_cast<int>(stringCount_);
 }
 
 // TODO: toStringObject() may return NULL in case of failure!
 #ifdef GEODESK_PYTHON
-PyObject* StringTable::getStringObject(int code)
+PyObject* StringTable::getStringObject(int code) const
 {
 	assert(code >= 0 && code < stringCount_);
 	PyObject* strObj = stringObjects_[code];

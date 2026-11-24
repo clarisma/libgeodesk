@@ -8,7 +8,7 @@ namespace geodesk {
 
 using namespace clarisma;
 
-TagIterator::TagIterator(TagTablePtr tags, StringTable& strings) :
+TagIterator::TagIterator(TagTablePtr tags, const StringTable& strings) :
 	tags_(tags), 
 	p_(tags.ptr()),
 	strings_(strings)

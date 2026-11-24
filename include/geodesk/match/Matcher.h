@@ -14,10 +14,10 @@ class BufferWriter;
 
 namespace geodesk {
 
-class FeatureStore;
 class Matcher;
 class MatcherHolder;
 class RoleMatcher;
+class Snapshot;
 
 /// \cond lowlevel
 
@@ -45,7 +45,7 @@ typedef const Matcher* (*RoleMatcherMethod)(const RoleMatcher*, FeaturePtr);
 class Matcher
 {
 public:
-    Matcher(MatcherMethod func, FeatureStore* store) : function_(func), store_(store) {}
+    Matcher(MatcherMethod func, const Snapshot* snapshot) : function_(func), snapshot_(snapshot) {}
 
     // TODO: Can this throw?
     bool accept(FeaturePtr feature) const
@@ -53,17 +53,17 @@ public:
         return function_(this, feature);
     }
 
-    FeatureStore* store() const { return store_; }
+    const Snapshot* snapshot() const { return snapshot_; }
     
 private:
     MatcherMethod function_;
-    FeatureStore* store_;           // not refcounted
+    const Snapshot* snapshot_;           // not refcounted
 };
 
 class RoleMatcher
 {
 public:
-    RoleMatcher(RoleMatcherMethod func, FeatureStore* store) : function_(func), store_(store) {}
+    RoleMatcher(RoleMatcherMethod func, const Snapshot* snapshot) : function_(func), snapshot_(snapshot) {}
 
     const Matcher* accept(FeaturePtr feature) const
     {
@@ -72,7 +72,7 @@ public:
 
 private:
     RoleMatcherMethod function_;
-    FeatureStore* store_;           // not refcounted
+    const Snapshot* snapshot_;           // not refcounted
 };
 
 

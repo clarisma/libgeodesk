@@ -8,14 +8,14 @@
 
 namespace geodesk {
 
-class FeatureStore;
+class Snapshot;
 
 // TODO: Use Buffer
 class MatcherDecoder
 {
 public:
-	MatcherDecoder(FeatureStore* store, clarisma::BufferWriter& out, const uint16_t* pCode) :
-		store_(store), out_(out), pCodeStart_(pCode), pLastInstruction_(pCode) {}
+	MatcherDecoder(const Snapshot* snapshot, clarisma::BufferWriter& out, const uint16_t* pCode) :
+		snapshot_(snapshot), out_(out), pCodeStart_(pCode), pLastInstruction_(pCode) {}
 
 	void decode();
 	
@@ -27,7 +27,7 @@ private:
 	const uint16_t* pCodeStart_;
 	const uint16_t* pLastInstruction_;
 	clarisma::BufferWriter& out_;
-	FeatureStore* store_;
+	const Snapshot* snapshot_;
 };
 
 } // namespace geodesk

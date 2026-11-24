@@ -26,7 +26,7 @@ public:
     using IndexedKeyMap = clarisma::HashMap<uint16_t, uint16_t>;
     using DataPtr = clarisma::DataPtr;
 
-    StringTable& strings() { return strings_; }
+    const StringTable& strings() const { return strings_; }
     const IndexedKeyMap& keysToCategories() const { return keysToCategories_; }
     std::vector<std::string_view> indexedKeyStrings() const;
     int getIndexCategory(int keyCode) const;
@@ -39,10 +39,17 @@ public:
     }
 
 private:
+    void initStrings(const uint8_t* pStrings)
+    {
+        strings_.create(pStrings);
+    }
+
     void readIndexSchema(DataPtr pSchema);
 
     StringTable strings_;
     IndexedKeyMap keysToCategories_;
+
+    friend class FeatureStore;
 };
 
 } // namespace geodesk

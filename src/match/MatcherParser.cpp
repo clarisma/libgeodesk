@@ -7,12 +7,11 @@ namespace geodesk {
 
 using namespace clarisma;
 
-MatcherParser::MatcherParser(FeatureStore* store, const char* pInput) :
+MatcherParser::MatcherParser(const Snapshot* snapshot, const char* pInput) :
 	Parser(pInput),
-	store_(store),
+	snapshot_(snapshot),
 	indexBits_()
 {
-	codeNo_ = getStringCode(std::string_view("no", 2));
 }
 
 Selector* MatcherParser::parse()
@@ -72,7 +71,7 @@ TagClause* MatcherParser::expectTagClause()
 	if (accept('!'))
 	{
 		clause = expectKey();
-		valueOp = graph_.newOp(Opcode::EQ_CODE, codeNo_);
+		valueOp = graph_.newOp(Opcode::EQ_CODE, codeNo());
 		clause->keyOp.setNegated(true);
 		clause->insertValueOp(valueOp, true);
 		return clause;
@@ -138,7 +137,7 @@ TagClause* MatcherParser::expectTagClause()
 		acceptString = true;
 		break;
 	default:	
-		valueOp = graph_.newOp(Opcode::EQ_CODE, codeNo_);
+		valueOp = graph_.newOp(Opcode::EQ_CODE, codeNo());
 		valueOp->setNegated(true);
 		clause->insertValueOp(valueOp, false);
 		clause->flags |= TagClause::KEY_REQUIRED;
@@ -301,7 +300,7 @@ TagClause* MatcherParser::expectKey()
 	int code = getStringCode(key);
 	if (code > 0)
 	{
-		int category = store_->getIndexCategory(code);
+		int category = snapshot_->getIndexCategory(code);
 		new(clause)TagClause(code, category);
 	}
 	else

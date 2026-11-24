@@ -14,7 +14,7 @@ TEST_CASE("Multiple negative clauses")
     clarisma::Console console;
     FeatureStore* store = FeatureStore::openSingle(
         "d:\\geodesk\\tests\\berlin.gol");
-    MatcherCompiler mc(store);
+    MatcherCompiler mc(store->snapshot());
     const MatcherHolder* matcher = mc.getMatcher(
         "a[amenity=parking][access!=no,private,employees,staff,permit,military,agricultural,restricted,delivery][parking!=carports,half_on_kerb,half_on_shoulder,layby,left,on_kerb,sheds,shoulder,lane,street_side]");
     //clarisma::ConsoleWriter out;

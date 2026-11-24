@@ -9,18 +9,18 @@
 
 namespace geodesk {
 
-class FeatureStore;
 class MatcherHolder;
 class OpGraph;
 struct Selector;
+class Snapshot;
 
 /// \cond lowlevel
 
 class MatcherCompiler
 {
 public:
-	explicit MatcherCompiler(FeatureStore* store) :
-		store_(store)
+	explicit MatcherCompiler(const Snapshot* snapshot) :
+		snapshot_(snapshot)
 	{
 		// TODO: fix this dependency, store not initialized yet
 	}
@@ -31,7 +31,7 @@ private:
 	const MatcherHolder* compileMatcher(OpGraph& graph, Selector* firstSel,
 		uint32_t indexBits, uint32_t keyMin);
 
-	FeatureStore* store_;
+	const Snapshot* snapshot_;
 	// asmjit::JitRuntime runtime_;
 };
 
