@@ -66,7 +66,7 @@ void StringTable::create(const uint8_t* pStrings)
 	#else
 	int stringObjectTableSize = 0;
 	#endif
-	int entryTableSize = stringCount_ * sizeof(Entry*);
+	int entryTableSize = stringCount_ * sizeof(Entry);
 	int arenaSize =
 		stringObjectTableSize +
 		entryTableSize +
