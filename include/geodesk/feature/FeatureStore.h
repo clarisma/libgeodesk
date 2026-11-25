@@ -166,11 +166,6 @@ public:
         return { header()->url, header()->urlLength };
     }
 
-    #ifdef GEODESK_PYTHON
-    PyObject* getEmptyTags();
-    PyFeatures* getEmptyFeatures();
-    #endif
-
     clarisma::ThreadPool<TileQueryTask>& executor() { return executor_; }
 
     TilePtr fetchTile(Tip tip) const;

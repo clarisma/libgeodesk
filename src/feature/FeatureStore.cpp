@@ -166,32 +166,6 @@ const MatcherHolder* FeatureStore::getMatcher(const char* query)
 	return MatcherCompiler(snapshot()).getMatcher(query);
 }
 
-#ifdef GEODESK_PYTHON
-
-PyObject* FeatureStore::getEmptyTags()
-{
-	if (!emptyTags_)
-	{
-		emptyTags_ = PyTags::create(this, TagTablePtr::empty());
-		if (!emptyTags_) return NULL;
-	}
-	return Python::newRef(emptyTags_);
-}
-
-PyFeatures* FeatureStore::getEmptyFeatures()
-{
-	if (!emptyFeatures_)
-	{
-		allMatcher_.addref();
-		emptyFeatures_ = PyFeatures::createEmpty(this, &allMatcher_);
-	}
-	Py_INCREF(emptyFeatures_);
-	return emptyFeatures_;
-}
-
-#endif
-
-
 HashMap<std::string, FeatureStore*>& FeatureStore::getOpenStores()
 {
 	static HashMap<std::string, FeatureStore*> openStores;
