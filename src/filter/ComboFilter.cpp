@@ -8,7 +8,7 @@ namespace geodesk {
 // Filter combination rules:
 // - Combined filter is FAST_TILE_FILTER if *either* is FAST_TILE_FILTER
 // - Combined filter is USES_BBOX if *either* USES_BBOX
-// - Combined filter is STRICT_BBOX if *both* are STRICT_BBOX
+// - Combined filter is STRICT_BBOX if *either* is STRICT_BBOX
 // - If combined filter is USES_BBOX:
 //   - If STRICT_BBOX, use intersection of all bboxes
 //   - If not STRICT_BBOX, use smallest bbox
@@ -21,7 +21,7 @@ ComboFilter::ComboFilter(const Filter* a, const Filter* b)
     int totalCount = 0;
     int fastTileFlag = (aFlags | bFlags) & FilterFlags::FAST_TILE_FILTER;
     int usesBoundsFlag = (aFlags | bFlags) & FilterFlags::USES_BBOX;
-    int strictBoundsFlag = a->flags() & b->flags() & FilterFlags::STRICT_BBOX;
+    int strictBoundsFlag = (aFlags | bFlags) & FilterFlags::STRICT_BBOX;
     acceptedTypes_ = a->acceptedTypes() & b->acceptedTypes();
     flags_ = fastTileFlag | usesBoundsFlag | strictBoundsFlag | FilterFlags::COMBO_FILTER;
     if (strictBoundsFlag)
