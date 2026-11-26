@@ -1,7 +1,6 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <span>
 #include <geodesk/filter/ComboFilter.h>
 
 namespace geodesk {
@@ -9,7 +8,7 @@ namespace geodesk {
 // Filter combination rules:
 // - Combined filter is FAST_TILE_FILTER if *either* is FAST_TILE_FILTER
 // - Combined filter is USES_BBOX if *either* USES_BBOX
-// - Combined filter is STRICT_BBOX if *either* is STRICT_BBOX
+// - Combined filter is STRICT_BBOX if *both* are STRICT_BBOX
 // - If combined filter is USES_BBOX:
 //   - If STRICT_BBOX, use intersection of all bboxes
 //   - If not STRICT_BBOX, use smallest bbox
@@ -39,19 +38,24 @@ const ComboFilter* ComboFilter::create(const Filter* a, const Filter* b)
         (bComboFlag ? cast(b)->roleFilterCount_ :
             ((bFlags & FilterFlags::ROLE_FILTER) ? 1 : 0));
 
-    int flags = (aFlags | bFlags) &
-        (FilterFlags::FAST_TILE_FILTER | FilterFlags::STRICT_BBOX) |
-            FilterFlags::COMBO_FILTER | FilterFlags::USES_BBOX;
+    int flags = (aFlags | bFlags) & (FilterFlags::FAST_TILE_FILTER) |
+        FilterFlags::COMBO_FILTER | FilterFlags::USES_BBOX;
 
     Box bounds;
-    if (flags & FilterFlags::STRICT_BBOX)
+    if ((aFlags | bFlags) & FilterFlags::STRICT_BBOX)
     {
+        // If *either* is strict-bbox, the spatial-filter bbox
+        // if the intersection of both
+
         bounds = Box::simpleIntersection(
             a->getBounds(), b->getBounds());
         if (bounds.isEmpty())
         {
             return nullptr;
         }
+
+        // The result is only strict-bbox if both are strict-bbox
+        flags |= aFlags & bFlags & FilterFlags::STRICT_BBOX;
     }
     else
     {

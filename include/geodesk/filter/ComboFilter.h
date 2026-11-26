@@ -4,7 +4,8 @@
 #pragma once
 
 #include <geodesk/filter/SpatialFilter.h>
-#include <vector>
+#include <cstdint>
+#include <span>
 
 namespace geodesk {
 
@@ -17,6 +18,8 @@ class ComboFilter : public SpatialFilter
 {
 public:
     ~ComboFilter() override;
+    ComboFilter(const ComboFilter&) = delete;
+    ComboFilter& operator=(const ComboFilter&) = delete;
 
     /// Deallocates the filter including its trailing storage.
     static void operator delete(void* p) noexcept

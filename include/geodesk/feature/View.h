@@ -429,7 +429,7 @@ public:
             int boundsActiveFlag = flags_ & BOUNDS_ACTIVE;
             if (boundsActiveFlag)
             {
-                int filterFlags = newFilter->flags();
+                int filterFlags = f->flags();
                 if (filterFlags & FilterFlags::USES_BBOX)
                 {
                     const SpatialFilter* spatialFilter =
