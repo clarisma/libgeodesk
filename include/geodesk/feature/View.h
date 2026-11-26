@@ -46,8 +46,9 @@ class GEODESK_API View
          * `bounds` has bounds tighter than `Box::ofWorld`. `USES_BOUNDS` must be set.
          */
         BOUNDS_ACTIVE = 2,
-        USES_MATCHER = 4,
-        USES_FILTER = 8,        // TODO: is this used?
+        EXPLICIT_BOUNDS = 4,
+        USES_MATCHER = 8,
+        USES_FILTER = 16,
 
         // TODO: need flag to indicate if relatedFeature is in use
         // or does NOT USES_BOUNDS imply use of relatedFeature?
@@ -210,26 +211,9 @@ public:
         if (types == 0) return empty();
 
         const Filter* filter = filter_;
-        if (flags_ & BOUNDS_ACTIVE)
+        if (flags_ & EXPLICIT_BOUNDS)
         {
-            const Filter* boundsFilter = new BoundsFilter(bounds());
-            if (filter)
-            {
-                try
-                {
-                    filter = new ComboFilter(boundsFilter, filter);
-                }
-                catch (...)
-                {
-                    boundsFilter->release();    // ComboFilter adds its own refs
-                    throw;
-                }
-                boundsFilter->release();    // ComboFilter adds its own refs
-            }
-            else
-            {
-                filter = boundsFilter;
-            }
+            if (!tryGetBoundsFilter(&filter, bounds())) return empty();
         }
         else
         {
@@ -416,22 +400,25 @@ public:
         */
     }
 
+    /// Returns a new View constricted by the given filter
+    ///
+    /// @param newFilter new reference (will be consumed), non-null
+    ///
     View withFilter(const Filter* newFilter) const
     {
-        if (filter_)
-        {
-            const ComboFilter* combo = new ComboFilter(filter_, newFilter);
-            newFilter->release();
-            // Need to release because this function is expected to consume the
-            // reference (ComboFilter adds its own ref)
-            newFilter = combo;
-        }
         FeatureTypes newTypes = types_ & newFilter->acceptedTypes();
         if (newTypes == 0)
         {
             newFilter->release();
             return empty();
         }
+        const Filter* f;
+        if (!ComboFilter::tryCombine(&f, filter_, newFilter))
+        {
+            newFilter->release();
+            return empty();
+        }
+        newFilter->release();
 
         matcher_->addref();      // createWith consumes ref to matcher
         store_->addref();
@@ -446,7 +433,7 @@ public:
                 if (filterFlags & FilterFlags::USES_BBOX)
                 {
                     const SpatialFilter* spatialFilter =
-                        SpatialFilter::cast(newFilter);
+                        SpatialFilter::cast(f);
                     if (filterFlags & FilterFlags::STRICT_BBOX)
                     {
                         b = Box::simpleIntersection(b, spatialFilter->bounds());
@@ -459,25 +446,28 @@ public:
             }
             else
             {
-                if (newFilter->flags() & FilterFlags::USES_BBOX)
+                if (f->flags() & FilterFlags::USES_BBOX)
                 {
-                    b = SpatialFilter::cast(newFilter)->bounds();
+                    b = SpatialFilter::cast(f)->bounds();
                     boundsActiveFlag = b != Box::ofWorld() ? BOUNDS_ACTIVE : 0;
                 }
             }
             Context ctx;
             ctx.bounds = { b.minX(), b.minY(), b.maxX(), b.maxY() };
             return View(view_, flags_ | USES_FILTER, newTypes, store_,
-                ctx, matcher_, newFilter);
+                ctx, matcher_, f);
         }
         return View(view_, flags_ | USES_FILTER, newTypes, store_,
-            context_, matcher_, newFilter);
+            context_, matcher_, f);
     }
 
     View withBounds(Box box) const
     {
-        if (box.isEmpty()) return empty();
-        if (flags_ & USES_BOUNDS)
+        if (box.isEmpty()) [[unlikely]]
+        {
+            return empty();
+        }
+        if (flags_ & USES_BOUNDS)  [[likely]]
         {
             if (flags_ & BOUNDS_ACTIVE)
             {
@@ -489,7 +479,7 @@ public:
             store_->addref();
             return View(view_, flags_ | BOUNDS_ACTIVE, types_, store_, box, matcher_, filter_);
         }
-        throw QueryException("Not yet implented");
+        throw QueryException("Not yet implemented");
     }
 
     View withBounds(Coordinate xy) const
@@ -537,6 +527,12 @@ public:
             throw QueryException("Not yet implented");
         }
 
+        const Filter* newFilter;
+        if (!ComboFilter::tryCombine(&newFilter, filter_, other.filter_))
+        {
+            return empty();
+        }
+
         Box b = bounds();
         if ((flags_ | other.flags_) & BOUNDS_ACTIVE)
         {
@@ -566,28 +562,6 @@ public:
             newMatcher->addref();
         }
 
-        const Filter* newFilter = other.filter_;
-        if (newFilter)
-        {
-            if (filter_)
-            {
-                newFilter = new ComboFilter(filter_, newFilter);
-            }
-            else
-            {
-                newFilter->addref();
-            }
-        }
-        else if (filter_)
-        {
-            newFilter = filter_;
-            newFilter->addref();
-        }
-        else
-        {
-            newFilter = nullptr;
-        }
-
         store_->addref();
         return { view_, flags_ | other.flags_, newTypes, store_,
             b, newMatcher, newFilter };
@@ -603,6 +577,15 @@ public:
     }
 
 private:
+    bool tryGetBoundsFilter(const Filter** res, Box b) const
+    {
+        const Filter* filter = filter_;
+        const Filter* boundsFilter = new BoundsFilter(b);
+        bool success = ComboFilter::tryCombine(res, boundsFilter, filter);
+        boundsFilter->release();
+        return success;
+    }
+
     uint16_t view_;
     uint16_t flags_;
     FeatureTypes types_;

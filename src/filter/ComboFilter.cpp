@@ -1,6 +1,7 @@
 // Copyright (c) 2024 Clarisma / GeoDesk contributors
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <span>
 #include <geodesk/filter/ComboFilter.h>
 
 namespace geodesk {
@@ -14,80 +15,106 @@ namespace geodesk {
 //   - If not STRICT_BBOX, use smallest bbox
 // -  
 
-ComboFilter::ComboFilter(const Filter* a, const Filter* b)
+const ComboFilter* ComboFilter::create(const Filter* a, const Filter* b)
 {
+    assert(a);
+    assert(b);
+
+    FeatureTypes types = a->acceptedTypes() & b->acceptedTypes();
+    if (types==0) [[unlikely]]
+    {
+        return nullptr;
+    }
+
     int aFlags = a->flags();
     int bFlags = b->flags();
-    int totalCount = 0;
-    int fastTileFlag = (aFlags | bFlags) & FilterFlags::FAST_TILE_FILTER;
-    int usesBoundsFlag = (aFlags | bFlags) & FilterFlags::USES_BBOX;
-    int strictBoundsFlag = (aFlags | bFlags) & FilterFlags::STRICT_BBOX;
-    acceptedTypes_ = a->acceptedTypes() & b->acceptedTypes();
-    flags_ = fastTileFlag | usesBoundsFlag | strictBoundsFlag | FilterFlags::COMBO_FILTER;
-    if (strictBoundsFlag)
-    {
-        const Box& aBounds = reinterpret_cast<const SpatialFilter*>(a)->bounds();
-        const Box& bBounds = reinterpret_cast<const SpatialFilter*>(b)->bounds();
-        bounds_ = Box::simpleIntersection(aBounds, bBounds);
-        if (bounds_.isEmpty()) acceptedTypes_ = 0;
-        // If the strict bound share no overlap, the filter will never match anything
-    }
-    else
-    {
-        bounds_ = Box::simpleSmaller(a->getBounds(), b->getBounds());
-    }
-    add(a);
-    add(b);
-}
+    int aComboFlag = aFlags & FilterFlags::COMBO_FILTER;
+    int bComboFlag = bFlags & FilterFlags::COMBO_FILTER;
+    uint32_t totalCount =
+        (aComboFlag ? cast(a)->totalCount_ : 1) +
+        (bComboFlag ? cast(b)->totalCount_ : 1);
+    uint32_t roleFilterCount =
+        (aComboFlag ? cast(a)->roleFilterCount_ :
+            ((aFlags & FilterFlags::ROLE_FILTER) ? 1 : 0)) +
+        (bComboFlag ? cast(b)->roleFilterCount_ :
+            ((bFlags & FilterFlags::ROLE_FILTER) ? 1 : 0));
 
+    int flags = (aFlags | bFlags) &
+        (FilterFlags::FAST_TILE_FILTER | FilterFlags::STRICT_BBOX) |
+            FilterFlags::COMBO_FILTER | FilterFlags::USES_BBOX;
 
-void ComboFilter::add(const Filter* f)
-{
-    if (f->isCombo())
+    Box bounds;
+    if (flags & FilterFlags::STRICT_BBOX)
     {
-        const ComboFilter* combo = reinterpret_cast<const ComboFilter*>(f);
-        for (auto it = combo->filters_.begin(); it != combo->filters_.end(); ++it)
+        bounds = Box::simpleIntersection(
+            a->getBounds(), b->getBounds());
+        if (bounds.isEmpty())
         {
-            (*it)->addref();
-            filters_.push_back(*it);
+            return nullptr;
         }
     }
     else
     {
-        f->addref();
-        filters_.push_back(f);
+        bounds = Box::simpleSmaller(a->getBounds(), b->getBounds());
     }
+
+    size_t bytes = sizeof(ComboFilter) + totalCount * sizeof(const ComboFilter*);
+    void* memory = ::operator new(bytes);
+    auto storage = ::new (memory) std::byte[bytes];
+    auto dest = ::new (storage + sizeof(ComboFilter))
+        const Filter*[totalCount];
+    ComboFilter* combo = new(memory)ComboFilter(
+        flags, types, bounds, totalCount, roleFilterCount);
+
+    using Children = std::span<const Filter* const>;
+    Children aChildren = aComboFlag ?
+        cast(a)->children() : Children(&a, 1);
+    Children bChildren = bComboFlag ?
+        cast(b)->children() : Children(&b, 1);
+
+    for (const Filter* child : aChildren)
+    {
+        child->addref();
+        *dest++ = child;
+    }
+    for (const Filter* child : bChildren)
+    {
+        child->addref();
+        *dest++ = child;
+    }
+    return combo;
 }
 
 
 ComboFilter::~ComboFilter()
 {
-    for (auto it = filters_.begin(); it != filters_.end(); ++it)
+    for (const Filter* child : children())
     {
-        (*it)->release();
+        child->release();
     }
 }
 
 
 bool ComboFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
-    for (auto it = filters_.begin(); it != filters_.end(); ++it)
+    for (const Filter* child : children())
     {
         FastFilterHint fastChild = fast;
         fastChild.turboFlags &= 1;      // mask of the turbo flag for this child
-        if (!(*it)->accept(store, feature, fastChild)) return false;
+        if (!child->accept(store, feature, fastChild)) return false;
         fast.turboFlags >>= 1;          // bring the next turbo flag to bit position 0
     }
     return true;
 }
 
+// TODO: check only the first 31 children
 int ComboFilter::acceptTile(Tile tile) const
 {
     int fast = 0;
     int nextFlag = 1;
-    for (auto it = filters_.begin(); it != filters_.end(); ++it)
+    for (const Filter* child : children())
     {
-        int accept = (*it)->acceptTile(tile);
+        int accept = child->acceptTile(tile);
         if (accept < 0) return accept;
         fast |= accept == 0 ? 0 : nextFlag;
         nextFlag <<= 1;
@@ -98,29 +125,49 @@ int ComboFilter::acceptTile(Tile tile) const
 
 const RoleFilter* ComboFilter::roleFilter() const
 {
-    for (const Filter* f : filters_)
+    for (const Filter* child : children())
     {
-        if (f->isRoleFilter()) return reinterpret_cast<const RoleFilter*>(f);
+        if (child->isRoleFilter()) return reinterpret_cast<const RoleFilter*>(child);
     }
     return nullptr;
 }
 
-// TODO: what if there are multiple RoleFilters?
 const Filter* ComboFilter::withoutRoleFilter() const
 {
-    std::vector<const Filter*> newFilters;
-    for (const Filter* f : filters_)
+    uint32_t nonRoleFilterCount = totalCount_ - roleFilterCount_;
+    if (nonRoleFilterCount == 0) [[unlikely]] return nullptr;
+    if (nonRoleFilterCount == 1) [[likely]]
     {
-        if (!f->isRoleFilter())
+        for (const Filter* child : children())
         {
-            f->addref();
-            newFilters.push_back(f);
+            if (!child->isRoleFilter())
+            {
+                child->addref();
+                return child;
+            }
+        }
+        assert(false);
+    }
+
+    size_t bytes = sizeof(ComboFilter) + nonRoleFilterCount *
+        sizeof(const ComboFilter*);
+    void* memory = ::operator new(bytes);
+    auto storage = ::new (memory) std::byte[bytes];
+    auto dest = ::new (storage + sizeof(ComboFilter))
+        const Filter*[nonRoleFilterCount];
+    auto p = dest;
+    ComboFilter* newCombo = new(memory)ComboFilter(
+        flags(), acceptedTypes(), bounds(), nonRoleFilterCount, 0);
+    for (const Filter* child : children())
+    {
+        if (!child->isRoleFilter())
+        {
+            child->addref();
+            *p++ = child;
         }
     }
-    if (newFilters.empty()) [[unlikely]] return nullptr;
-    if (newFilters.size() == 1) return newFilters[0];
-    return new ComboFilter(*this, std::move(newFilters));
+    assert(p - dest == nonRoleFilterCount);
+    return newCombo;
 }
-
 
 } // namespace geodesk
