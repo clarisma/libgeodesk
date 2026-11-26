@@ -8,6 +8,8 @@
 #include <geodesk/feature/FeatureStore.h>
 #include <geodesk/geom/Box.h>
 
+#include "geodesk/filter/BoundsFilter.h"
+
 namespace geodesk {
 
 class Filter;
@@ -141,24 +143,24 @@ public:
         view_ = other.view_;
         flags_ = other.flags_;
         types_ = other.types_;
-        if(store_ != other.store_)
-        {
-            store_->release();
-            other.store_->addref();
-            store_ = other.store_;
-        }
         context_ = other.context_;
         if(matcher_ != other.matcher_)
         {
-            matcher_->release();
             other.matcher_->addref();
+            matcher_->release();
             matcher_ = other.matcher_;
         }
         if(filter_ != other.filter_)
         {
-            if(filter_) filter_->release();
             if(other.filter_) other.filter_->addref();
+            if(filter_) filter_->release();
             filter_ = other.filter_;
+        }
+        if(store_ != other.store_)
+        {
+            other.store_->addref();
+            store_->release();
+            store_ = other.store_;
         }
         // printf("  Assigned. (store refcount now = %llu)\n", store_->refcount());
         // fflush(stdout);
@@ -204,11 +206,12 @@ public:
         }
         FeatureTypes types = types_ & FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED;
         if(types == 0) return empty();
-        // TODO: transform bbox into filter
         matcher_->addref();
         store_->addref();
-        if(filter_) filter_->addref();
-        return { WAY_NODES, flags_, types, store_, way, matcher_, filter_ };
+        const Filter* filter = getFilterWithPotentialBounds();
+        uint16_t filterFlag = filter ? USES_FILTER : 0;
+        return { WAY_NODES, flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE) | filterFlag,
+            types, store_, way, matcher_, filter };
     }
 
     // TODO: guard against empty relations
@@ -224,11 +227,12 @@ public:
             if(view_ == EMPTY) return empty();
             throw QueryException("Not implemented");
         }
-        // TODO: transform bbox into filter
         matcher_->addref();
         store_->addref();
-        if(filter_) filter_->addref();
-        return { MEMBERS, flags_, types_, store_, rel, matcher_, filter_ };
+        const Filter* filter = getFilterWithPotentialBounds();
+        uint16_t filterFlag = filter ? USES_FILTER : 0;
+        return { MEMBERS, flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE) | filterFlag,
+            types_, store_, rel, matcher_, filter };
     }
 
     View parentWaysOf(Coordinate anonNode) const
@@ -242,12 +246,12 @@ public:
             // don't constrain to WAYNODE_FLAGGED, because that
             // would only return ways that have at least one feature node
         if(types == 0) return empty();
-        // TODO: transform bbox into filter
         matcher_->addref();
         store_->addref();
-        if(filter_) filter_->addref();
-        return { PARENTS, flags_, types,
-            store_, anonNode, matcher_, filter_ };
+        const Filter* filter = getFilterWithPotentialBounds();
+        uint16_t filterFlag = filter ? USES_FILTER : 0;
+        return { PARENTS, flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE) | filterFlag,
+            types, store_, anonNode, matcher_, filter };
     }
 
     View parentsOf(FeaturePtr feature) const
@@ -274,11 +278,12 @@ public:
         FeatureTypes types = types_ & parentTypes;
         if(types == 0) return empty();
 
-        // TODO: transform bbox into filter
         matcher_->addref();
         store_->addref();
-        if(filter_) filter_->addref();
-        return { PARENTS, flags_, types, store_, feature, matcher_, filter_ };
+        const Filter* filter = getFilterWithPotentialBounds();
+        uint16_t filterFlag = filter ? USES_FILTER : 0;
+        return { PARENTS, flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE) | filterFlag,
+            types, store_, feature, matcher_, filter };
     }
 
     static View parentWaysOf(FeatureStore* store, Coordinate anonNode, const char* query = nullptr)
@@ -429,16 +434,29 @@ public:
             return empty();
         }
 
-        // TODO: apply bounds!!!
-        //
-        // TODO: fix
-        Box b = newFilter->getBounds();
-        // Box b = Box::simpleIntersection(bounds, newFilter->getBounds());
-
         matcher_->addref();      // createWith consumes ref to matcher
         store_->addref();
+
+        Box b = newFilter->getBounds();
         if(flags_ & USES_BOUNDS)
         {
+            if (flags_ & BOUNDS_ACTIVE)
+            {
+                int filterFlags = newFilter->flags();
+                if (filterFlags & FilterFlags::USES_BBOX)
+                {
+                    const SpatialFilter* spatialFilter =
+                        SpatialFilter::cast(newFilter);
+                    if (filterFlags & FilterFlags::STRICT_BBOX)
+                    {
+                        b = Box::simpleIntersection(b, spatialFilter->bounds());
+                    }
+                    else
+                    {
+                        b = Box::simpleSmaller(b, spatialFilter->bounds());
+                    }
+                }
+            }
             Context ctx;
             ctx.bounds = { b.minX(), b.minY(), b.maxX(), b.maxY() };
             return View(view_, flags_ | USES_FILTER, newTypes, store_,
@@ -591,7 +609,6 @@ public:
         return ofRelated(MEMBERS, related, FeatureTypes::RELATION_MEMBERS);
     }
 
-
     // TODO: Don't use the current matcher; use the allMatcher of the store
     //  (otherwise complex matchers hang around longer than needed)
     View empty() const
@@ -602,6 +619,24 @@ public:
     }
 
 private:
+    const Filter* getFilterWithPotentialBounds() const
+    {
+        if (flags_ & BOUNDS_ACTIVE)
+        {
+            const Filter* boundsFilter = new BoundsFilter(bounds());
+            if (filter_)
+            {
+                const Filter* combined = new ComboFilter(
+                    boundsFilter, filter_);
+                boundsFilter->release();    // ComboFilter adds its own refs
+                return combined;
+            }
+            return boundsFilter;
+        }
+        if (filter_) filter_->addref();
+        return filter_;
+    }
+
     uint16_t view_;
     uint16_t flags_;
     FeatureTypes types_;

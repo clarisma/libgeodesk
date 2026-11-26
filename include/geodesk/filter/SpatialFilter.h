@@ -29,6 +29,13 @@ public:
         Filter(other),
         bounds_(other.bounds()) {}
 
+    static const SpatialFilter* cast(const Filter* filter)
+    {
+        assert(filter);
+        assert (filter->flags() & FilterFlags::USES_BBOX);
+        return reinterpret_cast<const SpatialFilter*>(filter);
+    }
+
     const Box& bounds() const { return bounds_; }
 
 protected:
