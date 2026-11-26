@@ -226,6 +226,10 @@ public:
                 }
                 boundsFilter->release();    // ComboFilter adds its own refs
             }
+            else
+            {
+                filter = boundsFilter;
+            }
         }
         else
         {
@@ -244,7 +248,7 @@ public:
     View nodesOf(WayPtr way) const
     {
         return withRelated(WAY_NODES,
-            types_ & FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED, way);
+            FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED, way);
     }
 
     // TODO: guard against empty relations
@@ -255,12 +259,12 @@ public:
 
     View membersOf(RelationPtr rel) const
     {
-        return withRelated(MEMBERS, types_, rel);
+        return withRelated(MEMBERS, FeatureTypes::ALL, rel);
     }
 
     View parentWaysOf(Coordinate anonNode) const
     {
-        return withRelated(PARENTS, types_ & FeatureTypes::WAYS, anonNode);
+        return withRelated(PARENTS, FeatureTypes::WAYS, anonNode);
     }
 
     View parentsOf(FeaturePtr feature) const
@@ -278,7 +282,7 @@ public:
         {
             parentTypes |= FeatureTypes::RELATIONS;
         }
-        return withRelated(PARENTS, types_ & parentTypes, feature);
+        return withRelated(PARENTS, parentTypes, feature);
     }
 
     static View parentWaysOf(FeatureStore* store, Coordinate anonNode, const char* query = nullptr)
@@ -435,7 +439,8 @@ public:
         if(flags_ & USES_BOUNDS)
         {
             Box b = bounds();
-            if (flags_ & BOUNDS_ACTIVE)
+            int boundsActiveFlag = flags_ & BOUNDS_ACTIVE;
+            if (boundsActiveFlag)
             {
                 int filterFlags = newFilter->flags();
                 if (filterFlags & FilterFlags::USES_BBOX)
@@ -450,6 +455,14 @@ public:
                     {
                         b = Box::simpleSmaller(b, spatialFilter->bounds());
                     }
+                }
+            }
+            else
+            {
+                if (newFilter->flags() & FilterFlags::USES_BBOX)
+                {
+                    b = SpatialFilter::cast(newFilter)->bounds();
+                    boundsActiveFlag = b != Box::ofWorld() ? BOUNDS_ACTIVE : 0;
                 }
             }
             Context ctx;
