@@ -34,7 +34,7 @@ public:
 	{
 		// Relations can only be members of other relations
 		if(!feature.isRelation()) return Relations(empty());
-		return Relations(view_.membersOfRelation(feature.ptr()));
+		return Relations(view_.membersOf(feature.ptr()));
 	}
 
 };

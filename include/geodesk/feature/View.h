@@ -197,21 +197,54 @@ public:
             store, ptr, query);
     }
 
-    View nodesOf(WayPtr way) const
+    template<typename Related>
+    View withRelated(int kind, FeatureTypes acceptedTypes, Related related) const
     {
-        if(view_ != WORLD)
+        if (view_ != WORLD)
         {
-            if(view_ == EMPTY) return empty();
+            if (view_ == EMPTY) return empty();
             throw QueryException("Not implemented");
         }
-        FeatureTypes types = types_ & FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED;
-        if(types == 0) return empty();
+
+        FeatureTypes types = types_ & acceptedTypes;
+        if (types == 0) return empty();
+
+        const Filter* filter = filter_;
+        if (flags_ & BOUNDS_ACTIVE)
+        {
+            const Filter* boundsFilter = new BoundsFilter(bounds());
+            if (filter)
+            {
+                try
+                {
+                    filter = new ComboFilter(boundsFilter, filter);
+                }
+                catch (...)
+                {
+                    boundsFilter->release();    // ComboFilter adds its own refs
+                    throw;
+                }
+                boundsFilter->release();    // ComboFilter adds its own refs
+            }
+        }
+        else
+        {
+            if (filter) filter->addref();
+        }
         matcher_->addref();
         store_->addref();
-        const Filter* filter = getFilterWithPotentialBounds();
-        uint16_t filterFlag = filter ? USES_FILTER : 0;
-        return { WAY_NODES, flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE) | filterFlag,
-            types, store_, way, matcher_, filter };
+
+        int flags = flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE);
+        flags |= filter ? USES_FILTER : 0;
+
+        return { kind, flags, types, store_,
+            related, matcher_, filter };
+    }
+
+    View nodesOf(WayPtr way) const
+    {
+        return withRelated(WAY_NODES,
+            types_ & FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED, way);
     }
 
     // TODO: guard against empty relations
@@ -222,46 +255,16 @@ public:
 
     View membersOf(RelationPtr rel) const
     {
-        if(view_ != WORLD)
-        {
-            if(view_ == EMPTY) return empty();
-            throw QueryException("Not implemented");
-        }
-        matcher_->addref();
-        store_->addref();
-        const Filter* filter = getFilterWithPotentialBounds();
-        uint16_t filterFlag = filter ? USES_FILTER : 0;
-        return { MEMBERS, flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE) | filterFlag,
-            types_, store_, rel, matcher_, filter };
+        return withRelated(MEMBERS, types_, rel);
     }
 
     View parentWaysOf(Coordinate anonNode) const
     {
-        if(view_ != WORLD)
-        {
-            if(view_ == EMPTY) return empty();
-            throw QueryException("Not implemented");
-        }
-        FeatureTypes types = types_ & FeatureTypes::WAYS;
-            // don't constrain to WAYNODE_FLAGGED, because that
-            // would only return ways that have at least one feature node
-        if(types == 0) return empty();
-        matcher_->addref();
-        store_->addref();
-        const Filter* filter = getFilterWithPotentialBounds();
-        uint16_t filterFlag = filter ? USES_FILTER : 0;
-        return { PARENTS, flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE) | filterFlag,
-            types, store_, anonNode, matcher_, filter };
+        return withRelated(PARENTS, types_ & FeatureTypes::WAYS, anonNode);
     }
 
     View parentsOf(FeaturePtr feature) const
     {
-        if(view_ != WORLD)
-        {
-            if(view_ == EMPTY) return empty();
-            throw QueryException("Not implemented");
-        }
-
         FeatureTypes parentTypes = 0;
         if (feature.isNode())
         {
@@ -275,15 +278,7 @@ public:
         {
             parentTypes |= FeatureTypes::RELATIONS;
         }
-        FeatureTypes types = types_ & parentTypes;
-        if(types == 0) return empty();
-
-        matcher_->addref();
-        store_->addref();
-        const Filter* filter = getFilterWithPotentialBounds();
-        uint16_t filterFlag = filter ? USES_FILTER : 0;
-        return { PARENTS, flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE) | filterFlag,
-            types, store_, feature, matcher_, filter };
+        return withRelated(PARENTS, types_ & parentTypes, feature);
     }
 
     static View parentWaysOf(FeatureStore* store, Coordinate anonNode, const char* query = nullptr)
@@ -437,9 +432,9 @@ public:
         matcher_->addref();      // createWith consumes ref to matcher
         store_->addref();
 
-        Box b = newFilter->getBounds();
         if(flags_ & USES_BOUNDS)
         {
+            Box b = bounds();
             if (flags_ & BOUNDS_ACTIVE)
             {
                 int filterFlags = newFilter->flags();
@@ -529,7 +524,11 @@ public:
             throw QueryException("Not yet implented");
         }
 
-        // TODO: merge bounding boxes (need to consider world vs. related query)
+        Box b = bounds();
+        if ((flags_ | other.flags_) & BOUNDS_ACTIVE)
+        {
+            b = Box::simpleIntersection(b, other.bounds());
+        }
 
         const MatcherHolder* newMatcher;
         if (flags_ & USES_MATCHER)
@@ -577,36 +576,8 @@ public:
         }
 
         store_->addref();
-        return { view_, flags_ | BOUNDS_ACTIVE, newTypes, store_,
-            context_, newMatcher, newFilter };
-    }
-
-
-    // TODO: fix, apply to world view only
-    // TODO: merge with memnersOF()
-    View ofRelated(int view, FeaturePtr related, FeatureTypes types = FeatureTypes::ALL) const
-    {
-        types &= types_;
-        if(types == 0) return empty();
-        // TODO: If bbox is active, wrap it into a filter
-        matcher_->addref();
-        if(filter_) filter_->addref();
-        store_->addref();
-        return View(view, flags_ & ~(USES_BOUNDS | BOUNDS_ACTIVE), types, store_,
-            related, matcher_, filter_);
-    }
-
-    /*
-    View parentRelationsOf(FeaturePtr related) const
-    {
-        return ofRelated(PARENT_RELATIONS, related);
-    }
-    */
-
-    View membersOfRelation(FeaturePtr related) const
-    {
-        assert(related.isRelation());
-        return ofRelated(MEMBERS, related, FeatureTypes::RELATION_MEMBERS);
+        return { view_, flags_ | other.flags_, newTypes, store_,
+            b, newMatcher, newFilter };
     }
 
     // TODO: Don't use the current matcher; use the allMatcher of the store
@@ -619,24 +590,6 @@ public:
     }
 
 private:
-    const Filter* getFilterWithPotentialBounds() const
-    {
-        if (flags_ & BOUNDS_ACTIVE)
-        {
-            const Filter* boundsFilter = new BoundsFilter(bounds());
-            if (filter_)
-            {
-                const Filter* combined = new ComboFilter(
-                    boundsFilter, filter_);
-                boundsFilter->release();    // ComboFilter adds its own refs
-                return combined;
-            }
-            return boundsFilter;
-        }
-        if (filter_) filter_->addref();
-        return filter_;
-    }
-
     uint16_t view_;
     uint16_t flags_;
     FeatureTypes types_;
