@@ -15,10 +15,10 @@ class Ways : public FeaturesBase<Way>
 public:
 	using FeaturesBase::FeaturesBase;
 	Ways(const FeaturesBase<Feature>& other) :
-		FeaturesBase(withTypes(FeatureTypes::WAYS)) {}
-	Ways(const FeaturesBase<Node>& other) : FeaturesBase(getEmpty()) {}
+		FeaturesBase(other.withTypes(FeatureTypes::WAYS)) {}
+	Ways(const FeaturesBase<Node>& other) : FeaturesBase(other.getEmpty()) {}
 	Ways(const FeaturesBase<Way>& other) : FeaturesBase(other) {}
-	Ways(const FeaturesBase<Relation>& other) : FeaturesBase(getEmpty()) {}
+	Ways(const FeaturesBase<Relation>& other) : FeaturesBase(other.getEmpty()) {}
 };
 
 /// \endcond

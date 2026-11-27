@@ -30,12 +30,15 @@ public:
         PARENTS
     };
 
+
+    /*
     explicit ViewBase(FeatureStore* store) :
-        Selection(EMPTY, 0, store, {}, store->getAllMatcher(), nullptr)
+        Selection(EMPTY, 0, 0, store, {}, store->getAllMatcher(), nullptr)
     {
         store->addref();
         // TODO: this differs from other cons that steal the ref
     }
+    */
 
     using Selection::Selection;
 
@@ -390,9 +393,9 @@ public:
             b, newMatcher, newFilter);
     }
 
-    const T& self() const
+    const T& self() const noexcept
     {
-        return *reinterpret_cast<const T*>(this);
+        return static_cast<const T&>(*this);
     }
 
 private:

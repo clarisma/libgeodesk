@@ -15,9 +15,9 @@ class Relations : public FeaturesBase<Relation>
 public:
 	using FeaturesBase::FeaturesBase;
 	Relations(const FeaturesBase<Feature>& other) :
-		FeaturesBase(withTypes(FeatureTypes::RELATIONS)) {}
-	Relations(const FeaturesBase<Node>& other) : FeaturesBase(getEmpty()) {}
-	Relations(const FeaturesBase<Way>& other) : FeaturesBase(getEmpty()) {}
+		FeaturesBase(other.withTypes(FeatureTypes::RELATIONS)) {}
+	Relations(const FeaturesBase<Node>& other) : FeaturesBase(other.getEmpty()) {}
+	Relations(const FeaturesBase<Way>& other) : FeaturesBase(other.getEmpty()) {}
 	Relations(const FeaturesBase<Relation>& other) : FeaturesBase(other) {}
 
 	template<typename P>
@@ -34,7 +34,7 @@ public:
 	{
 		// Relations can only be members of other relations
 		if(!feature.isRelation()) return Relations(getEmpty());
-		return Relations(membersOf(RelationPtr(feature.ptr())));
+		return Relations(View::membersOf(RelationPtr(feature.ptr())));
 	}
 
 };

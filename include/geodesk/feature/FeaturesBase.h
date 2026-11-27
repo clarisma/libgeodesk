@@ -41,7 +41,14 @@ template <typename T>
 class FeaturesBase : public View
 {
 public:
-    FeaturesBase(const FeaturesBase<T>& other) :
+    FeaturesBase(const FeaturesBase& other) :
+        View(other)
+    {
+        addref();
+    }
+
+    template<typename U>
+    FeaturesBase(const FeaturesBase<U>& other) :
         View(other)
     {
         addref();
@@ -52,18 +59,18 @@ public:
         release();
     }
 
-    /*
     static FeaturesBase empty(FeatureStore* store) noexcept
     {
-        return FeaturesBase(View(store));
+        store->addref();
+        return View(EMPTY, 0, 0, store,
+    {}, store->getAllMatcher(), nullptr);
     }
-    */
 
     FeaturesBase& operator=(const FeaturesBase& other)
     {
         other.addref();
         release();
-        // TODO: set from other
+        View::operator=(other);
         return *this;
     }
 
@@ -228,7 +235,7 @@ public:
     ///
     FeaturesBase intersecting(GEOSContextHandle_t context, const GEOSGeometry* geom) const
     {
-        return { view_.withFilter(Filters::intersecting(context, geom))};
+        return withFilter(Filters::intersecting(context, geom));
     }
 
     /// @brief Only features that lie entirely inside @p geom.
@@ -241,7 +248,7 @@ public:
     ///
     FeaturesBase within(GEOSContextHandle_t context, const GEOSGeometry* geom) const
     {
-        return { view_.withFilter(Filters::within(context, geom))};
+        return withFilter(Filters::within(context, geom));
     }
 
     /// @brief Only features whose geometry contains @p geom.
@@ -255,7 +262,7 @@ public:
     ///
     FeaturesBase containing(GEOSContextHandle_t context, const GEOSGeometry* geom) const
     {
-        return { view_.withFilter(Filters::containing(context, geom))};
+        return withFilter(Filters::containing(context, geom));
     }
 
     /// @brief Only features whose geometry crosses @p geom.
@@ -268,7 +275,7 @@ public:
     ///
     FeaturesBase crossing(GEOSContextHandle_t context, const GEOSGeometry* geom) const
     {
-        return { view_.withFilter(Filters::crossing(context, geom))};
+        return withFilter(Filters::crossing(context, geom));
     }
 
 #endif
@@ -288,7 +295,7 @@ public:
     template<typename P>
     [[nodiscard]] FeaturesBase nodesOf(FeatureBase<P> feature) const
     {
-        if(feature.isWay()) return nodesOf(WayPtr(feature.ptr()));
+        if(feature.isWay()) return View::nodesOf(WayPtr(feature.ptr()));
         return getEmpty();
     }
 
@@ -299,7 +306,7 @@ public:
         {
             return parentWaysOf(feature.xy());
         }
-        return parentsOf(FeaturePtr(feature.ptr()));
+        return View::parentsOf(feature.ptr());
     }
 
     /// @brief Only relation members with the given role.
@@ -362,18 +369,19 @@ public:
         return store()->key(k);
     }
 
-protected:
+private:
     FeaturesBase(const View& view) : View(view)
     {
     }
 
     FeatureIterator<T> query() const;
 
+    // TODO: needed?
     static View rootView(const char* golFile)
     {
         FeatureStore* store = FeatureStore::openSingle(golFile);
         const MatcherHolder* matcher = store->getAllMatcher();
-        return View(View::WORLD, 0, FeatureTypes::ALL, store,
+        return View(View::WORLD, USES_BOUNDS, FeatureTypes::ALL, store,
             Box::ofWorld(), matcher, nullptr);
     }
 
