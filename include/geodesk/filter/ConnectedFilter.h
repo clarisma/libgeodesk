@@ -11,18 +11,18 @@ namespace geodesk {
 class ConnectedFilter : public SpatialFilter
 {
 public:
-	ConnectedFilter(FeatureStore* store, FeaturePtr feature);
+	ConnectedFilter(const FeatureStore* store, FeaturePtr feature);
 
-	bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
+	bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
 
 protected:
 	bool acceptWay(WayPtr way) const override;
 	bool acceptNode(NodePtr node) const override;
-	bool acceptAreaRelation(FeatureStore* store, RelationPtr relation) const override;
+	bool acceptAreaRelation(const FeatureStore* store, RelationPtr relation) const override;
 
 private:
 	void collectWayPoints(WayPtr way);
-	void collectMemberPoints(FeatureStore* store, RelationPtr relation, RecursionGuard& guard);
+	void collectMemberPoints(const FeatureStore* store, RelationPtr relation, RecursionGuard& guard);
 
 	uint64_t self_;
 	clarisma::HashSet<Coordinate> points_;

@@ -26,7 +26,7 @@ public:
     NodePtr node() const { return node_; }
     const Filter* secondaryFilter() const { return secondaryFilter_; }
 
-    bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
+    bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
 
 private:
     NodePtr node_;

@@ -63,7 +63,7 @@ bool WithinPolygonFilter::acceptNode(NodePtr node) const
 }
 
 
-bool WithinPolygonFilter::acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
+bool WithinPolygonFilter::acceptMembers(const FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
 {
 	return locateMembers(store, relation, guard) > 0;
 		// all must lie inide or on boundary, and at least one point
@@ -71,7 +71,7 @@ bool WithinPolygonFilter::acceptMembers(FeatureStore* store, RelationPtr relatio
 }
 
 
-int WithinPolygonFilter::locateMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
+int WithinPolygonFilter::locateMembers(const FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
 {
 	int where = 0;
 	FastMemberIterator iter(store, relation);
@@ -113,7 +113,7 @@ int WithinPolygonFilter::locateMembers(FeatureStore* store, RelationPtr relation
 }
 
 
-bool WithinPolygonFilter::acceptAreaRelation(FeatureStore* store, RelationPtr relation) const
+bool WithinPolygonFilter::acceptAreaRelation(const FeatureStore* store, RelationPtr relation) const
 {
 	// We only check ways (i.e. ignore label nodes and sub-areas)
 
@@ -140,7 +140,7 @@ bool WithinPolygonFilter::acceptAreaRelation(FeatureStore* store, RelationPtr re
 }
 
 
-bool WithinPolygonFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+bool WithinPolygonFilter::accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
 	if (fast.turboFlags)
 	{

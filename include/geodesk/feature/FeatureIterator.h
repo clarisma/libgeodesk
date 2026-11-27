@@ -17,8 +17,9 @@ public:
         FeatureIteratorBase(view) {}
 
     using FeatureIteratorBase::current;
+#ifdef GEODESK_PYTHON
     using FeatureIteratorBase::currentRole;
-
+#endif
     // Dereference operator
     T operator*() const noexcept
     {

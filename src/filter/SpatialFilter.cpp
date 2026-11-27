@@ -8,7 +8,7 @@
 
 namespace geodesk {
 
-bool SpatialFilter::acceptFeature(FeatureStore* store, FeaturePtr feature) const
+bool SpatialFilter::acceptFeature(const FeatureStore* store, FeaturePtr feature) const
 {
 	int type = feature.typeCode();
 	if (type == 1) return acceptWay(WayPtr(feature));
@@ -22,7 +22,7 @@ bool SpatialFilter::acceptFeature(FeatureStore* store, FeaturePtr feature) const
 }
 
 // TODO: check member bboxes as a quick way to eliminate
-bool SpatialFilter::acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
+bool SpatialFilter::acceptMembers(const FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const
 {
 	// TODO: We could split into two paths: Use
 	//  IntersectingMemberIterator only if the relation bbox

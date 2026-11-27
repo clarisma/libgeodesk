@@ -39,12 +39,12 @@ public:
     const Box& bounds() const { return bounds_; }
 
 protected:
-    bool acceptFeature(FeatureStore* store, FeaturePtr feature) const;
+    bool acceptFeature(const FeatureStore* store, FeaturePtr feature) const;
     
     virtual bool acceptWay(WayPtr way) const { return false; }
     virtual bool acceptNode(NodePtr node) const { return false; }
-    virtual bool acceptAreaRelation(FeatureStore* store, RelationPtr relation) const { return false; }
-    virtual bool acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const;
+    virtual bool acceptAreaRelation(const FeatureStore* store, RelationPtr relation) const { return false; }
+    virtual bool acceptMembers(const FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const;
     Box bounds_;
 };
 

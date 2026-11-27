@@ -7,7 +7,7 @@
 
 namespace geodesk {
 
-bool WayNodeFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+bool WayNodeFilter::accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
     assert(feature.isWay());
     WayPtr way(feature);

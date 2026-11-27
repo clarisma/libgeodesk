@@ -25,13 +25,13 @@ bool CrossesFilter::acceptNode(NodePtr node) const
 	return false;
 }
 
-bool CrossesFilter::acceptAreaRelation(FeatureStore* store, RelationPtr relation) const
+bool CrossesFilter::acceptAreaRelation(const FeatureStore* store, RelationPtr relation) const
 {
 	return acceptMembers(store, relation, nullptr);
 }
 
 
-bool CrossesFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+bool CrossesFilter::accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
 	// "crosses" has no turbo-mode; only tiles that interact with segments
 	// are examined, all others are rejected

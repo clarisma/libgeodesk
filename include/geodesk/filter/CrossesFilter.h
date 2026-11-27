@@ -20,13 +20,13 @@ public:
 		acceptedTypes_ = accepted;
 	}
 
-	bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
+	bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
 	int acceptTile(Tile tile) const override;
 
 protected:
 	bool acceptWay(WayPtr way) const override;
 	bool acceptNode(NodePtr node) const override;
-	bool acceptAreaRelation(FeatureStore* store, RelationPtr relation) const override;
+	bool acceptAreaRelation(const FeatureStore* store, RelationPtr relation) const override;
 };
 
 
@@ -47,7 +47,7 @@ public:
 			bounds(), buildIndex());
 	}
 
-	const Filter* forNonAreaRelation(FeatureStore* store, RelationPtr rel) override
+	const Filter* forNonAreaRelation(const FeatureStore* store, RelationPtr rel) override
 	{
 		return forLineal();
 	}

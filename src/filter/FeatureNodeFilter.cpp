@@ -7,7 +7,7 @@
 
 namespace geodesk {
 
-bool FeatureNodeFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+bool FeatureNodeFilter::accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
     // TODO: Ignore missing tiles; by definition, we cannot find the
     // candidate node in a missing tile

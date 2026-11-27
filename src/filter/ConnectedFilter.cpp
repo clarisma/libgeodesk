@@ -7,7 +7,7 @@
 
 namespace geodesk {
 
-ConnectedFilter::ConnectedFilter(FeatureStore* store, FeaturePtr feature)
+ConnectedFilter::ConnectedFilter(const FeatureStore* store, FeaturePtr feature)
 {
 	self_ = feature.idBits();
 	if (feature.isWay())
@@ -53,7 +53,7 @@ void ConnectedFilter::collectWayPoints(WayPtr way)
 }
 
 
-void ConnectedFilter::collectMemberPoints(FeatureStore* store, RelationPtr relation, RecursionGuard& guard)
+void ConnectedFilter::collectMemberPoints(const FeatureStore* store, RelationPtr relation, RecursionGuard& guard)
 {
 	FastMemberIterator iter(store, relation);
 	for (;;)
@@ -101,13 +101,13 @@ bool ConnectedFilter::acceptNode(NodePtr node) const
 	return points_.find(node.xy()) != points_.end();
 }
 
-bool ConnectedFilter::acceptAreaRelation(FeatureStore* store, RelationPtr relation) const
+bool ConnectedFilter::acceptAreaRelation(const FeatureStore* store, RelationPtr relation) const
 {
 	return acceptMembers(store, relation, nullptr);
 }
 
 
-bool ConnectedFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+bool ConnectedFilter::accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
 	if (feature.idBits() == self_) return false;
 	return acceptFeature(store, feature);

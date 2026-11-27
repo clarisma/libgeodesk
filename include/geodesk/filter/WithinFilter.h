@@ -30,15 +30,15 @@ public:
 	{
 	}
 
-	bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
+	bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
 	int acceptTile(Tile tile) const override;
 	
 protected:
 	bool acceptWay(WayPtr way) const override;
 	bool acceptNode(NodePtr node) const override;
-	bool acceptAreaRelation(FeatureStore* store, RelationPtr relation) const override;
-	bool acceptMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const override;
-	int locateMembers(FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const;
+	bool acceptAreaRelation(const FeatureStore* store, RelationPtr relation) const override;
+	bool acceptMembers(const FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const override;
+	int locateMembers(const FeatureStore* store, RelationPtr relation, RecursionGuard* guard) const;
 
 	int locateWayNodes(WayPtr way) const;
 	bool containsWay(WayPtr way) const;

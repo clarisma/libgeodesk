@@ -15,7 +15,7 @@ namespace geodesk {
 class PreparedFilterFactory
 {
 public:
-	const Filter* forFeature(FeatureStore* store, FeaturePtr feature);
+	const Filter* forFeature(const FeatureStore* store, FeaturePtr feature);
 	#ifdef GEODESK_WITH_GEOS
 	const Filter* forGeometry(GEOSContextHandle_t geosContext, const GEOSGeometry* geom);
 	#endif
@@ -34,7 +34,7 @@ protected:
 	// By default, the PreparedFilterFactory indexes all ways of a relation
 	// But for filters like "intersects" to work, we need *two* indexes:
 	// one for areas and one for lineal features
-	virtual const Filter* forNonAreaRelation(FeatureStore* store, RelationPtr feature)
+	virtual const Filter* forNonAreaRelation(const FeatureStore* store, RelationPtr feature)
 	{
 		return nullptr;
 	};

@@ -6,7 +6,7 @@
 
 namespace geodesk {
 
-const Filter* PreparedFilterFactory::forFeature(FeatureStore* store, FeaturePtr feature)
+const Filter* PreparedFilterFactory::forFeature(const FeatureStore* store, FeaturePtr feature)
 {
 	if (feature.isType(FeatureTypes::RELATIONS & FeatureTypes::AREAS))
 	{

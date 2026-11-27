@@ -16,7 +16,7 @@ static bool chainContainedByAreaWay(const RTree<const MonotoneChain>::Node* node
 
 struct StoredRelation
 {
-	FeatureStore* const store;
+	const FeatureStore* const store;
 	RelationPtr relation;
 };
 
@@ -59,7 +59,8 @@ bool IntersectsPolygonFilter::acceptNode(NodePtr node) const
 	return index_.containsPoint(node.xy());
 }
 
-bool IntersectsPolygonFilter::acceptAreaRelation(FeatureStore* store, RelationPtr relation) const
+bool IntersectsPolygonFilter::acceptAreaRelation(
+	const FeatureStore* store, RelationPtr relation) const
 {
 	// TODO: check ways only
 	RecursionGuard guard(relation);
@@ -75,7 +76,7 @@ bool IntersectsPolygonFilter::acceptAreaRelation(FeatureStore* store, RelationPt
 }
 
 
-bool IntersectsPolygonFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+bool IntersectsPolygonFilter::accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
 	if (fast.turboFlags) return true;
 	return acceptFeature(store, feature);
@@ -103,7 +104,8 @@ bool IntersectsLinealFilter::acceptNode(NodePtr node) const
 	return index_.pointOnBoundary(node.xy());
 }
 
-bool IntersectsLinealFilter::acceptAreaRelation(FeatureStore* store, RelationPtr relation) const
+bool IntersectsLinealFilter::acceptAreaRelation(
+	const FeatureStore* store, RelationPtr relation) const
 {
 	// TODO: check ways only
 	if (acceptMembers(store, relation, nullptr)) return true;
@@ -114,7 +116,8 @@ bool IntersectsLinealFilter::acceptAreaRelation(FeatureStore* store, RelationPtr
 }
 
 
-bool IntersectsLinealFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+bool IntersectsLinealFilter::accept(
+	const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
 	if (fast.turboFlags) return true;
 	return acceptFeature(store, feature);

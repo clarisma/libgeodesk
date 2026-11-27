@@ -82,8 +82,9 @@ bool Selection::contains(FeaturePtr feature) const noexcept
     {
     case NODES:
         assert(feature.isNode());
-        return WayPtr(relatedFeature()).contains(NodePtr(feature));
+        return WayPtr(relatedFeature()).contains(store(), NodePtr(feature));
     }
+    return true;    // TODO: other kinds
 }
 
 } // namespace geodesk

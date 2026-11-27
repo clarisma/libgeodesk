@@ -25,10 +25,10 @@ public:
 	void segmentizeCoords(GEOSContextHandle_t context, const GEOSCoordSequence* coords);
 	void segmentizePolygon(GEOSContextHandle_t context, const GEOSGeometry* polygon);
 	#endif
-	void segmentizeAreaRelation(FeatureStore* store, RelationPtr rel);
-	void segmentizeMembers(FeatureStore* store, RelationPtr rel, RecursionGuard& guard);
+	void segmentizeAreaRelation(const FeatureStore* store, RelationPtr rel);
+	void segmentizeMembers(const FeatureStore* store, RelationPtr rel, RecursionGuard& guard);
 	MCIndex build(Box bounds);
-	static MCIndex buildFromAreaRelation(FeatureStore* store, RelationPtr rel)
+	static MCIndex buildFromAreaRelation(const FeatureStore* store, RelationPtr rel)
 	{
 		MCIndexBuilder builder;
 		builder.segmentizeAreaRelation(store, rel);

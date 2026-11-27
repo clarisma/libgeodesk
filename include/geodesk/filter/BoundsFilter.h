@@ -21,7 +21,7 @@ public:
     explicit BoundsFilter(const Box& bounds) :
         SpatialFilter(bounds) {}
 
-    bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override
+    bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override
     {
         if (feature.isNode())
         {

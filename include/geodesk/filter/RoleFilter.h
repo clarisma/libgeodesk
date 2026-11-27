@@ -36,7 +36,7 @@ public:
 		}
 	}
 
-	bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override
+	bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override
 	{
 		// RoleFilter only accepts features in relation members queries;
 		// those queries call acceptRole() instead.

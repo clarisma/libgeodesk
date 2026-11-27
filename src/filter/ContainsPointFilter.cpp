@@ -12,7 +12,7 @@ namespace geodesk {
 //  But careful: intersecting(Node) also delegates to this filter,
 //  and for intersecting(Node) we need to include points on the boundary
 
-bool ContainsPointFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint /* ignored */) const
+bool ContainsPointFilter::accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint /* ignored */) const
 {
 	if (feature.isArea())
 	{

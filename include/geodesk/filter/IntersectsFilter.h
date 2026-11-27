@@ -24,13 +24,13 @@ public:
 		flags_ |= FilterFlags::FAST_TILE_FILTER;
 	}
 
-	bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
+	bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
 	int acceptTile(Tile tile) const override;
 
 protected:
 	bool acceptWay(WayPtr way) const override;
 	bool acceptNode(NodePtr node) const override;
-	bool acceptAreaRelation(FeatureStore* store, RelationPtr relation) const override;
+	bool acceptAreaRelation(const FeatureStore* store, RelationPtr relation) const override;
 };
 
 
@@ -40,12 +40,12 @@ public:
 	IntersectsLinealFilter(const Box& bounds, MCIndex&& index) :
 		PreparedSpatialFilter(bounds, std::move(index)) {}
 
-	bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
+	bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
 
 protected:
 	bool acceptWay(WayPtr way) const override;
 	bool acceptNode(NodePtr node) const override;
-	bool acceptAreaRelation(FeatureStore* store, RelationPtr relation) const override;
+	bool acceptAreaRelation(const FeatureStore* store, RelationPtr relation) const override;
 };
 
 

@@ -67,7 +67,7 @@ bool PointDistanceFilter::isWithinDistance(WayPtr way) const
 }
 
 
-bool PointDistanceFilter::isAreaWithinDistance(FeatureStore* store, RelationPtr relation) const
+bool PointDistanceFilter::isAreaWithinDistance(const FeatureStore* store, RelationPtr relation) const
 {
     // measure distance to the ways that define shell and holes, and
     // also perform point in polygon test
@@ -96,7 +96,7 @@ bool PointDistanceFilter::isAreaWithinDistance(FeatureStore* store, RelationPtr 
 }
 
 
-bool PointDistanceFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+bool PointDistanceFilter::accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
     FeatureType type = feature.type();
     if (type == FeatureType::WAY)
@@ -121,7 +121,8 @@ bool PointDistanceFilter::accept(FeatureStore* store, FeaturePtr feature, FastFi
 }
 
 
-bool PointDistanceFilter::areMembersWithinDistance(FeatureStore* store, RelationPtr relation, RecursionGuard& guard) const
+bool PointDistanceFilter::areMembersWithinDistance(
+    const FeatureStore* store, RelationPtr relation, RecursionGuard& guard) const
 {
     FastMemberIterator iter(store, relation);
     for (;;)

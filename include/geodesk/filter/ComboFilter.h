@@ -64,7 +64,7 @@ public:
         return combined != nullptr;
     }
 
-    bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
+    bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
     int acceptTile(Tile tile) const override;
     const RoleFilter* roleFilter() const;
     const Filter* withoutRoleFilter() const;

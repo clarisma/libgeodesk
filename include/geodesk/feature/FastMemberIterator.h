@@ -16,7 +16,7 @@ namespace geodesk {
 class FastMemberIterator : public RelatedIteratorBase<FastMemberIterator,FeaturePtr,1,2>
 {
 public:
-	FastMemberIterator(FeatureStore* store, RelationPtr relation) :
+	FastMemberIterator(const FeatureStore* store, RelationPtr relation) :
 		RelatedIteratorBase(store, relation.bodyptr(), Tex::MEMBERS_START_TEX)
 	{
 	}

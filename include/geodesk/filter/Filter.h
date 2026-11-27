@@ -91,7 +91,7 @@ public:
     Box getBounds() const;
     FeatureTypes acceptedTypes() const { return acceptedTypes_; }
 
-    virtual bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+    virtual bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
     {
         return false;
     }

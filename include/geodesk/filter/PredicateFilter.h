@@ -17,7 +17,7 @@ public:
 	{
 	}
 
-	bool accept(FeatureStore* store, FeaturePtr ptr, FastFilterHint fast) const override
+	bool accept(const FeatureStore* store, FeaturePtr ptr, FastFilterHint fast) const override
 	{
 		geodesk::Feature feature(store, FeaturePtr(ptr.ptr()));
 		return predicate_(feature);

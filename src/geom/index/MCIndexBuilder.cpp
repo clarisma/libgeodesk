@@ -41,7 +41,7 @@ void MCIndexBuilder::segmentizeWay(WayPtr way)
 	while (slicer.hasMore());
 }
 
-void MCIndexBuilder::segmentizeAreaRelation(FeatureStore* store, RelationPtr rel)
+void MCIndexBuilder::segmentizeAreaRelation(const FeatureStore* store, RelationPtr rel)
 {
 	FastMemberIterator iter(store, rel);
 	for (;;)
@@ -69,7 +69,7 @@ void MCIndexBuilder::segmentizeAreaRelation(FeatureStore* store, RelationPtr rel
 }
 
 
-void MCIndexBuilder::segmentizeMembers(FeatureStore* store, RelationPtr rel, RecursionGuard& guard)
+void MCIndexBuilder::segmentizeMembers(const FeatureStore* store, RelationPtr rel, RecursionGuard& guard)
 {
 	FastMemberIterator iter(store, rel);
 	for (;;)

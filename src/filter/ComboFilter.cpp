@@ -121,7 +121,7 @@ ComboFilter::~ComboFilter()
 }
 
 
-bool ComboFilter::accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
+bool ComboFilter::accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const
 {
     for (const Filter* child : children())
     {

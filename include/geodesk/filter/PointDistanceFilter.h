@@ -17,13 +17,13 @@ class PointDistanceFilter : public SpatialFilter
 public:
 	PointDistanceFilter(double meters, Coordinate point);
 
-	virtual bool accept(FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const;
+	bool accept(const FeatureStore* store, FeaturePtr feature, FastFilterHint fast) const override;
 
 private:
 	bool segmentsWithinDistance(WayPtr way, int areaFlag) const;
 	bool isWithinDistance(WayPtr way) const;
-	bool isAreaWithinDistance(FeatureStore* store, RelationPtr relation) const;
-	bool areMembersWithinDistance(FeatureStore* store, RelationPtr relation, RecursionGuard& guard) const;
+	bool isAreaWithinDistance(const FeatureStore* store, RelationPtr relation) const;
+	bool areMembersWithinDistance(const FeatureStore* store, RelationPtr relation, RecursionGuard& guard) const;
 
 	Coordinate point_;
 	double distanceSquared_;

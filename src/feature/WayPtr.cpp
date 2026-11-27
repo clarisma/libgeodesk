@@ -16,6 +16,7 @@ bool WayPtr::contains(const FeatureStore* store, NodePtr node) const noexcept
     {
         NodePtr n = iter.next();
         if (n.isNull()) return false;
+        if (n.ptr() == node.ptr()) return true;
     }
 }
 

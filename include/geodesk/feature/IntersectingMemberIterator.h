@@ -17,7 +17,7 @@ namespace geodesk {
 class IntersectingMemberIterator : public RelatedIteratorBase<IntersectingMemberIterator,FeaturePtr,1,2>
 {
 public:
-	IntersectingMemberIterator(FeatureStore* store, RelationPtr relation,
+	IntersectingMemberIterator(const FeatureStore* store, RelationPtr relation,
 		const Box& queryBounds, const Box& relationBounds) :
 		RelatedIteratorBase(store, relation.bodyptr(), Tex::MEMBERS_START_TEX),
 		bounds_(queryBounds)

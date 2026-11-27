@@ -274,7 +274,7 @@ public:
 	///	shortcuts; it assumes the caller has already performed
 	///	any appropriate bbox shortcuts.
 	///
-	static int classifyAreaRelation(FeatureStore* store, const RelationPtr rel, Coordinate pt)
+	static int classifyAreaRelation(const FeatureStore* store, const RelationPtr rel, Coordinate pt)
 	{
 		assert(rel.isArea());
 		int loc = 0;
