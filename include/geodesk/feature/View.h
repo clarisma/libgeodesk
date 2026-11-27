@@ -21,18 +21,19 @@ class GEODESK_API View
 {
     union Context
     {
-        struct
+        struct Related
         {
-            int32_t minX, minY, maxX, maxY;
-        }
-        bounds;                 // If used, USES_BOUNDS flag must be set 
-                                // If it contains a value other than Box::ofWorld(),
-                                // ACTIVE_BOUNDS must be set
-        struct
-        {
-            const uint8_t* relatedFeature;  // If used, USES_BOUNDS flag must be clear
-            int32_t relatedNodeX, relatedNodeY;
+            FeaturePtr feature;
+            Coordinate xy;
         };
+
+        Context() noexcept {}
+        Context(Box b) : bounds(b) {}
+        Context(FeaturePtr f) : related{f,Coordinate()} {}
+        Context(Coordinate xy) : related{FeaturePtr(),xy} {}
+
+        Box bounds;         // If used, USES_BOUNDS flag must be set
+        Related related;    // If used, USES_BOUNDS flag must be clear
     };
 
     enum Flags
@@ -74,41 +75,14 @@ public:
 
 
     // steals references
-    View(int view, int flags, FeatureTypes types, FeatureStore* store, const Context& context,
-        const MatcherHolder* matcher, const Filter* filter) :
+    View(int view, int flags, FeatureTypes types, FeatureStore* store,
+        Context context, const MatcherHolder* matcher, const Filter* filter) :
         view_(view), flags_(flags), types_(types), store_(store), 
         context_(context), matcher_(matcher), filter_(filter)
     {
         //printf("Creating view, store refcount = %llu\n", store_->refcount());
         //fflush(stdout);
     }
-
-    View(int view, int flags, FeatureTypes types, FeatureStore* store, const Box& bounds,
-        const MatcherHolder* matcher, const Filter* filter) :
-        view_(view), flags_(flags | USES_BOUNDS), types_(types), store_(store),
-        matcher_(matcher), filter_(filter)
-    {
-        context_.bounds = { bounds.minX(), bounds.minY(), bounds.maxX(), bounds.maxY() };
-    }
-
-    View(int view, int flags, FeatureTypes types, FeatureStore* store, FeaturePtr related,
-        const MatcherHolder* matcher, const Filter* filter) :
-        view_(view), flags_(flags), types_(types), store_(store),
-        matcher_(matcher), filter_(filter)
-    {
-        context_.relatedFeature = related.ptr();
-    }
-
-    View(int view, int flags, FeatureTypes types, FeatureStore* store, Coordinate anonNode,
-        const MatcherHolder* matcher, const Filter* filter) :
-        view_(view), flags_(flags), types_(types), store_(store),
-        matcher_(matcher), filter_(filter)
-    {
-        context_.relatedFeature = nullptr;
-        context_.relatedNodeX = anonNode.x;
-        context_.relatedNodeY = anonNode.y;
-    }
-
 
     View(const View& other) :
         View(other.view_, other.flags_, other.types_, other.store_,
@@ -307,18 +281,17 @@ public:
     const Filter* filter() const { return filter_; }
     Box bounds() const noexcept
     { 
-        return Box(context_.bounds.minX, context_.bounds.minY, 
-            context_.bounds.maxX, context_.bounds.maxY);
+        return context_.bounds;
     }
 
     FeaturePtr relatedFeature() const noexcept
     {
-        return context_.relatedFeature;
+        return context_.related.feature;
     }
 
     Coordinate relatedAnonymousNode() const noexcept
     {
-        return Coordinate(context_.relatedNodeX, context_.relatedNodeY);
+        return context_.related.xy;
     }
 
     bool usesMatcher() const noexcept
