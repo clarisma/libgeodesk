@@ -25,7 +25,7 @@ class RelatedIteratorBase
 public:
     using DataPtr = clarisma::DataPtr;
 
-    RelatedIteratorBase(FeatureStore* store, DataPtr p, Tex initialTex) :
+    RelatedIteratorBase(const FeatureStore* store, DataPtr p, Tex initialTex) :
         store_(store),
         currentTip_(FeatureConstants::START_TIP),
         currentTex_(initialTex),
@@ -35,7 +35,7 @@ public:
     {
     }
 
-    FeatureStore* store() const { return store_; }
+    const FeatureStore* store() const { return store_; }
 
     Ptr next()
     {
@@ -149,7 +149,7 @@ protected:
         return true;
     }
 
-    FeatureStore* store_;
+    const FeatureStore* store_;
     Tip currentTip_;
     Tex currentTex_;
     int32_t member_;
@@ -165,7 +165,7 @@ template<typename Derived, typename Ptr, int ExtraFlags, int Step>
 class RelatedIterator : public RelatedIteratorBase<Derived,Ptr,ExtraFlags,Step>
 {
 public:
-    RelatedIterator(FeatureStore* store, clarisma::DataPtr p, Tex initialTex,
+    RelatedIterator(const FeatureStore* store, clarisma::DataPtr p, Tex initialTex,
         const MatcherHolder* matcher, const Filter* filter) :
         RelatedIteratorBase<Derived,Ptr,ExtraFlags,Step>(store, p, initialTex),
         matcher_(matcher),

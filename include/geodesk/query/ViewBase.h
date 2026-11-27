@@ -60,7 +60,7 @@ public:
             //  resides within it (cause of #20)
     }
 
-    static T related(int view, FeatureTypes types, FeatureStore* store, FeaturePtr ptr, const char* query)
+    static auto related(int view, FeatureTypes types, FeatureStore* store, FeaturePtr ptr, const char* query)
     {
         const MatcherHolder* matcher;
         int flags;
@@ -84,14 +84,14 @@ public:
         return T::create(view, flags, types, store, ptr, matcher, nullptr);
     }
 
-    static T nodesOf(FeatureStore* store, FeaturePtr ptr, const char* query = nullptr)
+    static auto nodesOf(FeatureStore* store, FeaturePtr ptr, const char* query = nullptr)
     {
         return related(WAY_NODES, FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED,
             store, ptr, query);
     }
 
     template<typename Related>
-    T withRelated(int kind, FeatureTypes acceptedTypes, Related related) const
+    auto withRelated(int kind, FeatureTypes acceptedTypes, Related related) const
     {
         if (kind_ != WORLD)
         {
@@ -121,29 +121,29 @@ public:
             related, matcher_, filter);
     }
 
-    T withNodesOf(WayPtr way) const
+    auto withNodesOf(WayPtr way) const
     {
         return withRelated(WAY_NODES,
             FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED, way);
     }
 
     // TODO: guard against empty relations
-    static T membersOf(FeatureStore* store, FeaturePtr ptr, const char* query = nullptr)
+    static auto membersOf(FeatureStore* store, FeaturePtr ptr, const char* query = nullptr)
     {
         return related(MEMBERS, FeatureTypes::RELATION_MEMBERS, store, ptr, query);
     }
 
-    T withMembersOf(RelationPtr rel) const
+    auto withMembersOf(RelationPtr rel) const
     {
         return withRelated(MEMBERS, FeatureTypes::RELATION_MEMBERS, rel);
     }
 
-    T withParentWaysOf(Coordinate anonNode) const
+    auto withParentWaysOf(Coordinate anonNode) const
     {
         return withRelated(PARENTS, FeatureTypes::WAYS, anonNode);
     }
 
-    T withParentsOf(FeaturePtr feature) const
+    auto withParentsOf(FeaturePtr feature) const
     {
         FeatureTypes parentTypes = 0;
         if (feature.isNode())
@@ -161,13 +161,13 @@ public:
         return withRelated(PARENTS, parentTypes, feature);
     }
 
-    T withParentRelationsOf(FeaturePtr feature) const
+    auto withParentRelationsOf(FeaturePtr feature) const
     {
         if (!feature.isRelationMember()) return self().getEmpty();
         return withRelated(PARENTS, FeatureTypes::RELATIONS, feature);
     }
 
-    static T parentWaysOf(FeatureStore* store, Coordinate anonNode, const char* query = nullptr)
+    static auto parentWaysOf(FeatureStore* store, Coordinate anonNode, const char* query = nullptr)
     {
         const MatcherHolder* matcher;
         int flags;
@@ -189,7 +189,7 @@ public:
             store, anonNode, matcher, nullptr);
     }
 
-    static T parentsOf(FeatureStore* store, FeaturePtr feature, int types, const char* query = nullptr)
+    static auto parentsOf(FeatureStore* store, FeaturePtr feature, FeatureTypes types, const char* query = nullptr)
     {
         assert((types & ((FeatureTypes::WAYS & FeatureTypes::WAYNODE_FLAGGED) |
             FeatureTypes::RELATIONS)) == types);
@@ -198,7 +198,17 @@ public:
         return related(PARENTS, types, store, feature, query);
     }
 
-    T withTypes(FeatureTypes types) const
+    /*
+    static auto parentsOf(FeatureStore* store, FeaturePtr feature, const char* query = nullptr)
+    {
+        FeatureTypes types = feature.isRelationMember() ? FeatureTypes::RELATIONS : 0;
+        types |= feature.isType(FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED) ?
+            FeatureTypes::WAYS : 0;
+        if (types == 0) return self().getEmpty();
+    }
+    */
+
+    auto withTypes(FeatureTypes types) const
     {
         types &= types_;
         if (types == 0) return self().getEmpty();
@@ -208,7 +218,7 @@ public:
         return T::create(kind_, flags_, types, store_, context_, matcher_, filter_);
     }
 
-    T withQuery(const char* query, FeatureTypes newTypes = FeatureTypes::ALL) const
+    auto withQuery(const char* query, FeatureTypes newTypes = FeatureTypes::ALL) const
     {
         // TODO: Turn ParseException into QueryException
         //try
@@ -246,7 +256,7 @@ public:
     ///
     /// @param newFilter new reference (will be consumed), non-null
     ///
-    T withFilter(const Filter* newFilter) const
+    auto withFilter(const Filter* newFilter) const
     {
         FeatureTypes newTypes = types_ & newFilter->acceptedTypes();
         if (newTypes == 0)
@@ -303,7 +313,7 @@ public:
             context_, matcher_, f);
     }
 
-    T withBounds(Box box) const
+    auto withBounds(Box box) const
     {
         if (box.isEmpty()) [[unlikely]]
         {
@@ -325,7 +335,7 @@ public:
         throw QueryException("Not yet implemented");
     }
 
-    T withBounds(Coordinate xy) const
+    auto withBounds(Coordinate xy) const
     {
         return withBounds(Box(xy));
     }
@@ -344,7 +354,7 @@ public:
     //   - else materialize one of the Views and use it as a
     //     typedId set Matcher for the other
 
-    T withOther(const ViewBase& other) const
+    auto withOther(const ViewBase& other) const
     {
         // Cannot combine sets from different stores
         if (store_ != other.store_) return self().getEmpty();

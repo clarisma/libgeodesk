@@ -16,6 +16,9 @@ public:
     explicit FeatureIterator(const Selection& view) :
         FeatureIteratorBase(view) {}
 
+    using FeatureIteratorBase::current;
+    using FeatureIteratorBase::currentRole;
+
     // Dereference operator
     T operator*() const noexcept
     {

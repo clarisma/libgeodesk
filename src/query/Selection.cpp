@@ -4,6 +4,7 @@
 #include <geodesk/query/Selection.h>
 #include <geodesk/feature/WayPtr.h>
 #include <geodesk/feature/FeatureIterator.h>
+#include <geodesk/match/Matcher.h>
 
 namespace geodesk {
 
@@ -41,13 +42,48 @@ uint64_t Selection::count() const
 
 bool Selection::isEmpty() const
 {
-    if(kind_ == EMPTY) return true;
-    if (kind_ == WAY_NODES) [[unlikely]]
+    switch (kind_)
     {
+    case EMPTY:
+        return true;
+    case WAY_NODES:
+    case MEMBERS:
         if (!usesMatcherOrFilter()) return false;
+        break;
+    default:
+        break;
     }
     FeatureIterator<Feature> iter(*this);
     return iter == nullptr;
+
+    // TODO: Can likely accelerate for parent views also if they aren't filtered
+}
+
+bool Selection::contains(FeaturePtr feature) const noexcept
+{
+    if (!types_.acceptFlags(feature.flags())) return false;
+    if (kind_ == WORLD)
+    {
+        if (feature.isNode())
+        {
+            if (!bounds().contains(NodePtr(feature).xy())) return false;
+        }
+        else
+        {
+            if (!bounds().intersects(feature.bounds())) return false;
+        }
+    }
+    if (!matcher_->mainMatcher().accept(feature)) return false;
+    if (filter_)
+    {
+        if (!filter_->accept(store(), feature, FastFilterHint())) return false;
+    }
+    switch (kind_)
+    {
+    case NODES:
+        assert(feature.isNode());
+        return WayPtr(relatedFeature()).contains(NodePtr(feature));
+    }
 }
 
 } // namespace geodesk

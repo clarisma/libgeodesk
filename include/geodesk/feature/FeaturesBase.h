@@ -6,7 +6,6 @@
 #include <array>
 #include <optional>
 #include <geodesk/filter/Filters.h>
-#include <geodesk/feature/FeatureUtils.h>
 #include <geodesk/feature/QueryException.h>
 #include <geodesk/query/View.h>
 #include <geodesk/filter/PredicateFilter.h>

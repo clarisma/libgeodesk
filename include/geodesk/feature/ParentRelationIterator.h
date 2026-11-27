@@ -13,14 +13,14 @@ namespace geodesk {
 class ParentRelationIterator : public RelatedIterator<ParentRelationIterator,RelationPtr,0,2>
 {
 public:
-    ParentRelationIterator(FeatureStore* store, DataPtr pRelTable,
+    ParentRelationIterator(const FeatureStore* store, DataPtr pRelTable,
         const MatcherHolder* matcher, const Filter* filter) :
         RelatedIterator(store, pRelTable, Tex::RELATIONS_START_TEX,
             matcher, filter)
     {
     }
 
-    ParentRelationIterator(FeatureStore* store, DataPtr pRelTable) :
+    ParentRelationIterator(const FeatureStore* store, DataPtr pRelTable) :
         RelatedIterator(store, pRelTable, Tex::RELATIONS_START_TEX,
             store->borrowAllMatcher(), nullptr)
     {

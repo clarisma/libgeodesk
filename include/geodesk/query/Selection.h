@@ -75,7 +75,11 @@ public:
     FeatureTypes types() const noexcept { return types_; }
     const MatcherHolder* matcher() const noexcept { return matcher_; }
     const Filter* filter() const { return filter_; }
-    Box bounds() const noexcept { return context_.bounds; }
+    Box bounds() const noexcept
+    {
+        assert(flags_ & USES_BOUNDS);
+        return context_.bounds;
+    }
 
     FeaturePtr relatedFeature() const noexcept
     {
@@ -106,6 +110,8 @@ public:
     [[nodiscard]] GEODESK_API uint64_t count() const;
 
 protected:
+    bool contains(FeaturePtr feature) const noexcept;
+
     uint16_t kind_;
     uint16_t flags_;
     FeatureTypes types_;

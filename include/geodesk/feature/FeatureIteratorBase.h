@@ -13,6 +13,11 @@
 
 #include "ParentRelationIterator.h"
 
+#ifdef GEODESK_PYTHON
+#include <Python.h>
+#endif
+
+
 namespace geodesk {
 
 /// \cond
@@ -22,6 +27,11 @@ class GEODESK_API FeatureIteratorBase
 public:
     explicit FeatureIteratorBase(const Selection& view);
     ~FeatureIteratorBase();
+
+	const Feature& current() const { return current_; }	// TODO
+#ifdef GEODESK_PYTHON
+	PyObject* currentRole() const;
+#endif
 
 protected:
 	const Feature& currentFeature() const { return current_; }

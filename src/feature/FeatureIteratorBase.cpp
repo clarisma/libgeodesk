@@ -298,4 +298,12 @@ void FeatureIteratorBase::fetchNext()
     }
 }
 
+#ifdef GEODESK_PYTHON
+PyObject* FeatureIteratorBase::currentRole() const
+{
+    return type_ == RELATION_MEMBERS ? storage_.members.borrowCurrentRole() : nullptr;
+}
+#endif
+
+
 } // namespace geodesk

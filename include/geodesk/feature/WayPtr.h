@@ -30,6 +30,8 @@ public:
 		return rawCount + isArea();
 	}
 
+	bool contains(const FeatureStore* store, NodePtr node) const noexcept;
+
 	/// @brief Based on the given pointer to the way's encoded
 	/// coordinates and the raw (stored) node count, returns
 	/// a pointer to the encoded waynode IDs.

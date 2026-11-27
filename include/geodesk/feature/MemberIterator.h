@@ -32,7 +32,7 @@ namespace geodesk {
 class MemberIteratorBase : public RelatedIterator<MemberIteratorBase,FeaturePtr,1,2>
 {
 public:
-	MemberIteratorBase(FeatureStore* store, DataPtr pMembers,
+	MemberIteratorBase(const FeatureStore* store, DataPtr pMembers,
 		FeatureTypes types, const MatcherHolder* matcher, const Filter* filter) :
 		RelatedIterator(store, pMembers, Tex::MEMBERS_START_TEX,
 		matcher, filter),
@@ -64,7 +64,7 @@ public:
 		}
 	}
 
-	MemberIteratorBase(FeatureStore* store, DataPtr pMembers) :
+	MemberIteratorBase(const FeatureStore* store, DataPtr pMembers) :
 		MemberIteratorBase(store, pMembers, FeatureTypes::ALL,
 		store->borrowAllMatcher(), nullptr) {}
 
@@ -108,7 +108,7 @@ public:
 	 * Obtains a borrowed reference to the Python string object that
 	 * represents the role of the current member.
 	 */
-	PyObject* borrowCurrentRole() // const
+	PyObject* borrowCurrentRole() const
 	{
 		if (!currentRoleObject_)
 		{
@@ -216,14 +216,14 @@ protected:
 private:
 	const RoleFilter* roleFilter_;
 	#ifdef GEODESK_PYTHON
-	PyObject* currentRoleObject_;
+	mutable PyObject* currentRoleObject_;
 	#endif
 };
 
 class MemberIterator : public MemberIteratorBase
 {
 public:
-	MemberIterator(FeatureStore* store, DataPtr pMembers,
+	MemberIterator(const FeatureStore* store, DataPtr pMembers,
 		FeatureTypes types, const MatcherHolder* matcher, const Filter* filter) :
 		MemberIteratorBase(store, pMembers, types, matcher, filter)
 	{

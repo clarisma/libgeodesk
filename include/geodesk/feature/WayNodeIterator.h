@@ -31,7 +31,7 @@ public:
 
     // TODO: duplicateFirst is ambiguous
     //  Here it means "duplicate first ndoe, but only if way is an area"
-    WayNodeIterator(FeatureStore* store, WayPtr way, bool duplicateFirst, bool wayNodeIDs) :
+    WayNodeIterator(const FeatureStore* store, WayPtr way, bool duplicateFirst, bool wayNodeIDs) :
         nodes_(store, way.bodyptr(), way.flags(), store->borrowAllMatcher(), nullptr),
         pID_(nullptr),
         id_(0),
