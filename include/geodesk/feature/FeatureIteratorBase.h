@@ -20,7 +20,7 @@ namespace geodesk {
 class GEODESK_API FeatureIteratorBase
 {
 public:
-    explicit FeatureIteratorBase(const View& view);
+    explicit FeatureIteratorBase(const Selection& view);
     ~FeatureIteratorBase();
 
 protected:
@@ -28,12 +28,12 @@ protected:
 	void fetchNext();
 
 private:
-	void initNodeIterator(const View& view);
-	void initParentWaysIterator(const View& view);
+	void initNodeIterator(const Selection& view);
+	void initParentWaysIterator(const Selection& view);
 	void destroyParentWaysIterator();
 	void initParentRelationsIterator(FeatureStore* store, FeaturePtr member,
 		const MatcherHolder* matcher, const Filter* filter);
-	void initParentRelationsIterator(const View& view);
+	void initParentRelationsIterator(const Selection& view);
 	void switchToParentRelationsIterator();
 	bool fetchNextParentWay();
 	void fetchNextParentRelation();

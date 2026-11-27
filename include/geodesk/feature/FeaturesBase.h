@@ -38,33 +38,43 @@ class Relations;
 // TODO: type restrictions on derived
 
 template <typename T>
-class FeaturesBase
+class FeaturesBase : public View
 {
 public:
     FeaturesBase(const FeaturesBase<T>& other) :
-        view_(other.view_)
+        View(other)
     {
+        addref();
     }
 
+    ~FeaturesBase()
+    {
+        release();
+    }
+
+    /*
     static FeaturesBase empty(FeatureStore* store) noexcept
     {
         return FeaturesBase(View(store));
     }
+    */
 
     FeaturesBase& operator=(const FeaturesBase& other)
     {
-        view_ = other.view_;
+        other.addref();
+        release();
+        // TODO: set from other
         return *this;
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor)
-    operator bool() const { return !FeatureUtils::isEmpty(view_); }
-    bool operator !() const {return FeatureUtils::isEmpty(view_); }
+    operator bool() const { return !isEmpty(); }
+    bool operator !() const {return isEmpty(); }
 
     template<typename T2>
     [[nodiscard]] FeaturesBase operator&(const FeaturesBase<T2>& other) const
     {
-        return FeaturesBase(view_.withOther(other.view_));
+        return withOther(other);
     }
 
     
@@ -73,7 +83,7 @@ public:
 
     [[nodiscard]] FeaturesBase operator()(const char* query) const
     {
-        return FeaturesBase(view_.withQuery(query));
+        return withQuery(query);
     }
 
     [[nodiscard]] FeaturesBase operator()(const Feature& feature) const
@@ -87,7 +97,7 @@ public:
     /// @param box
     [[nodiscard]] FeaturesBase operator()(const Box& box) const
     {
-        return { view_.withBounds(box) };
+        return withBounds(box);
     }
 
     /// @brief Returns all features whose bounding box contains
@@ -96,7 +106,7 @@ public:
     /// @param xy
     [[nodiscard]] FeaturesBase operator()(Coordinate xy) const
     {
-        return { view_.withBounds(xy) };
+        return withBounds(xy);
     }
     
     /// @}
@@ -114,20 +124,6 @@ public:
     /// @}
     /// @name Scalar queries
     /// @{
-
-    /// Returns the number of features in this collection.
-    ///
-    [[nodiscard]] uint64_t count() const
-    {
-        return FeatureUtils::count(view_);
-    }
-
-    /// @brief Returns `true` if this collection contains no features.
-    ///
-    bool isEmpty() const
-    {
-        return FeatureUtils::isEmpty(view_);
-    }
 
     /// @brief Calculates the total length (in meters) of the features
     /// in this collection.
@@ -155,7 +151,7 @@ public:
     ///
     [[nodiscard]] FeaturesBase intersecting(const Feature& feature) const
     {
-        return { view_.withFilter(Filters::intersects(feature))};
+        return withFilter(Filters::intersects(feature));
     }
 
     /// @brief Returns all features that lie entirely inside the geometry
@@ -163,7 +159,7 @@ public:
     ///
     [[nodiscard]] FeaturesBase within(const Feature& feature) const
     {
-        return {view_.withFilter(Filters::within(feature))};
+        return withFilter(Filters::within(feature));
     }
 
     /// @brief Only features whose geometry contains the
@@ -171,7 +167,7 @@ public:
     ///
     [[nodiscard]] FeaturesBase containing(Coordinate xy) const
     {
-        return {view_.withFilter(Filters::containsPoint(xy))};
+        return withFilter(Filters::containsPoint(xy));
     }
 
     /// @brief Only features whose geometry contains the
@@ -182,8 +178,8 @@ public:
     ///
     [[nodiscard]] FeaturesBase containingLonLat(double lon, double lat) const
     {
-        return {view_.withFilter(Filters::containsPoint(
-            Coordinate::ofLonLat(lon, lat)))};
+        return withFilter(Filters::containsPoint(
+            Coordinate::ofLonLat(lon, lat)));
     }
 
     /// @brief Only features whose geometry crosses the
@@ -194,7 +190,7 @@ public:
     ///
     [[nodiscard]] FeaturesBase crossing(const Feature& feature) const
     {
-        return {view_.withFilter(Filters::crossing(feature))};
+        return withFilter(Filters::crossing(feature));
     }
 
     /// @brief Only features whose closest point lies within
@@ -205,7 +201,7 @@ public:
     ///
     [[nodiscard]] FeaturesBase maxMetersFrom(double distance, Coordinate xy) const
     {
-        return {view_.withFilter(Filters::maxMetersFrom(distance, xy))};
+        return withFilter(Filters::maxMetersFrom(distance, xy));
     }
 
     /// @brief Only features whose closest point lies within
@@ -217,8 +213,8 @@ public:
     ///
     [[nodiscard]] FeaturesBase maxMetersFromLonLat(double distance, double lon, double lat) const
     {
-        return {view_.withFilter(Filters::maxMetersFrom(distance,
-            Coordinate::ofLonLat(lon, lat)))};
+        return withFilter(Filters::maxMetersFrom(distance,
+            Coordinate::ofLonLat(lon, lat)));
     }
 
 #ifdef GEODESK_WITH_GEOS
@@ -284,16 +280,16 @@ public:
     template<typename P>
     [[nodiscard]] FeaturesBase membersOf(FeatureBase<P> feature) const
     {
-        if(feature.isRelation()) return {view_.membersOf(RelationPtr(feature.ptr()))};
-        if(feature.isWay()) return {view_.nodesOf(WayPtr(feature.ptr()))};
-        return {empty()};
+        if(feature.isRelation()) return membersOf(RelationPtr(feature.ptr()));
+        if(feature.isWay()) return nodesOf(WayPtr(feature.ptr()));
+        return getEmpty();
     }
 
     template<typename P>
     [[nodiscard]] FeaturesBase nodesOf(FeatureBase<P> feature) const
     {
-        if(feature.isWay()) return {view_.nodesOf(WayPtr(feature.ptr()))};
-        return {empty()};
+        if(feature.isWay()) return nodesOf(WayPtr(feature.ptr()));
+        return getEmpty();
     }
 
     template<typename P>
@@ -301,9 +297,9 @@ public:
     {
         if (feature.isAnonymousNode())
         {
-            return {view_.parentWaysOf(feature.xy())};
+            return parentWaysOf(feature.xy());
         }
-        return {view_.parentsOf(feature.ptr())};
+        return parentsOf(FeaturePtr(feature.ptr()));
     }
 
     /// @brief Only relation members with the given role.
@@ -321,7 +317,7 @@ public:
     ///
     [[nodiscard]] FeaturesBase withRole(std::span<const std::string_view> roles) const
     {
-        return { view_.withFilter(Filters::withRole(roles, store()->strings()))};
+        return withFilter(Filters::withRole(roles, store()->strings()));
     }
 
     /// @brief Only relation members with one of the given roles.
@@ -352,8 +348,7 @@ public:
     template <typename Predicate>
     [[nodiscard]] FeaturesBase filter(Predicate predicate) const
     {
-        return FeaturesBase(view_.withFilter(
-            new PredicateFilter<Predicate>(predicate)));
+        return withFilter(new PredicateFilter<Predicate>(predicate));
     }
 
     /// @brief Obtains a Key for the given string, which can be
@@ -367,19 +362,9 @@ public:
         return store()->key(k);
     }
 
-    /// @brief Returns a pointer to the FeatureStore
-    /// which contains the features in this collection.
-    ///
-    FeatureStore* store() const noexcept { return view_.store(); }
-
 protected:
-    FeaturesBase(const View& view) : view_(view)
+    FeaturesBase(const View& view) : View(view)
     {
-    }
-
-    View empty() const
-    {
-        return view_.empty();
     }
 
     FeatureIterator<T> query() const;
@@ -392,9 +377,7 @@ protected:
             Box::ofWorld(), matcher, nullptr);
     }
 
-    FeaturesBase withFilter(PreparedFilterFactory& factory, Feature feature) const;
-
-    View view_;
+    // FeaturesBase withFilter(PreparedFilterFactory& factory, Feature feature) const;
 
     friend class FeatureBase<FeaturePtr>;
     friend class FeatureBase<NodePtr>;

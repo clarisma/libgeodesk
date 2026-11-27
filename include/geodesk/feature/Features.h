@@ -23,14 +23,14 @@ public:
 
 	template <typename T>
 	Features(const FeaturesBase<T>& other) :
-		FeaturesBase(other.view_)
+		FeaturesBase(other)
 	{
 	}
 
 	///
 	/// Returns a view of this collection that contains only nodes.
 	///
-	Nodes nodes() const { return Nodes(view_ & FeatureTypes::NODES); };
+	Nodes nodes() const { return Nodes(withTypes(FeatureTypes::NODES)); };
 	
 	///
 	/// Returns a view of this collection that contains only nodes 
@@ -40,33 +40,19 @@ public:
 	/// 
 	Nodes nodes(const char* query) const
 	{
-		return Nodes(view_.withQuery(query, FeatureTypes::NODES));
+		return Nodes(withQuery(query, FeatureTypes::NODES));
 	}
-	Ways ways() const {	return Ways(view_ & FeatureTypes::WAYS); }
+	Ways ways() const {	return Ways(withTypes(FeatureTypes::WAYS)); }
 	Ways ways(const char* query) const
 	{
-		return Ways(view_.withQuery(query, FeatureTypes::WAYS));
+		return Ways(withQuery(query, FeatureTypes::WAYS));
 	}
-	Relations relations() const { return Relations(view_ & FeatureTypes::RELATIONS); }
+	Relations relations() const { return Relations(withTypes(FeatureTypes::RELATIONS)); }
 	Relations relations(const char* query) const
 	{
-		return Relations(view_.withQuery(query, FeatureTypes::RELATIONS));
+		return Relations(withQuery(query, FeatureTypes::RELATIONS));
 	}
 
-	/*
-	template<typename P>
-	Nodes nodesOf(FeatureBase<P>) const;
-
-	template<typename P>
-	FeaturesBase parentsOf(FeatureBase<P> feature) const
-	{
-		if(view_.types() & (FeatureTypes::WAYS | FeatureTypes::RELATIONS))
-		{
-			// TODO
-		}
-		return FeaturesBase(empty());
-	}
-	*/
 };
 
 } // namespace geodesk

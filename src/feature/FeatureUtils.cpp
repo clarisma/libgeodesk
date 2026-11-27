@@ -6,59 +6,11 @@
 #include <clarisma/util/StringBuilder.h>
 #include <geodesk/feature/FeatureIterator.h>
 #include <geodesk/feature/Tags.h>
-#include <geodesk/query/View.h>
+#include <geodesk/query/Selection.h>
 
 using namespace clarisma;
 
 namespace geodesk {
-
-uint64_t FeatureUtils::countWorld(const View &view)
-{
-    uint64_t count = 0;
-    Query query(view.store(), view.bounds(),
-        view.types(), view.matcher(), view.filter());
-    while (!query.next().isNull()) count++;
-    return count;
-}
-
-uint64_t FeatureUtils::countGeneric(const View &view)
-{
-    uint64_t count = 0;
-    FeatureIterator<Feature> iter(view);
-    while (iter != nullptr)
-    {
-        ++iter;
-        ++count;
-    }
-    return count;
-}
-
-uint64_t FeatureUtils::count(const View &view)
-{
-    switch (view.view())
-    {
-    case View::EMPTY:
-        return 0;
-    case View::WAY_NODES:
-        if (!view.usesMatcherOrFilter())
-        {
-            return WayPtr(view.relatedFeature()).nodeCount();
-        }
-        break;
-    case View::WORLD:
-        return countWorld(view);
-    default:
-        break;
-    }
-    return countGeneric(view);
-}
-
-bool FeatureUtils::isEmpty(const View& view)
-{
-    if(view.view() == View::EMPTY) return true;
-    FeatureIterator<Feature> iter(view);
-    return iter == nullptr;
-}
 
 char* FeatureUtils::format(char* buf, const char* type, int64_t id)
 {

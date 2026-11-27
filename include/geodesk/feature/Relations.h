@@ -15,16 +15,16 @@ class Relations : public FeaturesBase<Relation>
 public:
 	using FeaturesBase::FeaturesBase;
 	Relations(const FeaturesBase<Feature>& other) :
-		FeaturesBase(View(other.view_& FeatureTypes::RELATIONS)) {}
-	Relations(const FeaturesBase<Node>& other) : FeaturesBase(empty()) {}
-	Relations(const FeaturesBase<Way>& other) : FeaturesBase(empty()) {}
-	Relations(const FeaturesBase<Relation>& other) : FeaturesBase(other.view_) {}
+		FeaturesBase(withTypes(FeatureTypes::RELATIONS)) {}
+	Relations(const FeaturesBase<Node>& other) : FeaturesBase(getEmpty()) {}
+	Relations(const FeaturesBase<Way>& other) : FeaturesBase(getEmpty()) {}
+	Relations(const FeaturesBase<Relation>& other) : FeaturesBase(other) {}
 
 	template<typename P>
 	Relations parentsOf(FeatureBase<P> feature) const
 	{
 		// if(!feature.belongsToRelation()) return Relations(empty());
-		return Relations(view_.parentsOf(feature.ptr()));
+		return Relations(parentsOf(feature.ptr()));
 		// TODO: may be able to optimize, this parent view can only
 		//  contain relations
 	}
@@ -33,8 +33,8 @@ public:
 	Relations membersOf(FeatureBase<P> feature) const
 	{
 		// Relations can only be members of other relations
-		if(!feature.isRelation()) return Relations(empty());
-		return Relations(view_.membersOf(feature.ptr()));
+		if(!feature.isRelation()) return Relations(getEmpty());
+		return Relations(membersOf(RelationPtr(feature.ptr())));
 	}
 
 };

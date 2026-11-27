@@ -13,20 +13,20 @@ namespace geodesk {
 template<typename T>
 FeatureIterator<T> FeaturesBase<T>::query() const
 {
-    return FeatureIterator<T>(view_);
+    return FeatureIterator<T>(*this);
 }
 
 template<typename T>
 FeatureIterator<T> FeaturesBase<T>::begin() const
 {
-    return FeatureIterator<T>(view_);
+    return FeatureIterator<T>(*this);
 }
 
 
 template<typename T>
 [[nodiscard]] std::optional<T> FeaturesBase<T>::first() const
 {
-    FeatureIterator<T> query(view_);
+    FeatureIterator<T> query(*this);
     if(query != nullptr) return std::optional<T>(*query);
     return std::nullopt;
 }
@@ -34,7 +34,7 @@ template<typename T>
 template<typename T>
 [[nodiscard]] T FeaturesBase<T>::one() const
 {
-    FeatureIterator<T> query(view_);
+    FeatureIterator<T> query(*this);
     if(query != nullptr)
     {
         T feature = *query;

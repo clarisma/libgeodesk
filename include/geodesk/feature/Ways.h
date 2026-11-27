@@ -15,15 +15,10 @@ class Ways : public FeaturesBase<Way>
 public:
 	using FeaturesBase::FeaturesBase;
 	Ways(const FeaturesBase<Feature>& other) :
-		FeaturesBase(View(other.view_& FeatureTypes::WAYS)) {}
-	Ways(const FeaturesBase<Node>& other) : FeaturesBase(empty()) {}
-	Ways(const FeaturesBase<Way>& other) : FeaturesBase(other.view_) {}
-	Ways(const FeaturesBase<Relation>& other) : FeaturesBase(empty()) {}
-
-	/*
-	template<typename P>
-	Ways parentsOf(FeatureBase<P> feature) const;
-	*/
+		FeaturesBase(withTypes(FeatureTypes::WAYS)) {}
+	Ways(const FeaturesBase<Node>& other) : FeaturesBase(getEmpty()) {}
+	Ways(const FeaturesBase<Way>& other) : FeaturesBase(other) {}
+	Ways(const FeaturesBase<Relation>& other) : FeaturesBase(getEmpty()) {}
 };
 
 /// \endcond

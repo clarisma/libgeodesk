@@ -13,7 +13,7 @@ template<typename T>
 class FeatureIterator : protected FeatureIteratorBase
 {
 public:
-    explicit FeatureIterator(const View& view) :
+    explicit FeatureIterator(const Selection& view) :
         FeatureIteratorBase(view) {}
 
     // Dereference operator

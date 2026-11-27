@@ -19,10 +19,10 @@ enum IterType
 };
 
 
-FeatureIteratorBase::FeatureIteratorBase(const View& view) :
+FeatureIteratorBase::FeatureIteratorBase(const Selection& view) :
     current_(view.store())
 {
-    switch (view.view())
+    switch (view.kind())
     {
     case View::EMPTY:
         type_ = EMPTY;
@@ -58,7 +58,7 @@ FeatureIteratorBase::FeatureIteratorBase(const View& view) :
     fetchNext();
 }
 
-void FeatureIteratorBase::initNodeIterator(const View& view)
+void FeatureIteratorBase::initNodeIterator(const Selection& view)
 {
     WayPtr way(view.relatedFeature());
     if(way.hasFeatureNodes())
@@ -84,7 +84,7 @@ void FeatureIteratorBase::initNodeIterator(const View& view)
     }
 }
 
-void FeatureIteratorBase::initParentWaysIterator(const View& view)
+void FeatureIteratorBase::initParentWaysIterator(const Selection& view)
 {
     type_ = PARENTS_WAYS;
     NodePtr node(view.relatedFeature());
@@ -118,7 +118,7 @@ void FeatureIteratorBase::initParentRelationsIterator(FeatureStore* store, Featu
 }
 
 
-void FeatureIteratorBase::initParentRelationsIterator(const View& view)
+void FeatureIteratorBase::initParentRelationsIterator(const Selection& view)
 {
     initParentRelationsIterator(view.store(), view.relatedFeature(),
         view.matcher(), view.filter());

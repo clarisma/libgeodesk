@@ -15,10 +15,10 @@ class Nodes : public FeaturesBase<Node>
 public:
 	using FeaturesBase::FeaturesBase;
 	Nodes(const FeaturesBase<Feature>& other) : 
-		FeaturesBase(View(other.view_ & FeatureTypes::NODES)) {}
-	Nodes(const FeaturesBase<Node>& other) : FeaturesBase(other.view_) {}
-	Nodes(const FeaturesBase<Way>& other) : FeaturesBase(empty()) {}
-	Nodes(const FeaturesBase<Relation>& other) : FeaturesBase(empty()) {}
+		FeaturesBase(withTypes(FeatureTypes::NODES)) {}
+	Nodes(const FeaturesBase<Node>& other) : FeaturesBase(other) {}
+	Nodes(const FeaturesBase<Way>& other) : FeaturesBase(getEmpty()) {}
+	Nodes(const FeaturesBase<Relation>& other) : FeaturesBase(getEmpty()) {}
 
 };
 
