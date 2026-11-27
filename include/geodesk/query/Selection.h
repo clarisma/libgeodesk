@@ -102,8 +102,8 @@ public:
         return flags_ & (USES_MATCHER | USES_FILTER);
     }
 
-    bool isEmpty() const;
-    [[nodiscard]] uint64_t count() const;
+    [[nodiscard]] GEODESK_API bool isEmpty() const;
+    [[nodiscard]] GEODESK_API uint64_t count() const;
 
 protected:
     uint16_t kind_;

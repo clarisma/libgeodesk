@@ -121,7 +121,7 @@ public:
             related, matcher_, filter);
     }
 
-    T nodesOf(WayPtr way) const
+    T withNodesOf(WayPtr way) const
     {
         return withRelated(WAY_NODES,
             FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED, way);
@@ -133,17 +133,17 @@ public:
         return related(MEMBERS, FeatureTypes::RELATION_MEMBERS, store, ptr, query);
     }
 
-    T membersOf(RelationPtr rel) const
+    T withMembersOf(RelationPtr rel) const
     {
         return withRelated(MEMBERS, FeatureTypes::ALL, rel);
     }
 
-    T parentWaysOf(Coordinate anonNode) const
+    T withParentWaysOf(Coordinate anonNode) const
     {
         return withRelated(PARENTS, FeatureTypes::WAYS, anonNode);
     }
 
-    T parentsOf(FeaturePtr feature) const
+    T withParentsOf(FeaturePtr feature) const
     {
         FeatureTypes parentTypes = 0;
         if (feature.isNode())
@@ -159,6 +159,12 @@ public:
             parentTypes |= FeatureTypes::RELATIONS;
         }
         return withRelated(PARENTS, parentTypes, feature);
+    }
+
+    T withParentRelationsOf(FeaturePtr feature) const
+    {
+        if (!feature.isRelationMember()) return self().getEmpty();
+        return withRelated(PARENTS, FeatureTypes::RELATIONS, feature);
     }
 
     static T parentWaysOf(FeatureStore* store, Coordinate anonNode, const char* query = nullptr)

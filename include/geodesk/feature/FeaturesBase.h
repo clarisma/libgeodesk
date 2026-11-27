@@ -47,13 +47,6 @@ public:
         addref();
     }
 
-    template<typename U>
-    FeaturesBase(const FeaturesBase<U>& other) :
-        View(other)
-    {
-        addref();
-    }
-
     ~FeaturesBase()
     {
         release();
@@ -287,15 +280,15 @@ public:
     template<typename P>
     [[nodiscard]] FeaturesBase membersOf(FeatureBase<P> feature) const
     {
-        if(feature.isRelation()) return membersOf(RelationPtr(feature.ptr()));
-        if(feature.isWay()) return nodesOf(WayPtr(feature.ptr()));
+        if(feature.isRelation()) return withMembersOf(RelationPtr(feature.ptr()));
+        if(feature.isWay()) return withNodesOf(WayPtr(feature.ptr()));
         return getEmpty();
     }
 
     template<typename P>
     [[nodiscard]] FeaturesBase nodesOf(FeatureBase<P> feature) const
     {
-        if(feature.isWay()) return View::nodesOf(WayPtr(feature.ptr()));
+        if(feature.isWay()) return withNodesOf(WayPtr(feature.ptr()));
         return getEmpty();
     }
 
@@ -304,9 +297,9 @@ public:
     {
         if (feature.isAnonymousNode())
         {
-            return parentWaysOf(feature.xy());
+            return withParentWaysOf(feature.xy());
         }
-        return View::parentsOf(feature.ptr());
+        return withParentsOf(feature.ptr());
     }
 
     /// @brief Only relation members with the given role.
@@ -370,9 +363,24 @@ public:
     }
 
 private:
-    FeaturesBase(const View& view) : View(view)
+    template<typename V>
+    requires std::same_as<V, View>
+    FeaturesBase(V&& view) noexcept :
+        View(view)
     {
     }
+
+    // This converting ctor is important, otherwise we risk
+    // invocation of the View-based ctor, which does not perform
+    // refocunting
+    template<typename U>
+    FeaturesBase(const FeaturesBase<U>& other) :
+        View(other)
+    {
+        addref();
+    }
+
+
 
     FeatureIterator<T> query() const;
 
