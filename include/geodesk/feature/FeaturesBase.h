@@ -363,6 +363,8 @@ public:
     }
 
 private:
+    // This ctor must only accept Views (not subclasses
+    // like FeaturesBase), because it does not add refs
     template<typename V>
     requires std::same_as<V, View>
     FeaturesBase(V&& view) noexcept :
@@ -370,17 +372,14 @@ private:
     {
     }
 
-    // This converting ctor is important, otherwise we risk
-    // invocation of the View-based ctor, which does not perform
-    // refocunting
+    /// Copies a collection of another feature type,
+    /// acquiring references to its resources.
     template<typename U>
     FeaturesBase(const FeaturesBase<U>& other) :
         View(other)
     {
         addref();
     }
-
-
 
     FeatureIterator<T> query() const;
 

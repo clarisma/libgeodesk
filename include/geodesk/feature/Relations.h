@@ -23,6 +23,7 @@ public:
 	template<typename P>
 	Relations parentsOf(FeatureBase<P> feature) const
 	{
+		if (feature.isAnonymousNode()) return Relations(getEmpty());
 		return Relations(withParentRelationsOf(feature.ptr()));
 	}
 

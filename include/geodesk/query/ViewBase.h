@@ -135,7 +135,7 @@ public:
 
     T withMembersOf(RelationPtr rel) const
     {
-        return withRelated(MEMBERS, FeatureTypes::ALL, rel);
+        return withRelated(MEMBERS, FeatureTypes::RELATION_MEMBERS, rel);
     }
 
     T withParentWaysOf(Coordinate anonNode) const
