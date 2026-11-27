@@ -27,8 +27,16 @@ private:
 	public:
 		Areal() : areaSum_(0), areaCentroidX_(0), areaCentroidY_(0) {}
 
-		// TODO: mishandles clockwise-wound holes
-		//  make the sign depend on both factors, e.g. sign = (isShell ? 1.0 : -1.0) * (ringSum >= 0 ? 1.0 : -1.0)
+		// The shoelace sums are computed relative to the ring's first vertex.
+		// Using absolute coordinates (up to 2^31) makes products like x1 * y2
+		// reach ~2^62, losing precision in a double; for small polygons, the
+		// centroid can shift by many meters, often to outside the polygon
+		// (see https://github.com/clarisma/geodesk-py/issues/102).
+		// The ring's moments are translated back to absolute coordinates
+		// before they are accumulated.
+		//
+		// Shells and holes may have either winding order: each ring is
+		// normalized to positive area, then shells are added, holes subtracted.
 
 		template<typename Iter>
 		void addRing(Iter& iter, bool isShell)
@@ -37,14 +45,14 @@ private:
 			double ringCentroidX = 0;
 			double ringCentroidY = 0;
 
-			Coordinate c = iter.next();
-			double x1 = c.x;
-			double y1 = c.y;
+			Coordinate first = iter.next();
+			double x1 = 0;
+			double y1 = 0;
 			for (int count = iter.coordinatesRemaining(); count > 0; count--)
 			{
-				c = iter.next();
-				double x2 = c.x;
-				double y2 = c.y;
+				Coordinate c = iter.next();
+				double x2 = static_cast<double>(c.x) - first.x;
+				double y2 = static_cast<double>(c.y) - first.y;
 				double a = x1 * y2 - x2 * y1;
 				ringSum += a;
 				ringCentroidX += (x1 + x2) * a;
@@ -52,10 +60,10 @@ private:
 				x1 = x2;
 				y1 = y2;
 			}
-			double sign = (ringSum >= 0 && isShell) ? 1.0 : -1.0;
+			double sign = (isShell ? 1.0 : -1.0) * (ringSum >= 0 ? 1.0 : -1.0);
 			areaSum_ += ringSum * sign;
-			areaCentroidX_ += ringCentroidX * sign;
-			areaCentroidY_ += ringCentroidY * sign;
+			areaCentroidX_ += (ringCentroidX + 3.0 * ringSum * first.x) * sign;
+			areaCentroidY_ += (ringCentroidY + 3.0 * ringSum * first.y) * sign;
 		}
 
 		void addAreaRelation(FeatureStore* store, RelationPtr relation);

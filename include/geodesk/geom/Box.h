@@ -342,6 +342,23 @@ public:
 		m_maxY = std::numeric_limits<int32_t>::min();
 	}
 
+	/// Clips this box to b, collapsing disjoint intervals
+	/// onto the nearest edge of b.
+	///
+	/// For any feature bbox f:
+	/// f intersects both this box and b iff
+	/// f intersects both this box and the returned box.
+	///
+	/// @param b A nonempty, non-wrapping box.
+	Box nearestSimple(const Box& b) const noexcept
+	{
+		return Box(
+			std::clamp(minX(), b.minX(), b.maxX()),
+			std::clamp(minY(), b.minY(), b.maxY()),
+			std::clamp(maxX(), b.minX(), b.maxX()),
+			std::clamp(maxY(), b.minY(), b.maxY()));
+	}
+
 	GEODESK_API void format(char* buf) const;
 	GEODESK_API std::string toString() const;
 
