@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/feature/FeatureIteratorBase.h>
-#include <geodesk/feature/View.h>
+#include <geodesk/query/View.h>
 
 namespace geodesk {
 

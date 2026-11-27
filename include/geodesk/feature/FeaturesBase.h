@@ -8,7 +8,7 @@
 #include <geodesk/filter/Filters.h>
 #include <geodesk/feature/FeatureUtils.h>
 #include <geodesk/feature/QueryException.h>
-#include <geodesk/feature/View.h>
+#include <geodesk/query/View.h>
 #include <geodesk/filter/PredicateFilter.h>
 #ifdef GEODESK_WITH_GEOS
 #include <geos_c.h>

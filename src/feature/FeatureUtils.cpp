@@ -6,7 +6,7 @@
 #include <clarisma/util/StringBuilder.h>
 #include <geodesk/feature/FeatureIterator.h>
 #include <geodesk/feature/Tags.h>
-#include <geodesk/feature/View.h>
+#include <geodesk/query/View.h>
 
 using namespace clarisma;
 
