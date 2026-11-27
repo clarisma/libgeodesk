@@ -42,24 +42,46 @@ const ComboFilter* ComboFilter::create(const Filter* a, const Filter* b)
         FilterFlags::COMBO_FILTER | FilterFlags::USES_BBOX;
 
     Box bounds;
-    if ((aFlags | bFlags) & FilterFlags::STRICT_BBOX)
+    if ((aFlags & bFlags) & FilterFlags::USES_BBOX)
     {
-        // If *either* is strict-bbox, the spatial-filter bbox
-        // if the intersection of both
-
-        bounds = Box::simpleIntersection(
-            a->getBounds(), b->getBounds());
-        if (bounds.isEmpty())
+        // both filters are spatial
+        if ((aFlags | bFlags) & FilterFlags::STRICT_BBOX)
         {
-            return nullptr;
-        }
+            // If *either* is strict-bbox, the spatial-filter bbox
+            // if the intersection of both
 
-        // The result is only strict-bbox if both are strict-bbox
-        flags |= aFlags & bFlags & FilterFlags::STRICT_BBOX;
+            bounds = Box::simpleIntersection(
+                a->getBounds(), b->getBounds());
+            if (bounds.isEmpty())
+            {
+                return nullptr;
+            }
+
+            // The result is only strict-bbox if both are strict-bbox
+            flags |= aFlags & bFlags & FilterFlags::STRICT_BBOX;
+        }
+        else
+        {
+            bounds = Box::simpleSmaller(a->getBounds(), b->getBounds());
+        }
     }
     else
     {
-        bounds = Box::simpleSmaller(a->getBounds(), b->getBounds());
+        // one one (or neither) is spatial
+        if (aFlags & FilterFlags::USES_BBOX)
+        {
+            bounds = SpatialFilter::cast(a)->bounds();
+            flags |= aFlags & FilterFlags::STRICT_BBOX;
+        }
+        else if (bFlags & FilterFlags::USES_BBOX)
+        {
+            bounds = SpatialFilter::cast(b)->bounds();
+            flags |= bFlags & FilterFlags::STRICT_BBOX;
+        }
+        else
+        {
+            bounds = Box::ofWorld();
+        }
     }
 
     size_t bytes = sizeof(ComboFilter) + totalCount * sizeof(const ComboFilter*);

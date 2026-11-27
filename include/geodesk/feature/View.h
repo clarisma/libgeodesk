@@ -454,8 +454,8 @@ public:
             }
             Context ctx;
             ctx.bounds = { b.minX(), b.minY(), b.maxX(), b.maxY() };
-            return View(view_, flags_ | USES_FILTER, newTypes, store_,
-                ctx, matcher_, f);
+            return View(view_, flags_ | USES_FILTER | boundsActiveFlag,
+                newTypes, store_, ctx, matcher_, f);
         }
         return View(view_, flags_ | USES_FILTER, newTypes, store_,
             context_, matcher_, f);
@@ -477,7 +477,8 @@ public:
             matcher_->addref();
             if(filter_) filter_->addref();
             store_->addref();
-            return View(view_, flags_ | BOUNDS_ACTIVE, types_, store_, box, matcher_, filter_);
+            return View(view_, flags_ | BOUNDS_ACTIVE | EXPLICIT_BOUNDS,
+                types_, store_, box, matcher_, filter_);
         }
         throw QueryException("Not yet implemented");
     }
