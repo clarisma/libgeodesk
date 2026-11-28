@@ -111,6 +111,7 @@ public:
 
 protected:
     bool contains(FeaturePtr feature) const noexcept;
+    bool containsAnonNode(Coordinate xy) const noexcept;
 
     uint16_t kind_;
     uint16_t flags_;

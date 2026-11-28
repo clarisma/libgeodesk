@@ -80,11 +80,33 @@ bool Selection::contains(FeaturePtr feature) const noexcept
     }
     switch (kind_)
     {
-    case NODES:
+    case WAY_NODES:
         assert(feature.isNode());
+        assert(relatedFeature().isWay());
         return WayPtr(relatedFeature()).contains(store(), NodePtr(feature));
+    case MEMBERS:
+        assert(relatedFeature().isRelation());
+        return RelationPtr(relatedFeature()).contains(store(), feature);
+    case PARENTS:
+        if (feature.isRelation())
+        {
+            return RelationPtr(feature).contains(store(), relatedFeature());
+        }
+        assert(feature.isWay());
+        assert(relatedFeature().isNode());
+        return WayPtr(feature).contains(store(), NodePtr(relatedFeature()));
+    default:
+        return true;
     }
-    return true;    // TODO: other kinds
+}
+
+bool Selection::containsAnonNode(Coordinate xy) const noexcept
+{
+    if (kind_ != WAY_NODES) return false;
+    if (usesMatcher()) return false;
+    // TODO: Filters need to be able to accept anon nodes
+    assert(relatedFeature().isWay());
+    return WayPtr(relatedFeature()).containsAnonNode(xy);
 }
 
 } // namespace geodesk

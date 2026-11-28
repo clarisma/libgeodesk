@@ -31,6 +31,7 @@ public:
 	}
 
 	bool contains(const FeatureStore* store, NodePtr node) const noexcept;
+	bool containsAnonNode(Coordinate xy) const noexcept;
 
 	/// @brief Based on the given pointer to the way's encoded
 	/// coordinates and the raw (stored) node count, returns
