@@ -7,7 +7,7 @@
 
 namespace geodesk {
 
-bool RelationPtr::contains(const FeatureStore* store, FeaturePtr member)
+bool RelationPtr::contains(const FeatureStore* store, FeaturePtr member) const
 {
     if (!member.isRelationMember()) return false;
     if (member.isNode())

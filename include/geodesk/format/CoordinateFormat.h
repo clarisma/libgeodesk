@@ -8,7 +8,6 @@
 #include <geos_c.h>
 #endif
 #include <geodesk/feature/WayPtr.h>
-#include <geodesk/feature/RelationPtr.h>
 #include <geodesk/geom/Coordinate.h>
 #include <functional>
 
@@ -21,6 +20,8 @@ class Polygonizer;
 ///
 class CoordinateFormat
 {
+	using Buffer = clarisma::Buffer;
+
 public:
 	void precision(int precision)
 	{ 
@@ -29,10 +30,10 @@ public:
 		precision_ = precision;
 	}
 
-	void write(clarisma::Buffer& out, Coordinate c, char leadChar = 0) const;
+	void write(Buffer& out, Coordinate c, char leadChar = 0) const;
 	
 	template<typename Iter>
-	void write(clarisma::Buffer& out, Iter& iter) const
+	void write(Buffer& out, Iter& iter) const
 	{
 		char separatorChar = 0;
 		out.writeByte(coordGroupStartChar_);
@@ -45,8 +46,8 @@ public:
 		out.writeByte(coordGroupEndChar_);
 	}
 
-	void writeWayCoordinates(clarisma::Buffer& buf, WayPtr way, bool group) const;
-	void writePolygonizedCoordinates(clarisma::Buffer& out, const Polygonizer& polygonizer) const;
+	void writeWayCoordinates(Buffer& buf, WayPtr way, bool group) const;
+	void writePolygonizedCoordinates(Buffer& out, const Polygonizer& polygonizer) const;
 
 protected:
 	uint8_t precision_ = 7;

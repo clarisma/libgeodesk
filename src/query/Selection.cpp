@@ -93,8 +93,13 @@ bool Selection::contains(FeaturePtr feature) const noexcept
             return RelationPtr(feature).contains(store(), relatedFeature());
         }
         assert(feature.isWay());
-        assert(relatedFeature().isNode());
-        return WayPtr(feature).contains(store(), NodePtr(relatedFeature()));
+        // TODO: This may change, use explicit flags to indicate feature vs anon
+        if (!relatedFeature().isNull()) [[likely]]
+        {
+            assert(relatedFeature().isNode());
+            return WayPtr(feature).contains(store(), NodePtr(relatedFeature()));
+        }
+        return WayPtr(feature).containsAnonNode(relatedAnonymousNode());
     default:
         return true;
     }

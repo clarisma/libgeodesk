@@ -18,7 +18,7 @@ public:
 	explicit RelationPtr(FeaturePtr f) : FeaturePtr(f.ptr()) { assert(isNull() || isRelation()); }
 	explicit RelationPtr(clarisma::DataPtr p) : FeaturePtr(p) {}
 
-	bool contains(const FeatureStore* store, FeaturePtr member);
+	bool contains(const FeatureStore* store, FeaturePtr member) const;
 };
 
 // TODO: remove in v2

@@ -19,7 +19,7 @@ class TagUtils
 public:
     template<typename Container>
     static void getTags(
-        FeatureStore* store, TagTablePtr tags,
+        const FeatureStore* store, TagTablePtr tags,
         const KeySchema& keys, Container& results)
     {
         TagWalker tw(tags, store->strings());

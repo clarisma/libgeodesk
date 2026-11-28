@@ -14,31 +14,32 @@ namespace geodesk {
 
 class LeafletFormatter : public FeatureFormatter<LeafletFormatter>
 {
+    using Buffer = clarisma::Buffer;
 public:
     LeafletFormatter()
     {
         latitudeFirst_ = true;
     }
 
-    void writeHeader(clarisma::Buffer& out, const LeafletSettings& settings,
+    void writeHeader(Buffer& out, const LeafletSettings& settings,
         const char* extraStyles = nullptr);
-    void writeFooter(clarisma::Buffer& out, const Box& bounds);
+    void writeFooter(Buffer& out, const Box& bounds);
 
-    void writeNodeGeometry(clarisma::Buffer& out, NodePtr node) const
+    void writeNodeGeometry(Buffer& out, NodePtr node) const
     {
         out.write("L.circleMarker(");
         write(out, node.xy());
         out << ",style";
     }
 
-    void writeWayGeometry(clarisma::Buffer& out, WayPtr way) const
+    void writeWayGeometry(Buffer& out, WayPtr way) const
     {
         out.write(way.isArea() ? "L.polygon(" : "L.polyline(");
         writeWayCoordinates(out, way, way.isArea());
         out << ",style";
     }
 
-    void writeAreaRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+    void writeAreaRelationGeometry(Buffer& out, const FeatureStore* store, RelationPtr rel) const
     {
         Polygonizer polygonizer;
         polygonizer.createRings(store, rel);
@@ -56,7 +57,7 @@ public:
         out << ",style";
     }
 
-    void writeCollectionRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+    void writeCollectionRelationGeometry(Buffer& out, const FeatureStore* store, RelationPtr rel) const
     {
         out.write("L.featureGroup([");
         uint64_t count = 0;
@@ -87,9 +88,9 @@ public:
         out.writeByte(']');
     }
 
-    void writeBox(clarisma::Buffer& out, const Box& box);
+    void writeBox(Buffer& out, const Box& box);
 
-    static void writeSetColor(clarisma::Buffer& out, std::string_view color)
+    static void writeSetColor(Buffer& out, std::string_view color)
     {
         out << "style={color:'" << color << "'};\n";
     }

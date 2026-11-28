@@ -8,7 +8,6 @@
 #include <geodesk/feature/FastMemberIterator.h>
 #include <geodesk/feature/WayPtr.h>
 #include <geodesk/format/KeySchema.h>
-#include <geodesk/geom/Coordinate.h>
 #include <geodesk/format/FilteredTagWalker.h>
 
 namespace geodesk {
@@ -19,10 +18,12 @@ namespace geodesk {
 template<typename Derived>
 class FeatureFormatter : public CoordinateFormat
 {
+	using Buffer = clarisma::Buffer;
+
 public:
 	FeatureFormatter(const KeySchema* schema = nullptr) : schema_(schema) {}
 
-	void writeFeatureGeometry(clarisma::Buffer& out, FeatureStore* store, FeaturePtr feature) const
+	void writeFeatureGeometry(Buffer& out, const FeatureStore* store, FeaturePtr feature) const
     {
 		if (feature.isWay())
 		{
@@ -39,8 +40,8 @@ public:
 		}
     }
 
-	void writeNodeGeometry(clarisma::Buffer& out, NodePtr node) const {}
-	void writeWayGeometry(clarisma::Buffer& out, WayPtr way) const
+	void writeNodeGeometry(Buffer& out, NodePtr node) const {}
+	void writeWayGeometry(Buffer& out, WayPtr way) const
     {
     	if(way.isArea())
         {
@@ -52,7 +53,7 @@ public:
         }
     }
 
-	void writeRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+	void writeRelationGeometry(Buffer& out, const FeatureStore* store, RelationPtr rel) const
 	{
 		if(rel.isArea())
 		{
@@ -64,12 +65,12 @@ public:
 		}
 	}
 
-	void writeAreaWayGeometry(clarisma::Buffer& out, WayPtr way) const {}
-	void writeLinealWayGeometry(clarisma::Buffer& out, WayPtr way) const {}
-    void writeAreaRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const {}
-    void writeCollectionRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const {}
+	void writeAreaWayGeometry(Buffer& out, WayPtr way) const {}
+	void writeLinealWayGeometry(Buffer& out, WayPtr way) const {}
+    void writeAreaRelationGeometry(Buffer& out, const FeatureStore* store, RelationPtr rel) const {}
+    void writeCollectionRelationGeometry(Buffer& out, const FeatureStore* store, RelationPtr rel) const {}
 
-	uint64_t writeMemberGeometries(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+	uint64_t writeMemberGeometries(Buffer& out, const FeatureStore* store, RelationPtr rel) const
 	{
 		uint64_t count = 0;
 		FastMemberIterator iter(store, rel);
@@ -98,7 +99,7 @@ public:
 		return count;
 	}
 
-    void writeTagValue(clarisma::Buffer& out, const TagWalker& iter) const
+    void writeTagValue(Buffer& out, const TagWalker& iter) const
     {
 		if (iter.isStringValue()) [[likely]] // string
 		{
@@ -117,12 +118,12 @@ public:
 		}
 	}
 
-	void writeNumberTagValue(clarisma::Buffer& out, clarisma::Decimal d) const
+	void writeNumberTagValue(Buffer& out, clarisma::Decimal d) const
     {
     	out << d;
 	}
 
-	void writeDefaultId(clarisma::Buffer& out, FeaturePtr feature)
+	void writeDefaultId(Buffer& out, FeaturePtr feature)
 	{
 		out.writeByte("NWRS"[feature.typeCode()]);
 		out << feature.id();

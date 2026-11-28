@@ -14,6 +14,8 @@ namespace geodesk {
 ///
 class WktFormatter : public FeatureFormatter<WktFormatter>
 {
+	using Buffer = clarisma::Buffer;
+
 public:
 	WktFormatter()
 	{
@@ -24,20 +26,20 @@ public:
 		coordGroupEndChar_ = ')';
 	}
 
-	void writeNodeGeometry(clarisma::Buffer& out, NodePtr node) const
+	void writeNodeGeometry(Buffer& out, NodePtr node) const
     {
 		out.write("POINT(");
 		write(out, node.xy());
 		out.writeByte(')');
     }
 
-	void writeWayGeometry(clarisma::Buffer& out, WayPtr way) const
+	void writeWayGeometry(Buffer& out, WayPtr way) const
     {
 		out.write(way.isArea() ? "POLYGON" : "LINESTRING");
 		writeWayCoordinates(out, way, way.isArea());
     }
 
-	void writeAreaRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+	void writeAreaRelationGeometry(Buffer& out, const FeatureStore* store, RelationPtr rel) const
     {
 		Polygonizer polygonizer;
 		polygonizer.createRings(store, rel);
@@ -55,7 +57,7 @@ public:
 		}
     }
 
-    void writeCollectionRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+    void writeCollectionRelationGeometry(Buffer& out, const FeatureStore* store, RelationPtr rel) const
     {
 		out.write("GEOMETRYCOLLECTION");
 		if (writeMemberGeometries(out, store, rel) == 0) out.write(" EMPTY");

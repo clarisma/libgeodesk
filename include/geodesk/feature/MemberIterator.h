@@ -250,7 +250,7 @@ public:
 		}
 	}
 
-	MemberIterator(FeatureStore* store, DataPtr pMembers) :
+	MemberIterator(const FeatureStore* store, DataPtr pMembers) :
 		MemberIteratorBase(store, pMembers)
 	{
 	}

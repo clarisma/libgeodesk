@@ -15,17 +15,18 @@ namespace geodesk {
 ///
 class GeoJsonFormatter : public FeatureFormatter<GeoJsonFormatter>
 {
+	using Buffer = clarisma::Buffer;
 public:
     using FeatureFormatter::FeatureFormatter;
 
-	void writeNodeGeometry(clarisma::Buffer& out, NodePtr node) const
+	void writeNodeGeometry(Buffer& out, NodePtr node) const
   	{
 		out.write("{\"type\":\"Point\",\"coordinates\":");
   		write(out,node.xy());
 		out.writeByte('}');
   	}
 
-	void writeWayGeometry(clarisma::Buffer& out, WayPtr way) const
+	void writeWayGeometry(Buffer& out, WayPtr way) const
     {
 		out.write(way.isArea() ?
 			"{\"type\":\"Polygon\",\"coordinates\":" :
@@ -34,7 +35,7 @@ public:
 		out.writeByte('}');
     }
 
-	void writeAreaRelationGeometry(clarisma::Buffer& out, const FeatureStore* store, RelationPtr rel) const
+	void writeAreaRelationGeometry(Buffer& out, const FeatureStore* store, RelationPtr rel) const
     {
 		Polygonizer polygonizer;
 		polygonizer.createRings(store, rel);
@@ -55,7 +56,7 @@ public:
 		out.writeByte('}');
     }
 
-	void writeCollectionRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+	void writeCollectionRelationGeometry(Buffer& out, const FeatureStore* store, RelationPtr rel) const
     {
 		out.write("{\"type\":\"GeometryCollection\",\"geometries\":");
     	if (writeMemberGeometries(out, store, rel) == 0)
@@ -65,14 +66,14 @@ public:
 		out.writeByte('}');
     }
 
-	void writeStringTagValue(clarisma::Buffer& out, const clarisma::ShortVarString* s) const
+	void writeStringTagValue(Buffer& out, const clarisma::ShortVarString* s) const
 	{
 		out.writeByte('\"');
 		clarisma::Json::writeEscaped(out, s->toStringView());
 		out.writeByte('\"');
 	}
 
-	void writeTags(clarisma::Buffer& out, TagTablePtr tags, const StringTable& strings) const
+	void writeTags(Buffer& out, TagTablePtr tags, const StringTable& strings) const
     {
 		FilteredTagWalker iter(tags, strings, schema_);
 		out.writeByte('{');
@@ -89,7 +90,7 @@ public:
 		out.writeByte('}');
     }
 
-	void writeFeature(clarisma::Buffer& out, const FeatureStore* store, FeaturePtr feature)
+	void writeFeature(Buffer& out, const FeatureStore* store, FeaturePtr feature)
 	{
 		out << "{\"type\":\"Feature\",\"id\":\"";
 		writeDefaultId(out, feature);	// TODO: customizable ID
@@ -102,7 +103,7 @@ public:
 	}
 
 	// TODO: No header for GeoJSONL
-	void writeHeader(clarisma::Buffer& out, const std::string_view& generator)
+	void writeHeader(Buffer& out, const std::string_view& generator)
 	{
 		out << "{\"type\":\"FeatureCollection\",\"generator\":\"";
 		out << generator;
@@ -110,7 +111,7 @@ public:
 	}
 
 	// TODO: No footer for GeoJSONL
-	void writeFooter(clarisma::Buffer& out)
+	void writeFooter(Buffer& out)
 	{
 		out << "]}";
 	}

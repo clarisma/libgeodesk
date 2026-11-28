@@ -18,7 +18,7 @@ using namespace geodesk;
 class FeatureRow : public clarisma::SmallArray<StringHolder,32>
 {
 public:
-    FeatureRow(const KeySchema& keys, FeatureStore* store,
+    FeatureRow(const KeySchema& keys, const FeatureStore* store,
         FeaturePtr feature, int precision,
         clarisma::StringBuilder& stringBuilder);
 };

@@ -30,7 +30,7 @@ static void writeTag(StringBuilder& out, TagWalker& tw)
     }
 }
 
-FeatureRow::FeatureRow(const KeySchema& keys, FeatureStore* store,
+FeatureRow::FeatureRow(const KeySchema& keys, const FeatureStore* store,
     FeaturePtr feature, int precision,
     StringBuilder& stringBuilder) :
     SmallArray(keys.columnCount())
