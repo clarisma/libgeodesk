@@ -39,12 +39,12 @@ public:
      * Returns the area (in square meters) of the given relation.
      * Assumes that the relation is an area.
      */
-    static double ofRelation(FeatureStore* store, RelationPtr relation);
+    static double ofRelation(const FeatureStore* store, RelationPtr relation);
 
 	/**
 	 * Returns the area (in square meters) of the given feature.
 	 */
-	static double ofFeature(FeatureStore* store, FeaturePtr feature)
+	static double ofFeature(const FeatureStore* store, FeaturePtr feature)
 	{
 		if (!feature.isArea()) return 0;
 		if (feature.isWay()) return ofWay(WayPtr(feature));

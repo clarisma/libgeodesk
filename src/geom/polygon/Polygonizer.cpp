@@ -41,7 +41,7 @@ Polygonizer::Segment* Polygonizer::createSegment(WayPtr way, Segment* next)
 }
 
 
-void Polygonizer::createRings(FeatureStore* store, RelationPtr relation)
+void Polygonizer::createRings(const FeatureStore* store, RelationPtr relation)
 {
     Segment* outerSegments = nullptr;
     Segment* innerSegments = nullptr;

@@ -61,7 +61,7 @@ public:
     /// @param store    the FeatureStore
     /// @param relation pointer to the stored Relation
     ///
-    void createRings(FeatureStore* store, RelationPtr relation);
+    void createRings(const FeatureStore* store, RelationPtr relation);
 
     /// @brief Assigns inner rings to outer, and merges any inner
     /// rings whose edges touch. The createRings() method must

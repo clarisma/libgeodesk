@@ -15,12 +15,12 @@ class GEODESK_API Length
 {
 public:
 	static double ofWay(WayPtr way);
-	static double ofRelation(FeatureStore* store, RelationPtr relation);
+	static double ofRelation(const FeatureStore* store, RelationPtr relation);
 
 	/**
 	* Returns the length (in meters) of the given feature.
 	*/
-	static double ofFeature(FeatureStore* store, FeaturePtr feature)
+	static double ofFeature(const FeatureStore* store, FeaturePtr feature)
 	{
 		if(feature.isWay()) return ofWay(WayPtr(feature));
 		if(feature.isRelation()) return ofRelation(store, RelationPtr(feature));
@@ -28,7 +28,7 @@ public:
 	}
 
 private:
-	static double ofRelation(FeatureStore* store, RelationPtr rel, RecursionGuard& guard);
+	static double ofRelation(const FeatureStore* store, RelationPtr rel, RecursionGuard& guard);
 };
 
 // \endcond

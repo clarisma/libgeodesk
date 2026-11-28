@@ -49,7 +49,7 @@ double Area::signedMercatorOfRing(const Polygonizer::Ring* ring)
 }
 
 
-double Area::ofRelation(FeatureStore* store, const RelationPtr relation)
+double Area::ofRelation(const FeatureStore* store, const RelationPtr relation)
 {
     assert(relation.isArea());
     int32_t avgY = clarisma::Math::avg(relation.minY(), relation.maxY());

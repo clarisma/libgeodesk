@@ -26,13 +26,13 @@ double Length::ofWay(WayPtr way)
 // TODO: Define in spec: what's the "length" of an Area-Relation?
 // Circumference without holes? Right now, we simply add up all the ways
 
-double Length::ofRelation(FeatureStore* store, RelationPtr relation)
+double Length::ofRelation(const FeatureStore* store, RelationPtr relation)
 {
 	RecursionGuard guard(relation);
 	return ofRelation(store, relation, guard);
 }
 
-double Length::ofRelation(FeatureStore *store, RelationPtr rel, RecursionGuard &guard)
+double Length::ofRelation(const FeatureStore *store, RelationPtr rel, RecursionGuard &guard)
 {
 	double totalLength = 0;
 	FastMemberIterator iter(store, rel);
