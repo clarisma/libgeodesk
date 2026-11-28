@@ -70,6 +70,10 @@ public:
     operator bool() const { return !isEmpty(); }
     bool operator !() const {return isEmpty(); }
 
+    /// @brief Checks if the specified Feature exists in this collection.
+    ///
+    bool contains(const Feature& feature) const;
+
     template<typename T2>
     [[nodiscard]] FeaturesBase operator&(const FeaturesBase<T2>& other) const
     {

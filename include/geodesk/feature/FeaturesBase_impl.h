@@ -78,6 +78,20 @@ template<typename T>
     return v;
 }
 
+template<typename T>
+bool FeaturesBase<T>::contains(const Feature& feature) const
+{
+    if (feature.store() != store()) [[unlikely]] return false;
+    if constexpr (std::is_same_v<T, Feature> || std::is_same_v<T, Node>)
+    {
+        if (feature.isAnonymousNode()) [[unlikely]]
+        {
+            return containsAnonNode(feature.xy());
+        }
+    }
+    return contains(feature.ptr());
+}
+
 } // namespace geodesk
 
 // \endcond

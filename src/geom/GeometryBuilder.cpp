@@ -61,7 +61,9 @@ GEOSGeometry* GeometryBuilder::buildBoxGeometry(const Box& box, GEOSContextHandl
 }
 
 
-GEOSGeometry* GeometryBuilder::buildAreaRelationGeometry(FeatureStore* store, RelationPtr relation, GEOSContextHandle_t geosContext)
+GEOSGeometry* GeometryBuilder::buildAreaRelationGeometry(
+	const FeatureStore* store, RelationPtr relation,
+	GEOSContextHandle_t geosContext)
 {
 	Polygonizer polygonizer;
 	polygonizer.createRings(store, relation);
@@ -70,7 +72,9 @@ GEOSGeometry* GeometryBuilder::buildAreaRelationGeometry(FeatureStore* store, Re
 }
 
 
-GEOSGeometry* GeometryBuilder::buildRelationGeometry(FeatureStore* store, RelationPtr relation, GEOSContextHandle_t geosContext)
+GEOSGeometry* GeometryBuilder::buildRelationGeometry(
+	const FeatureStore* store, RelationPtr relation,
+	GEOSContextHandle_t geosContext)
 {
 	if (relation.isArea())
 	{
@@ -81,8 +85,9 @@ GEOSGeometry* GeometryBuilder::buildRelationGeometry(FeatureStore* store, Relati
 }
 
 
-RelationGeometryBuilder::RelationGeometryBuilder(FeatureStore* store, 
-	RelationPtr relation, GEOSContextHandle_t geosContext) :
+RelationGeometryBuilder::RelationGeometryBuilder(
+	const FeatureStore* store, RelationPtr relation,
+	GEOSContextHandle_t geosContext) :
 	store_(store),
 	context_(geosContext),
 	guard_(relation)
@@ -143,7 +148,9 @@ GEOSGeometry* RelationGeometryBuilder::build()
 }
 
 
-GEOSGeometry* GeometryBuilder::buildFeatureGeometry(FeatureStore* store, FeaturePtr feature, GEOSContextHandle_t geosContext)
+GEOSGeometry* GeometryBuilder::buildFeatureGeometry(
+	const FeatureStore* store, FeaturePtr feature,
+	GEOSContextHandle_t geosContext)
 {
 	int typeCode = feature.typeCode();
 	if (typeCode == 1)

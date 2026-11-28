@@ -59,7 +59,7 @@ bool Selection::isEmpty() const
     // TODO: Can likely accelerate for parent views also if they aren't filtered
 }
 
-bool Selection::contains(FeaturePtr feature) const noexcept
+bool Selection::contains(FeaturePtr feature) const
 {
     if (!types_.acceptFlags(feature.flags())) return false;
     if (kind_ == WORLD)
@@ -105,7 +105,7 @@ bool Selection::contains(FeaturePtr feature) const noexcept
     }
 }
 
-bool Selection::containsAnonNode(Coordinate xy) const noexcept
+bool Selection::containsAnonNode(Coordinate xy) const
 {
     if (kind_ != WAY_NODES) return false;
     if (usesMatcher()) return false;
