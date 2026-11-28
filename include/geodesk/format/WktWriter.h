@@ -15,7 +15,7 @@ class WktWriter : public FeatureWriter
 public:
 	explicit WktWriter(clarisma::Buffer* buf);
 
-	void writeFeature(FeatureStore* store, FeaturePtr feature) override;
+	void writeFeature(const FeatureStore* store, FeaturePtr feature) override;
 	void writeAnonymousNodeNode(Coordinate point) override;
 	void writeHeader() override;
 	void writeFooter() override;
@@ -23,8 +23,8 @@ public:
 protected:
 	void writeNodeGeometry(NodePtr node) override;
 	void writeWayGeometry(WayPtr way) override;
-	void writeAreaRelationGeometry(FeatureStore* store, RelationPtr relation) override;
-	void writeCollectionRelationGeometry(FeatureStore* store, RelationPtr relation) override;
+	void writeAreaRelationGeometry(const FeatureStore* store, RelationPtr relation) override;
+	void writeCollectionRelationGeometry(const FeatureStore* store, RelationPtr relation) override;
 };
 
 // \endcond

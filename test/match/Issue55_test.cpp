@@ -11,7 +11,7 @@ using namespace geodesk;
 
 namespace {
 
-uint32_t indexBitsOf(FeatureStore* store, const char* key)
+uint32_t indexBitsOf(const FeatureStore* store, const char* key)
 {
     int code = store->strings().getCode(key, strlen(key));
     REQUIRE(code > 0);
@@ -21,7 +21,7 @@ uint32_t indexBitsOf(FeatureStore* store, const char* key)
 }
 
 // Checks that two queries accept exactly the same index buckets
-void requireSameIndexUse(FeatureStore* store, const char* a, const char* b)
+void requireSameIndexUse(const FeatureStore* store, const char* a, const char* b)
 {
     const MatcherHolder* ma = store->getMatcher(a);
     const MatcherHolder* mb = store->getMatcher(b);
@@ -44,7 +44,7 @@ void requireSameIndexUse(FeatureStore* store, const char* a, const char* b)
 TEST_CASE("Issue 55: tag index is used regardless of clause order")
 {
     Features monaco = getMonaco();
-    FeatureStore* store = monaco.store();
+    const FeatureStore* store = monaco.store();
     uint32_t boundaryBits = indexBitsOf(store, "boundary");
 
     SECTION("unindexed clause before indexed clause")

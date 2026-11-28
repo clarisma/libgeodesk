@@ -51,11 +51,11 @@ public:
         release();
     }
 
-    static FeaturesBase empty(FeatureStore* store) noexcept
+    static FeaturesBase empty(const FeatureStore* store) noexcept
     {
         store->addref();
         return View(EMPTY, 0, 0, store,
-    {}, store->getAllMatcher(), nullptr);
+        {}, store->getAllMatcher(), nullptr);
     }
 
     FeaturesBase& operator=(const FeaturesBase& other)

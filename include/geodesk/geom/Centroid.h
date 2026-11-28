@@ -18,8 +18,8 @@ class GEODESK_API Centroid
 {
 public:
 	static Coordinate ofWay(WayPtr way);
-	static Coordinate ofRelation(FeatureStore* store, RelationPtr relation);
-	static Coordinate ofFeature(FeatureStore* store, FeaturePtr feature);
+	static Coordinate ofRelation(const FeatureStore* store, RelationPtr relation);
+	static Coordinate ofFeature(const FeatureStore* store, FeaturePtr feature);
 
 private:
 	class Areal
@@ -66,7 +66,7 @@ private:
 			areaCentroidY_ += (ringCentroidY + 3.0 * ringSum * first.y) * sign;
 		}
 
-		void addAreaRelation(FeatureStore* store, RelationPtr relation);
+		void addAreaRelation(const FeatureStore* store, RelationPtr relation);
 		bool isEmpty() const { return areaSum_ == 0; }
 		Coordinate centroid() const
 		{
@@ -124,7 +124,7 @@ private:
 
 private:
 	void addWay(WayPtr way);
-	void addRelation(FeatureStore* store, RelationPtr rel, RecursionGuard& guard);
+	void addRelation(const FeatureStore* store, RelationPtr rel, RecursionGuard& guard);
 	
 	Areal areal_;
 	Lineal lineal_;

@@ -63,7 +63,7 @@ public:
         PARENTS
     };
 
-    Selection(int kind, int flags, FeatureTypes types, FeatureStore* store,
+    Selection(int kind, int flags, FeatureTypes types, const FeatureStore* store,
         Context context, const MatcherHolder* matcher, const Filter* filter) :
         kind_(kind), flags_(flags), types_(types), store_(store),
         context_(context), matcher_(matcher), filter_(filter)
@@ -71,7 +71,7 @@ public:
     }
 
     uint32_t kind() const noexcept { return kind_; }
-    FeatureStore* store() const noexcept { return store_; }
+    const FeatureStore* store() const noexcept { return store_; }
     FeatureTypes types() const noexcept { return types_; }
     const MatcherHolder* matcher() const noexcept { return matcher_; }
     const Filter* filter() const { return filter_; }
@@ -116,7 +116,7 @@ protected:
     uint16_t kind_;
     uint16_t flags_;
     FeatureTypes types_;
-    FeatureStore* store_;
+    const FeatureStore* store_;
     const MatcherHolder* matcher_;
     const Filter* filter_;
     Context context_;

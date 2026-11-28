@@ -60,7 +60,7 @@ public:
             //  resides within it (cause of #20)
     }
 
-    static auto related(int view, FeatureTypes types, FeatureStore* store, FeaturePtr ptr, const char* query)
+    static auto related(int view, FeatureTypes types, const FeatureStore* store, FeaturePtr ptr, const char* query)
     {
         const MatcherHolder* matcher;
         int flags;
@@ -84,7 +84,7 @@ public:
         return T::create(view, flags, types, store, ptr, matcher, nullptr);
     }
 
-    static auto nodesOf(FeatureStore* store, FeaturePtr ptr, const char* query = nullptr)
+    static auto nodesOf(const FeatureStore* store, FeaturePtr ptr, const char* query = nullptr)
     {
         return related(WAY_NODES, FeatureTypes::NODES & FeatureTypes::WAYNODE_FLAGGED,
             store, ptr, query);
@@ -128,7 +128,7 @@ public:
     }
 
     // TODO: guard against empty relations
-    static auto membersOf(FeatureStore* store, FeaturePtr ptr, const char* query = nullptr)
+    static auto membersOf(const FeatureStore* store, FeaturePtr ptr, const char* query = nullptr)
     {
         return related(MEMBERS, FeatureTypes::RELATION_MEMBERS, store, ptr, query);
     }
@@ -167,7 +167,7 @@ public:
         return withRelated(PARENTS, FeatureTypes::RELATIONS, feature);
     }
 
-    static auto parentWaysOf(FeatureStore* store, Coordinate anonNode, const char* query = nullptr)
+    static auto parentWaysOf(const FeatureStore* store, Coordinate anonNode, const char* query = nullptr)
     {
         const MatcherHolder* matcher;
         int flags;
@@ -189,7 +189,7 @@ public:
             store, anonNode, matcher, nullptr);
     }
 
-    static auto parentsOf(FeatureStore* store, FeaturePtr feature, FeatureTypes types, const char* query = nullptr)
+    static auto parentsOf(const FeatureStore* store, FeaturePtr feature, FeatureTypes types, const char* query = nullptr)
     {
         assert((types & ((FeatureTypes::WAYS & FeatureTypes::WAYNODE_FLAGGED) |
             FeatureTypes::RELATIONS)) == types);

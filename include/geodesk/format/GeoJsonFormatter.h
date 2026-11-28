@@ -34,7 +34,7 @@ public:
 		out.writeByte('}');
     }
 
-	void writeAreaRelationGeometry(clarisma::Buffer& out, FeatureStore* store, RelationPtr rel) const
+	void writeAreaRelationGeometry(clarisma::Buffer& out, const FeatureStore* store, RelationPtr rel) const
     {
 		Polygonizer polygonizer;
 		polygonizer.createRings(store, rel);
@@ -89,7 +89,7 @@ public:
 		out.writeByte('}');
     }
 
-	void writeFeature(clarisma::Buffer& out, FeatureStore* store, FeaturePtr feature)
+	void writeFeature(clarisma::Buffer& out, const FeatureStore* store, FeaturePtr feature)
 	{
 		out << "{\"type\":\"Feature\",\"id\":\"";
 		writeDefaultId(out, feature);	// TODO: customizable ID

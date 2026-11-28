@@ -163,7 +163,7 @@ void GeoJsonWriter::writeWayGeometry(WayPtr way)
 	writeByte('}');
 }
 
-void GeoJsonWriter::writeAreaRelationGeometry(FeatureStore* store, RelationPtr relation)
+void GeoJsonWriter::writeAreaRelationGeometry(const FeatureStore* store, RelationPtr relation)
 {
 	Polygonizer polygonizer;
 	polygonizer.createRings(store, relation);
@@ -204,7 +204,7 @@ void GeoJsonWriter::writeAreaRelationGeometry(FeatureStore* store, RelationPtr r
 }
 
 
-void GeoJsonWriter::writeCollectionRelationGeometry(FeatureStore* store, RelationPtr relation)
+void GeoJsonWriter::writeCollectionRelationGeometry(const FeatureStore* store, RelationPtr relation)
 {
 	if (pretty_)
 	{
@@ -221,7 +221,7 @@ void GeoJsonWriter::writeCollectionRelationGeometry(FeatureStore* store, Relatio
 	writeConstString("}");
 }
 
-void GeoJsonWriter::writeFeature(FeatureStore* store, FeaturePtr feature)
+void GeoJsonWriter::writeFeature(const FeatureStore* store, FeaturePtr feature)
 {
 	TagIterator tagIter(feature.tags(), store->strings());
 	if (pretty_)

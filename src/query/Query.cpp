@@ -10,7 +10,7 @@ namespace geodesk {
 // #include <boost/asio.hpp>
 
 
-Query::Query(FeatureStore* store, const Box& box, FeatureTypes types,
+Query::Query(const FeatureStore* store, const Box& box, FeatureTypes types,
     const MatcherHolder* matcher, const Filter* filter) :
     QueryBase(store, box, types, matcher, filter, &Query::consumeResults),
     completedTiles_(0),

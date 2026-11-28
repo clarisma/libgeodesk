@@ -161,7 +161,7 @@ std::span<byte> FeatureStore::propertiesData() const
 	return { pTable.bytePtr(), static_cast<size_t>(p - pTable.bytePtr()) };
 }
 
-const MatcherHolder* FeatureStore::getMatcher(const char* query)
+const MatcherHolder* FeatureStore::getMatcher(const char* query) const
 {
 	return MatcherCompiler(snapshot()).getMatcher(query);
 }

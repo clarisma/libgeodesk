@@ -16,7 +16,7 @@ class FeatureWriter : public GeometryWriter
 {
 public:
 	using WriteIdFunction = void(*)(FeatureWriter* writer, 
-		FeatureStore* store, FeaturePtr feature, void* closure);
+		const FeatureStore* store, FeaturePtr feature, void* closure);
 
 	explicit FeatureWriter(clarisma::Buffer* buf) :
 		GeometryWriter(buf),
@@ -38,28 +38,28 @@ public:
 	const char* pos() const { return p_; }
 	void setFirstFeature(bool b) { firstFeature_ = b; }
 
-	virtual void writeFeature(FeatureStore* store, FeaturePtr feature) = 0;
+	virtual void writeFeature(const FeatureStore* store, FeaturePtr feature) = 0;
 	virtual void writeAnonymousNodeNode(Coordinate point) = 0;
 	virtual void writeHeader() {}
 	virtual void writeFooter() {}
 
 protected:
 	// void writeWayCoordinates(WayRef way);
-	void writeFeatureGeometry(FeatureStore* store, FeaturePtr feature);
+	void writeFeatureGeometry(const FeatureStore* store, FeaturePtr feature);
 	virtual void writeNodeGeometry(NodePtr way) = 0;
 	virtual void writeWayGeometry(WayPtr way) = 0;
-	virtual void writeAreaRelationGeometry(FeatureStore* store, RelationPtr feature) = 0;
-	virtual void writeCollectionRelationGeometry(FeatureStore* store, RelationPtr feature) = 0;
-	uint64_t writeMemberGeometries(FeatureStore* store, RelationPtr relation, RecursionGuard& guard);
-	uint64_t writeMemberGeometries(FeatureStore* store, RelationPtr relation)
+	virtual void writeAreaRelationGeometry(const FeatureStore* store, RelationPtr feature) = 0;
+	virtual void writeCollectionRelationGeometry(const FeatureStore* store, RelationPtr feature) = 0;
+	uint64_t writeMemberGeometries(const FeatureStore* store, RelationPtr relation, RecursionGuard& guard);
+	uint64_t writeMemberGeometries(const FeatureStore* store, RelationPtr relation)
 	{
 		RecursionGuard guard(relation);
 		return writeMemberGeometries(store, relation, guard);
 	}
 
-	void writeId(FeatureStore* store, FeaturePtr feature);
+	void writeId(const FeatureStore* store, FeaturePtr feature);
 	static void writeDefaultId(FeatureWriter* writer,
-		FeatureStore* store, FeaturePtr feature, void* closure);
+		const FeatureStore* store, FeaturePtr feature, void* closure);
 	void writeTagValue(TagTablePtr tags, TagBits value, const StringTable& strings);
 
 	WriteIdFunction writeIdFunction_;

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <geodesk/feature/RelationPtr.h>
+#include <geodesk/feature/NodePtr.h>
 #include <geodesk/feature/ParentRelationIterator.h>
 
 namespace geodesk {

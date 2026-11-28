@@ -43,7 +43,7 @@ void FeatureWriter::writeTagValue(TagTablePtr tags, TagBits value, const StringT
 }
 
 
-void FeatureWriter::writeFeatureGeometry(FeatureStore* store, FeaturePtr feature)
+void FeatureWriter::writeFeatureGeometry(const FeatureStore* store, FeaturePtr feature)
 {
 	if (feature.isWay())
 	{
@@ -71,7 +71,7 @@ void FeatureWriter::writeFeatureGeometry(FeatureStore* store, FeaturePtr feature
 // TODO: In GOL 2.0, empty geometry collections won't exist
 //  (no placeholders, no empty relations)
 
-uint64_t FeatureWriter::writeMemberGeometries(FeatureStore* store, RelationPtr relation, RecursionGuard& guard)
+uint64_t FeatureWriter::writeMemberGeometries(const FeatureStore* store, RelationPtr relation, RecursionGuard& guard)
 {
 	uint64_t count = 0;
 	FastMemberIterator iter(store, relation);
@@ -144,7 +144,7 @@ uint64_t FeatureWriter::writeMemberGeometries(FeatureStore* store, RelationPtr r
 
 
 void FeatureWriter::writeDefaultId(FeatureWriter* writer,
-	FeatureStore* store, FeaturePtr feature, void* closure)
+	const FeatureStore* store, FeaturePtr feature, void* closure)
 {
 	char quoteChar = writer->quoteChar_;
 	if (quoteChar) writer->writeByte(quoteChar);
@@ -155,7 +155,7 @@ void FeatureWriter::writeDefaultId(FeatureWriter* writer,
 }
 
 
-void FeatureWriter::writeId(FeatureStore* store, FeaturePtr feature)
+void FeatureWriter::writeId(const FeatureStore* store, FeaturePtr feature)
 {
 	writeIdFunction_(this, store, feature, writeIdClosure_);
 }

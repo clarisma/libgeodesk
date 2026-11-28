@@ -102,12 +102,12 @@ public:
     static FeatureStore* openSingle(std::string_view fileName);
 
 #ifdef GEODESK_MULTITHREADED
-    void addref()
+    void addref() const
     {
         refcount_.fetch_add(1, std::memory_order_relaxed);
     }
 
-    void release()
+    void release() const
     {
         if (refcount_.fetch_sub(1, std::memory_order_acq_rel) == 1)
         {
@@ -115,8 +115,8 @@ public:
         }
     }
 #else
-    void addref()  { ++refcount_;  }
-    void release() { if (--refcount_ == 0) delete this;  }
+    void addref() const { ++refcount_;  }
+    void release() const { if (--refcount_ == 0) delete this;  }
     size_t refcount() const { return refcount_; }
 #endif
 
@@ -138,9 +138,9 @@ public:
     std::span<byte> stringTableData() const;
     std::span<byte> propertiesData() const;
 
-    const MatcherHolder* getMatcher(const char* query);
+    const MatcherHolder* getMatcher(const char* query) const;
     const MatcherHolder* borrowAllMatcher() const { return &allMatcher_; }
-    const MatcherHolder* getAllMatcher() 
+    const MatcherHolder* getAllMatcher() const
     { 
         allMatcher_.addref();
         return &allMatcher_; 
@@ -166,7 +166,7 @@ public:
         return { header()->url, header()->urlLength };
     }
 
-    clarisma::ThreadPool<TileQueryTask>& executor() { return executor_; }
+    clarisma::ThreadPool<TileQueryTask>& executor() const { return executor_; }
 
     TilePtr fetchTile(Tip tip) const;
     static bool isTileValid(const byte* p);
@@ -194,9 +194,9 @@ private:
     void readIndexSchema(DataPtr pSchema) { snapshot_.readIndexSchema(pSchema); };
 
 #ifdef GEODESK_MULTITHREADED
-    std::atomic_size_t refcount_;
+    mutable std::atomic_size_t refcount_;
 #else
-    std::size_t refcount_;
+    mutable std::size_t refcount_;
 #endif
 
     Snapshot snapshot_;
@@ -211,7 +211,7 @@ private:
         // but PyFeatures requires a non-null MatcherHolder, which in turn
         // requires a FeatureStore
     #endif
-    clarisma::ThreadPool<TileQueryTask> executor_;
+    mutable clarisma::ThreadPool<TileQueryTask> executor_;
     ZoomLevels zoomLevels_;
     ReverseTileIndex reverseTileIndex_;
 

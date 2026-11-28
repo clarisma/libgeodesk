@@ -49,11 +49,11 @@ namespace geodesk {
 class GEODESK_API Tags
 {
 public:
-    explicit Tags(FeatureStore* store) : store_(store), tags_(TagTablePtr::empty()) {}
+    explicit Tags(const FeatureStore* store) : store_(store), tags_(TagTablePtr::empty()) {}
     explicit Tags(const Feature& feature);
-    Tags(FeatureStore* store, FeaturePtr ptr) :
+    Tags(const FeatureStore* store, FeaturePtr ptr) :
         store_(store), tags_(ptr.tags()) {}
-    Tags(FeatureStore* store, TagTablePtr ptr) :
+    Tags(const FeatureStore* store, TagTablePtr ptr) :
         store_(store), tags_(ptr) {}
 
 
@@ -232,7 +232,7 @@ public:
     // may allocate, hence throw
 
 private:
-    FeatureStore* store_;
+    const FeatureStore* store_;
     TagTablePtr tags_;
 };
 

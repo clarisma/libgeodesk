@@ -50,7 +50,7 @@ void WktWriter::writeWayGeometry(WayPtr way)
 	writeWayCoordinates(way, way.isArea());
 }
 
-void WktWriter::writeAreaRelationGeometry(FeatureStore* store, RelationPtr relation)
+void WktWriter::writeAreaRelationGeometry(const FeatureStore* store, RelationPtr relation)
 {
 	Polygonizer polygonizer;
 	polygonizer.createRings(store, relation);
@@ -76,7 +76,7 @@ void WktWriter::writeAreaRelationGeometry(FeatureStore* store, RelationPtr relat
 }
 
 
-void WktWriter::writeCollectionRelationGeometry(FeatureStore* store, RelationPtr relation)
+void WktWriter::writeCollectionRelationGeometry(const FeatureStore* store, RelationPtr relation)
 {
 	writeConstString("GEOMETRYCOLLECTION");
 	if (writeMemberGeometries(store, relation) == 0) writeConstString(" EMPTY");
@@ -84,7 +84,7 @@ void WktWriter::writeCollectionRelationGeometry(FeatureStore* store, RelationPtr
 
 
 
-void WktWriter::writeFeature(FeatureStore* store, FeaturePtr feature)
+void WktWriter::writeFeature(const FeatureStore* store, FeaturePtr feature)
 {
 	if (!firstFeature_) writeConstString(",");
 	writeFeatureGeometry(store, feature); 

@@ -53,7 +53,7 @@ class Filter;
 class QueryBase
 {
 public:
-    QueryBase(FeatureStore* store, const Box& box, FeatureTypes types,
+    QueryBase(const FeatureStore* store, const Box& box, FeatureTypes types,
         const MatcherHolder* matcher, const Filter* filter,
         QueryResultsConsumer consumer) :
         store_(store),
@@ -69,11 +69,11 @@ public:
     FeatureTypes types() const { return types_; }
     const MatcherHolder* matcher() const { return matcher_; }
     const Filter* filter() const { return filter_; }
-    FeatureStore* store() const { return store_; }
+    const FeatureStore* store() const { return store_; }
     QueryResultsConsumer consumer() const { return consumer_; };
 
 protected:
-    FeatureStore* store_;
+    const FeatureStore* store_;
     FeatureTypes types_;
     const MatcherHolder* matcher_;
     const Filter* filter_;

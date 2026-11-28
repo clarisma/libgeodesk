@@ -26,7 +26,7 @@ Coordinate Centroid::ofWay(WayPtr way)
 }
 
 
-void Centroid::Areal::addAreaRelation(FeatureStore* store, RelationPtr relation)
+void Centroid::Areal::addAreaRelation(const FeatureStore* store, RelationPtr relation)
 {
 	Polygonizer polygonizer;
 	polygonizer.createRings(store, relation);
@@ -47,7 +47,7 @@ void Centroid::Areal::addAreaRelation(FeatureStore* store, RelationPtr relation)
 }
 
 
-Coordinate Centroid::ofRelation(FeatureStore* store, RelationPtr relation)
+Coordinate Centroid::ofRelation(const FeatureStore* store, RelationPtr relation)
 {
 	if (relation.isArea())
 	{
@@ -86,7 +86,7 @@ void Centroid::addWay(WayPtr way)
 }
 
 
-void Centroid::addRelation(FeatureStore* store, RelationPtr rel, RecursionGuard& guard)
+void Centroid::addRelation(const FeatureStore* store, RelationPtr rel, RecursionGuard& guard)
 {
 	FastMemberIterator iter(store, rel);
 	for (;;)
@@ -149,7 +149,7 @@ void Centroid::Puntal::addPoint(Coordinate point)
 }
 
 
-Coordinate Centroid::ofFeature(FeatureStore* store, FeaturePtr feature)
+Coordinate Centroid::ofFeature(const FeatureStore* store, FeaturePtr feature)
 {
 	if (feature.isWay())
 	{

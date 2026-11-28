@@ -41,7 +41,7 @@ private:
 	void initNodeIterator(const Selection& view);
 	void initParentWaysIterator(const Selection& view);
 	void destroyParentWaysIterator();
-	void initParentRelationsIterator(FeatureStore* store, FeaturePtr member,
+	void initParentRelationsIterator(const FeatureStore* store, FeaturePtr member,
 		const MatcherHolder* matcher, const Filter* filter);
 	void initParentRelationsIterator(const Selection& view);
 	void switchToParentRelationsIterator();

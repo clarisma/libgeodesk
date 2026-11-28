@@ -12,7 +12,7 @@ namespace geodesk {
 class GEODESK_API View : public ViewBase<View>
 {
 public:
-    static View create(int view, int flags, FeatureTypes types, FeatureStore* store,
+    static View create(int view, int flags, FeatureTypes types, const FeatureStore* store,
         Context context, const MatcherHolder* matcher, const Filter* filter)
     {
         return { view, flags, types, store, context, matcher, filter };

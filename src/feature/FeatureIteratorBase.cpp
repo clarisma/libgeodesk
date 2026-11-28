@@ -109,7 +109,7 @@ void FeatureIteratorBase::initParentWaysIterator(const Selection& view)
         //  querying parent ways of feature nodes?
 }
 
-void FeatureIteratorBase::initParentRelationsIterator(FeatureStore* store, FeaturePtr member,
+void FeatureIteratorBase::initParentRelationsIterator(const FeatureStore* store, FeaturePtr member,
     const MatcherHolder* matcher, const Filter* filter)
 {
     type_ = PARENTS_RELATIONS;
@@ -190,7 +190,7 @@ void FeatureIteratorBase::fetchNextParentRelation()
 void FeatureIteratorBase::switchToParentRelationsIterator()
 {
     assert(type_ == PARENTS_ALL);
-    FeatureStore* store = storage_.parents.parentWayQuery.store();
+    const FeatureStore* store = storage_.parents.parentWayQuery.store();
     NodePtr node = storage_.parents.featureNodeFilter.node();
     const MatcherHolder* matcher = storage_.parents.parentWayQuery.matcher();
     const Filter* filter = storage_.parents.featureNodeFilter.secondaryFilter();
